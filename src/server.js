@@ -130,9 +130,6 @@ app.post('/api/connect/pairing', async (req, res) => {
 // ── GET /api/setup-status ─────────────────────────────────────────────────────
 
 app.get('/api/setup-status', (req, res) => {
-  const raw = process.env.SESSION_ID;
-  const hasEnvSession = !!(raw && raw.trim());
-
   let hasDiskSession = false;
   if (fs.existsSync(SESSION_BASE)) {
     for (const entry of fs.readdirSync(SESSION_BASE)) {
@@ -143,13 +140,13 @@ app.get('/api/setup-status', (req, res) => {
     }
   }
 
-  res.json({ setupRequired: !hasEnvSession && !hasDiskSession });
+  res.json({ setupRequired: !hasDiskSession });
 });
 
 // ── GET /api/config — read .env config vars ───────────────────────────────────
 
 const ENV_FILE = path.join(__dirname, '../.env');
-const EXPOSED_VARS = ['SESSION_ID', 'OWNER_NUMBER', 'OWNER_NAME', 'PREFIX', 'BOT_NAME'];
+const EXPOSED_VARS = ['OWNER_NUMBER', 'OWNER_NAME', 'PREFIX', 'BOT_NAME'];
 
 function readEnvFile() {
   if (!fs.existsSync(ENV_FILE)) return {};
@@ -176,84 +173,11 @@ app.get('/api/config', (req, res) => {
   const vars = readEnvFile();
   const result = {};
   for (const key of EXPOSED_VARS) {
-    let val = vars[key] || '';
-    if (key === 'SESSION_ID' && val.length > 40) {
-      result[key] = { value: val, masked: val.slice(0, 20) + '...' + val.slice(-10) };
-    } else {
-      result[key] = { value: val, masked: null };
-    }
+    const val = vars[key] || '';
+    result[key] = { value: val, masked: null };
   }
   res.json(result);
 });
-
-// ── Universal Session ID parser — supports all common bot formats ─────────────
-
-function parseSessionId(raw) {
-  const AdmZip = require('adm-zip');
-
-  // ── Format 1: CYPHER-X  (CYPHER-X:~<base64zip> with * replacing +) ──────────
-  if (raw.startsWith('CYPHER-X:~') || raw.startsWith('CYPHER-X: ~')) {
-    const b64 = raw.replace(/^CYPHER-X:\s*~/, '').replace(/\*/g, '+');
-    const buf = Buffer.from(b64, 'base64');
-    if (buf[0] === 0x50 && buf[1] === 0x4B) { // ZIP magic PK
-      const zip = new AdmZip(buf);
-      const bundle = {};
-      for (const entry of zip.getEntries()) {
-        if (!entry.isDirectory) {
-          bundle[entry.entryName] = entry.getData().toString('utf8');
-        }
-      }
-      return bundle;
-    }
-  }
-
-  // ── Format 2: Raw ZIP base64 (PK magic after decode) ─────────────────────────
-  try {
-    const buf = Buffer.from(raw.replace(/\*/g, '+'), 'base64');
-    if (buf[0] === 0x50 && buf[1] === 0x4B) {
-      const zip = new AdmZip(buf);
-      const bundle = {};
-      for (const entry of zip.getEntries()) {
-        if (!entry.isDirectory) {
-          bundle[entry.entryName] = entry.getData().toString('utf8');
-        }
-      }
-      if (bundle['creds.json']) return bundle;
-    }
-  } catch (_) {}
-
-  // ── Format 3: My JSON-bundle base64 ({filename: content, ...}) ───────────────
-  try {
-    const decoded = Buffer.from(raw, 'base64').toString('utf8');
-    const parsed = JSON.parse(decoded);
-    if (parsed && typeof parsed === 'object' && parsed['creds.json']) {
-      return parsed;
-    }
-  } catch (_) {}
-
-  // ── Format 4: Raw creds.json base64 (Baileys creds object directly) ──────────
-  try {
-    const decoded = Buffer.from(raw, 'base64').toString('utf8');
-    const creds = JSON.parse(decoded);
-    if (creds && (creds.noiseKey || creds.signedIdentityKey || creds.registrationId)) {
-      return { 'creds.json': decoded };
-    }
-  } catch (_) {}
-
-  // ── Format 5: Plain JSON string (not base64 encoded) ─────────────────────────
-  try {
-    const parsed = JSON.parse(raw);
-    if (parsed && parsed['creds.json']) return parsed;
-    if (parsed && (parsed.noiseKey || parsed.signedIdentityKey)) {
-      return { 'creds.json': raw };
-    }
-  } catch (_) {}
-
-  throw new Error(
-    'Unrecognised Session ID format. Make sure you copied the full Session ID ' +
-    'that your bot sent to your WhatsApp. Supported formats: Firebox, CYPHER-X, ZIP, and Baileys JSON.'
-  );
-}
 
 // ── POST /api/config — save config vars and apply ────────────────────────────
 
@@ -277,46 +201,6 @@ app.post('/api/config', async (req, res) => {
     // Reload env into current process
     for (const [k, v] of Object.entries(vars)) {
       process.env[k] = v;
-    }
-
-    // If SESSION_ID was updated, apply it immediately
-    const newSessionId = updates['SESSION_ID'];
-    if (newSessionId && newSessionId.trim()) {
-      let bundle;
-      try {
-        bundle = parseSessionId(newSessionId.trim());
-      } catch (parseErr) {
-        return res.status(400).json({ error: parseErr.message });
-      }
-
-      if (!bundle['creds.json']) {
-        return res.status(400).json({ error: 'Invalid SESSION_ID — could not find credentials inside. Make sure you copied the full Session ID.' });
-      }
-
-      const { sessions, startSession } = require('./sessionManager');
-      const id = 'sess_env';
-      const sessionDir = path.join(SESSION_BASE, id);
-
-      // Stop existing sess_env if running
-      const existing = sessions.get(id);
-      if (existing?.sock) { try { existing.sock.end(new Error('reconfigured')); } catch {} sessions.delete(id); }
-
-      fs.mkdirSync(sessionDir, { recursive: true });
-      // Clear old files
-      for (const f of fs.readdirSync(sessionDir)) {
-        fs.rmSync(path.join(sessionDir, f), { force: true });
-      }
-      // Write new session files
-      for (const [file, content] of Object.entries(bundle)) {
-        fs.writeFileSync(path.join(sessionDir, file), content, 'utf8');
-      }
-
-      const SESSIONS_FILE = path.join(__dirname, '../data/sessions.json');
-      fs.mkdirSync(path.join(__dirname, '../data'), { recursive: true });
-      fs.writeFileSync(SESSIONS_FILE, JSON.stringify([{ id, name: 'Bot', createdAt: Date.now() }], null, 2));
-
-      await startSession(id, 'Bot', Date.now());
-      return res.json({ success: true, message: 'Config saved. Bot is connecting with new session...' });
     }
 
     res.json({ success: true, message: 'Config saved successfully.' });
@@ -343,51 +227,6 @@ app.get('/api/sessions/:id/export', (req, res) => {
     }
     const encoded = Buffer.from(JSON.stringify(bundle)).toString('base64');
     res.json({ sessionId: encoded });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ── POST /api/sessions/import — restore session from base64 string ────────────
-
-app.post('/api/sessions/import', async (req, res) => {
-  try {
-    const { sessionId, name } = req.body;
-    if (!sessionId) return res.status(400).json({ error: 'sessionId is required' });
-
-    let bundle;
-    try {
-      bundle = parseSessionId(sessionId.trim());
-    } catch (parseErr) {
-      return res.status(400).json({ error: parseErr.message });
-    }
-
-    if (!bundle['creds.json']) {
-      return res.status(400).json({ error: 'Invalid session ID: missing credentials' });
-    }
-
-    const id = 'sess_' + Date.now();
-    const sessionDir = path.join(SESSION_BASE, id);
-    fs.mkdirSync(sessionDir, { recursive: true });
-
-    for (const [file, content] of Object.entries(bundle)) {
-      fs.writeFileSync(path.join(sessionDir, file), content, 'utf8');
-    }
-
-    const { startSession, sessions } = require('./sessionManager');
-    const { saveSessionList } = require('./sessionManager');
-    const sessionName = name || 'Imported Bot';
-    const createdAt = Date.now();
-
-    await startSession(id, sessionName, createdAt);
-
-    const SESSIONS_FILE = path.join(__dirname, '../data/sessions.json');
-    let list = [];
-    try { list = JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf8')); } catch {}
-    list.push({ id, name: sessionName, createdAt });
-    fs.writeFileSync(SESSIONS_FILE, JSON.stringify(list, null, 2));
-
-    res.json({ success: true, id });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

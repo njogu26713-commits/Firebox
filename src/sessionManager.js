@@ -211,33 +211,6 @@ async function startSession(id, name, createdAt) {
           }
         }
 
-        // Send Session ID to self so user can deploy on any Replit without re-scanning
-        try {
-          const sessionDir = path.join(SESSION_BASE, id);
-          if (selfJid && fs.existsSync(sessionDir)) {
-            const files = fs.readdirSync(sessionDir);
-            const bundle = {};
-            for (const file of files) {
-              const fp = path.join(sessionDir, file);
-              if (fs.statSync(fp).isFile()) bundle[file] = fs.readFileSync(fp, 'utf8');
-            }
-            const sessionIdStr = Buffer.from(JSON.stringify(bundle)).toString('base64');
-            const deployMsg =
-              `🔑 *Your Firebox Session ID*\n\n` +
-              `Use this to deploy your bot on any Replit instantly — no QR scan needed!\n\n` +
-              `*Steps:*\n` +
-              `1️⃣ Copy the Session ID below\n` +
-              `2️⃣ Fork this bot project on Replit\n` +
-              `3️⃣ Go to *Secrets* (🔒) in the sidebar\n` +
-              `4️⃣ Add secret → key: \`SESSION_ID\` → value: *(paste)*\n` +
-              `5️⃣ Click *Run* → bot goes live! ✅\n\n` +
-              `━━━━━━━━━━━━━━━━━━━━\n` +
-              `*SESSION_ID:*\n${sessionIdStr}\n` +
-              `━━━━━━━━━━━━━━━━━━━━\n\n` +
-              `⚠️ _Keep this private — it gives full access to your WhatsApp bot._`;
-            await sock.sendMessage(selfJid, { text: deployMsg });
-          }
-        } catch (_) {}
       } catch (_) {}
     } else if (connection === 'connecting') {
       sessionState.status = 'connecting';
@@ -795,48 +768,9 @@ async function requestPairingCode(id, number) {
   return formatted;
 }
 
-async function importSessionFromEnv() {
-  const raw = process.env.SESSION_ID;
-  if (!raw) return false;
-
-  const id = 'sess_env';
-  const sessionDir = path.join(SESSION_BASE, id);
-
-  // Skip if already imported (creds already on disk)
-  if (fs.existsSync(path.join(sessionDir, 'creds.json'))) {
-    console.log('[SESSIONS] SESSION_ID already imported, using existing files.');
-    return id;
-  }
-
-  let bundle;
-  try {
-    bundle = JSON.parse(Buffer.from(raw, 'base64').toString('utf8'));
-  } catch {
-    console.error('[SESSIONS] SESSION_ID env var is invalid (bad base64 or JSON). Skipping.');
-    return false;
-  }
-
-  if (!bundle['creds.json']) {
-    console.error('[SESSIONS] SESSION_ID env var is missing creds.json. Skipping.');
-    return false;
-  }
-
-  fs.mkdirSync(sessionDir, { recursive: true });
-  for (const [file, content] of Object.entries(bundle)) {
-    fs.writeFileSync(path.join(sessionDir, file), content, 'utf8');
-  }
-
-  console.log('[SESSIONS] ✅ SESSION_ID imported from environment variable.');
-  return id;
-}
-
 // ── Check if setup is required (no session configured yet) ────────────────────
 
 function isSetupRequired() {
-  // Has a valid SESSION_ID env var?
-  const raw = process.env.SESSION_ID;
-  if (raw && raw.trim()) return false;
-
   // Has any session directory with creds on disk?
   if (fs.existsSync(SESSION_BASE)) {
     for (const entry of fs.readdirSync(SESSION_BASE)) {
@@ -853,33 +787,12 @@ async function loadAndStartAll() {
     fs.mkdirSync(path.join(__dirname, '../data'), { recursive: true });
   }
 
-  const envSessionId = await importSessionFromEnv();
-  const existingList = loadSessionList();
-
-  if (envSessionId) {
-    // Merge: keep env session as primary + any additional sessions already saved
-    const others = existingList.filter(s => s.id !== envSessionId);
-    const envEntry = existingList.find(s => s.id === envSessionId);
-    const merged = [
-      { id: envSessionId, name: envEntry?.name || 'Bot', createdAt: envEntry?.createdAt || Date.now() },
-      ...others
-    ];
-    fs.writeFileSync(SESSIONS_FILE, JSON.stringify(merged, null, 2));
-    console.log(`[SESSIONS] Starting ${merged.length} session(s)...`);
-    for (let i = 0; i < merged.length; i++) {
-      const { id, name, createdAt } = merged[i];
-      if (i > 0) await new Promise(r => setTimeout(r, 3000));
-      await startSession(id, name, createdAt);
-    }
-    return;
-  }
-
   if (isSetupRequired()) {
-    console.log('[SESSIONS] ⚠️  No SESSION_ID configured. Open the dashboard to pair a bot.');
+    console.log('[SESSIONS] ⚠️  No session found. Open the dashboard to pair a bot.');
     return;
   }
 
-  const list = existingList;
+  const list = loadSessionList();
 
   // Remove any orphan session directories not in the active list
   const knownIds = new Set(list.map(s => s.id));
