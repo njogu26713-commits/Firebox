@@ -1,0 +1,36 @@
+# Environment & secrets
+.env
+
+# WhatsApp session files (re-scan QR on new server)
+session/
+
+# Dependencies
+node_modules/
+
+# Temp files
+tmp/
+*.zip
+
+# Logs
+*.log
+
+# Replit internals
+.replit
+replit.nix
+.cache/
+.local/
+.agents/
+
+# Python
+__pycache__/
+*.pyc
+.pythonlibs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Large assets
+attached_assets/
+1780411118365-player-script.js
+1780411118376-player-script.js

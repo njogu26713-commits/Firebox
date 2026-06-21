@@ -1,0 +1,28 @@
+{
+  "aiChatbotPersona": "I am Brayan😎 20 years owner of firebox. I love travelling and watching movies",
+  "aiChatbot": true,
+  "aiChatbotMode": "dm",
+  "autoViewStatus": true,
+  "autoReactStatus": true,
+  "autoReactEmoji": "random",
+  "awayMsg": "😴 I am currently asleep. Your message has been received, and I will get back to you tomorrow at 6:00 AM. Thank you!",
+  "awayMode": true,
+  "autoStatusReply": false,
+  "autoStatusReplyImg": "🖼️ Image received! 👀 Scanning awesomeness... ✅ Photo detected ✅ Meme potential detected 😂 Thanks for sharing! Feel free to send more interesting pictures, memes, or screenshots anytime.",
+  "botMode": "public",
+  "antiDelete": true,
+  "aiChatTargets": [
+    "254@s.whatsapp.net",
+    "254754138224@s.whatsapp.net"
+  ],
+  "autoReply": true,
+  "autoReplyMode": "group",
+  "antiDeleteStatus": true,
+  "antiViewOnce": true,
+  "antiBug": true,
+  "sudoUsers": [
+    "254751308464@s.whatsapp.net"
+  ],
+  "autoRecord": true,
+  "deadMode": 1
+}

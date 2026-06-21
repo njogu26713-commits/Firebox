@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>⚙️ Config Vars — Firebox</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0d0d0d; color: #e0e0e0; min-height: 100vh; }
+
+    header {
+      background: linear-gradient(135deg, #1a1a1a, #2a1500);
+      border-bottom: 2px solid #ff6600;
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 16px 0; text-decoration: none; }
+    .brand h1 { font-size: 1.5rem; color: #ff6600; }
+    .brand span { font-size: 0.82rem; color: #666; }
+
+    nav { margin-left: auto; display: flex; gap: 4px; }
+    nav a {
+      padding: 8px 22px;
+      text-decoration: none;
+      color: #888;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    nav a:hover { color: #ccc; }
+    nav a.active { color: #ff6600; border-bottom-color: #ff6600; }
+
+    .container { max-width: 760px; margin: 0 auto; padding: 36px 24px; }
+
+    .page-title { font-size: 1.4rem; color: #fff; margin-bottom: 6px; }
+    .page-sub   { font-size: 0.87rem; color: #555; margin-bottom: 28px; }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(135deg, #1a0d00, #12121e);
+      border: 1px solid #ff6600;
+      border-radius: 14px;
+      padding: 22px 26px;
+      margin-bottom: 28px;
+    }
+    .hero h3 { font-size: 1rem; color: #ff6600; margin-bottom: 8px; }
+    .hero ol  { font-size: 0.84rem; color: #aaa; padding-left: 20px; line-height: 2.1; }
+    .hero ol code {
+      background: #1a1a1a;
+      color: #ff9944;
+      padding: 1px 7px;
+      border-radius: 4px;
+      font-size: 0.82rem;
+    }
+
+    /* Config sections */
+    .section {
+      background: #141414;
+      border: 1px solid #222;
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+    .section-hdr {
+      padding: 13px 22px;
+      background: #0f0f0f;
+      border-bottom: 1px solid #1e1e1e;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      align-items: start;
+      padding: 18px 22px;
+      border-bottom: 1px solid #1a1a1a;
+      gap: 18px;
+    }
+    .row:last-child { border-bottom: none; }
+    @media (max-width: 580px) { .row { grid-template-columns: 1fr; } }
+    .row-key  { font-size: 0.85rem; font-weight: 700; color: #ff9944; font-family: monospace; margin-bottom: 5px; }
+    .row-desc { font-size: 0.74rem; color: #555; line-height: 1.5; }
+    .row-input { display: flex; flex-direction: column; gap: 7px; }
+    .row-input input,
+    .row-input textarea {
+      width: 100%;
+      padding: 10px 13px;
+      background: #0d0d0d;
+      border: 1px solid #2a2a2a;
+      border-radius: 9px;
+      color: #fff;
+      font-size: 0.86rem;
+      font-family: 'Segoe UI', sans-serif;
+      transition: border-color 0.2s;
+    }
+    .row-input input:focus,
+    .row-input textarea:focus { outline: none; border-color: #ff6600; }
+    .row-input textarea {
+      height: 95px;
+      resize: vertical;
+      font-size: 0.74rem;
+      font-family: monospace;
+      line-height: 1.5;
+    }
+    .row-status { font-size: 0.72rem; }
+    .row-status.ok  { color: #27ae60; }
+    .row-status.dim { color: #444; font-family: monospace; }
+
+    /* Save bar */
+    .save-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 22px 0 0;
+      flex-wrap: wrap;
+    }
+    .save-msg { font-size: 0.84rem; color: #555; }
+    .save-msg code { background: #1a1a1a; padding: 1px 6px; border-radius: 4px; font-size: 0.78rem; color: #888; }
+
+    /* Buttons */
+    .btn {
+      border: none; border-radius: 9px; cursor: pointer;
+      font-size: 0.9rem; font-weight: 600; padding: 11px 24px;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.82; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-orange { background: #ff6600; color: #fff; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #ff6600; color: #fff;
+      padding: 12px 20px; border-radius: 9px;
+      font-size: 0.88rem; opacity: 0;
+      transition: opacity 0.3s; z-index: 200; max-width: 360px;
+    }
+    .toast.show    { opacity: 1; }
+    .toast.success { background: #27ae60; }
+    .toast.error   { background: #c0392b; }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="/pair">
+    <div>🔥</div>
+    <div><h1>Firebox</h1><span>WhatsApp Bot</span></div>
+  </a>
+  <nav>
+    <a href="/pair">📲 Pair</a>
+    <a href="/config" class="active">⚙️ Config Vars</a>
+  </nav>
+</header>
+
+<div class="container">
+
+  <h2 class="page-title">Config Vars</h2>
+  <p class="page-sub">Set your Session ID and bot settings below. Changes apply immediately.</p>
+
+  <div class="hero">
+    <h3>⚡ Deploy via Session ID</h3>
+    <ol>
+      <li>Get your Session ID from WhatsApp — the bot messages it to you when it first connects</li>
+      <li>Paste it in the <code>SESSION_ID</code> field below</li>
+      <li>Fill in your number and click <strong>Save & Apply</strong> — bot goes live instantly ✅</li>
+    </ol>
+  </div>
+
+  <!-- Session -->
+  <div class="section">
+    <div class="section-hdr">🔑 Session</div>
+    <div class="row">
+      <div>
+        <div class="row-key">SESSION_ID</div>
+        <div class="row-desc">Paste any Session ID. Supports Firebox, CYPHER-X, CYPHER-MD, Baileys JSON, ZIP format.</div>
+      </div>
+      <div class="row-input">
+        <textarea id="cfg-SESSION_ID" placeholder="Paste your Session ID here…"></textarea>
+        <div id="cfg-SESSION_ID-status" class="row-status dim"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Owner -->
+  <div class="section">
+    <div class="section-hdr">👤 Owner Settings</div>
+    <div class="row">
+      <div>
+        <div class="row-key">OWNER_NUMBER</div>
+        <div class="row-desc">Your WhatsApp number with country code. No + or spaces.</div>
+      </div>
+      <div class="row-input">
+        <input type="tel" id="cfg-OWNER_NUMBER" placeholder="e.g. 254712345678" />
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <div class="row-key">OWNER_NAME</div>
+        <div class="row-desc">Your name, shown in bot messages.</div>
+      </div>
+      <div class="row-input">
+        <input type="text" id="cfg-OWNER_NAME" placeholder="e.g. John" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Bot -->
+  <div class="section">
+    <div class="section-hdr">🤖 Bot Settings</div>
+    <div class="row">
+      <div>
+        <div class="row-key">PREFIX</div>
+        <div class="row-desc">Command prefix character. Default is <code style="background:#1a1a1a;color:#ff9944;padding:1px 6px;border-radius:4px">.</code></div>
+      </div>
+      <div class="row-input">
+        <input type="text" id="cfg-PREFIX" placeholder="." maxlength="3" style="max-width:80px" />
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <div class="row-key">BOT_NAME</div>
+        <div class="row-desc">Display name for the bot.</div>
+      </div>
+      <div class="row-input">
+        <input type="text" id="cfg-BOT_NAME" placeholder="e.g. Firebox" />
+      </div>
+    </div>
+  </div>
+
+  <div class="save-bar">
+    <div class="save-msg" id="save-msg">Saved to <code>.env</code> and applied live.</div>
+    <button class="btn btn-orange" id="save-btn" onclick="saveConfig()">💾 Save & Apply</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  function toast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (type ? ' ' + type : '');
+    clearTimeout(t._t);
+    t._t = setTimeout(() => t.classList.remove('show'), 3800);
+  }
+
+  async function loadConfig() {
+    try {
+      const res = await fetch('/api/config');
+      const data = await res.json();
+      const keys = ['SESSION_ID','OWNER_NUMBER','OWNER_NAME','PREFIX','BOT_NAME'];
+      for (const key of keys) {
+        const field = document.getElementById('cfg-' + key);
+        if (!field || !data[key]) continue;
+        const { value, masked } = data[key];
+        if (key === 'SESSION_ID') {
+          field.value = '';
+          field.placeholder = masked
+            ? 'Currently set: ' + masked + '  (paste new to replace)'
+            : 'Paste your Session ID here…';
+          const st = document.getElementById('cfg-SESSION_ID-status');
+          if (st) {
+            st.textContent = masked ? '✅ Session ID configured' : '';
+            st.className = masked ? 'row-status ok' : 'row-status dim';
+          }
+        } else {
+          field.value = value || '';
+        }
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  async function saveConfig() {
+    const btn   = document.getElementById('save-btn');
+    const msgEl = document.getElementById('save-msg');
+    btn.disabled = true; btn.textContent = 'Saving…';
+
+    const updates = {};
+    const keys = ['SESSION_ID','OWNER_NUMBER','OWNER_NAME','PREFIX','BOT_NAME'];
+    for (const key of keys) {
+      const f = document.getElementById('cfg-' + key);
+      if (f) updates[key] = f.value.trim();
+    }
+
+    try {
+      const res = await fetch('/api/config', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(updates)
+      });
+      const d = await res.json();
+      if (d.success) {
+        toast(d.message || 'Saved!', 'success');
+        msgEl.textContent = '✅ ' + (d.message || 'Config saved. Bot is connecting…');
+        msgEl.style.color = '#27ae60';
+        await loadConfig();
+        setTimeout(() => { window.location.href = '/pair'; }, 1800);
+      } else {
+        toast(d.error || 'Save failed.', 'error');
+        msgEl.textContent = '❌ ' + (d.error || 'Failed to save.');
+        msgEl.style.color = '#e74c3c';
+      }
+    } catch (e) {
+      toast('Error: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = '💾 Save & Apply';
+    }
+  }
+
+  loadConfig();
+</script>
+</body>
+</html>

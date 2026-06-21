@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🔥 Firebox Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0d0d0d;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #1a1a1a, #2a1500);
+      border-bottom: 1px solid #ff6600;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 0;
+    }
+    header h1 { font-size: 1.5rem; color: #ff6600; }
+    header span { font-size: 0.85rem; color: #888; }
+
+    .nav-tabs { display: flex; gap: 4px; margin-left: auto; }
+    .nav-tab {
+      padding: 8px 20px;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: #888;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .nav-tab:hover { color: #ccc; }
+    .nav-tab.active { color: #ff6600; border-bottom-color: #ff6600; }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 9px 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary  { background: #ff6600; color: #fff; }
+    .btn-danger   { background: #c0392b; color: #fff; }
+    .btn-green    { background: #27ae60; color: #fff; }
+    .btn-blue     { background: #2980b9; color: #fff; }
+    .btn-gray     { background: #333; color: #ccc; }
+    .btn-sm       { padding: 6px 14px; font-size: 0.82rem; }
+    .btn-full     { width: 100%; padding: 13px; font-size: 0.95rem; border-radius: 10px; }
+
+    /* ── Pair Page ── */
+    .pair-page {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .pair-header {
+      margin-bottom: 28px;
+    }
+    .pair-header h2 { font-size: 1.3rem; color: #fff; margin-bottom: 6px; }
+    .pair-header p  { font-size: 0.87rem; color: #666; }
+
+    /* Connected banner */
+    .connected-banner {
+      background: #0d2b18;
+      border: 1px solid #27ae60;
+      border-radius: 12px;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .connected-banner-left { display: flex; align-items: center; gap: 14px; }
+    .connected-dot {
+      width: 14px; height: 14px;
+      background: #27ae60;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #27ae60;
+      flex-shrink: 0;
+    }
+    .connected-info h3 { font-size: 1rem; color: #2ecc71; font-weight: 700; }
+    .connected-info p  { font-size: 0.82rem; color: #888; margin-top: 2px; }
+    .connected-stats {
+      display: flex;
+      gap: 24px;
+    }
+    .stat-item { text-align: center; }
+    .stat-val  { font-size: 1.1rem; font-weight: 700; color: #fff; }
+    .stat-lbl  { font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+    .connected-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* Pairing card */
+    .pair-card {
+      background: #161616;
+      border: 1px solid #2a2a2a;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .pair-card-header {
+      padding: 16px 24px;
+      background: #111;
+      border-bottom: 1px solid #222;
+      font-size: 0.82rem;
+      color: #666;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .pair-methods {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 320px;
+    }
+    @media (max-width: 560px) {
+      .pair-methods { grid-template-columns: 1fr; }
+    }
+
+    /* QR side */
+    .pair-qr-side {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      border-right: 1px solid #1e1e1e;
+      gap: 16px;
+    }
+    .qr-frame {
+      background: #fff;
+      border-radius: 12px;
+      padding: 10px;
+      display: inline-block;
+      line-height: 0;
+    }
+    .qr-frame img { border-radius: 4px; display: block; width: 180px; height: 180px; }
+    .qr-placeholder {
+      width: 180px; height: 180px;
+      background: #1a1a1a;
+      border-radius: 8px;
+      border: 2px dashed #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #444;
+      font-size: 0.82rem;
+      gap: 8px;
+    }
+    .qr-placeholder span { font-size: 2rem; }
+    .qr-label {
+      font-size: 0.8rem;
+      color: #555;
+      text-align: center;
+      line-height: 1.5;
+    }
+    .qr-label strong { color: #888; }
+
+    /* Divider */
+    .pair-divider {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 0;
+      color: #333;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      position: relative;
+    }
+    .pair-divider::before,
+    .pair-divider::after {
+      content: '';
+      flex: 1;
+      width: 1px;
+      background: #1e1e1e;
+    }
+    @media (min-width: 561px) {
+      .pair-divider { display: none; }
+    }
+
+    /* Pairing code side */
+    .pair-code-side {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 32px 28px;
+      gap: 16px;
+    }
+    .pair-code-side h3 { font-size: 1rem; color: #ccc; font-weight: 700; }
+    .pair-code-side p  { font-size: 0.82rem; color: #666; line-height: 1.5; }
+
+    .pair-phone-row {
+      display: flex;
+      gap: 8px;
+    }
+    .pair-phone-row input {
+      flex: 1;
+      padding: 10px 12px;
+      background: #0d0d0d;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.88rem;
+      transition: border-color 0.2s;
+    }
+    .pair-phone-row input:focus { outline: none; border-color: #ff6600; }
+
+    .pairing-code-display {
+      background: #1a0d00;
+      border: 1px solid #ff6600;
+      border-radius: 10px;
+      padding: 14px 20px;
+      text-align: center;
+    }
+    .pairing-code-display .code {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #ff6600;
+      letter-spacing: 6px;
+      font-family: monospace;
+    }
+    .pairing-code-display .code-hint {
+      font-size: 0.75rem;
+      color: #555;
+      margin-top: 6px;
+    }
+
+    /* Status strip */
+    .pair-status-strip {
+      padding: 12px 24px;
+      background: #0d0d0d;
+      border-top: 1px solid #1e1e1e;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-waiting    { background: #555; }
+    .dot-connecting { background: #f39c12; animation: pulse 1.2s infinite; }
+    .dot-connected  { background: #27ae60; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    /* Active sessions list */
+    .sessions-section { margin-top: 28px; }
+    .sessions-section h3 {
+      font-size: 0.8rem;
+      color: #555;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 14px;
+    }
+    .session-row {
+      background: #161616;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .session-row-left { display: flex; align-items: center; gap: 12px; }
+    .session-row-name { font-size: 0.9rem; font-weight: 700; color: #ddd; }
+    .session-row-number { font-size: 0.78rem; color: #666; margin-top: 2px; }
+    .session-row-actions { display: flex; gap: 8px; }
+
+    .status-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .status-connected    { background: #1e4d2b; color: #2ecc71; }
+    .status-connecting   { background: #4d3a00; color: #f1c40f; }
+    .status-disconnected { background: #4d1414; color: #e74c3c; }
+
+    /* ── Config Vars Page (unchanged) ── */
+    .config-page { max-width: 720px; }
+
+    .config-hero {
+      background: linear-gradient(135deg, #1f1200, #1a1a2a);
+      border: 1px solid #ff6600;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 28px;
+    }
+    .config-hero h2 { font-size: 1.1rem; color: #ff6600; margin-bottom: 6px; }
+    .config-hero p  { font-size: 0.85rem; color: #aaa; line-height: 1.6; }
+    .config-hero ol { font-size: 0.85rem; color: #ccc; padding-left: 20px; margin-top: 10px; line-height: 2; }
+
+    .config-section {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .config-section-header {
+      padding: 14px 20px;
+      background: #141414;
+      border-bottom: 1px solid #2a2a2a;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .config-var {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      align-items: start;
+      padding: 16px 20px;
+      border-bottom: 1px solid #1e1e1e;
+      gap: 16px;
+    }
+    .config-var:last-child { border-bottom: none; }
+    .config-var-key  { font-size: 0.85rem; font-weight: 700; color: #ff9944; font-family: monospace; margin-bottom: 4px; }
+    .config-var-desc { font-size: 0.75rem; color: #666; line-height: 1.4; }
+    .config-var-input { display: flex; flex-direction: column; gap: 6px; }
+    .config-var-input input,
+    .config-var-input textarea {
+      width: 100%;
+      padding: 9px 12px;
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.85rem;
+      font-family: 'Segoe UI', sans-serif;
+      transition: border-color 0.2s;
+    }
+    .config-var-input input:focus,
+    .config-var-input textarea:focus { outline: none; border-color: #ff6600; }
+    .config-var-input textarea {
+      height: 90px;
+      resize: vertical;
+      font-size: 0.75rem;
+      font-family: monospace;
+    }
+    .config-var-set { font-size: 0.72rem; color: #27ae60; }
+    .config-var-masked { font-size: 0.75rem; color: #555; font-family: monospace; }
+
+    .config-save-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 0;
+      flex-wrap: wrap;
+    }
+    .config-save-msg { font-size: 0.85rem; color: #666; }
+
+    /* ── Modals ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 14px;
+      padding: 28px;
+      width: 400px;
+      max-width: 92vw;
+    }
+    .modal h3   { margin-bottom: 16px; color: #fff; font-size: 1.1rem; }
+    .modal input {
+      width: 100%;
+      padding: 10px 14px;
+      background: #111;
+      border: 1px solid #444;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.9rem;
+      margin-bottom: 14px;
+    }
+    .modal textarea {
+      width: 100%;
+      height: 100px;
+      padding: 10px 14px;
+      background: #111;
+      border: 1px solid #444;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.8rem;
+      margin-bottom: 14px;
+      resize: vertical;
+    }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .btn-cancel  { background: #333; color: #ccc; }
+
+    .export-box {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+      word-break: break-all;
+      font-size: 0.7rem;
+      color: #aaa;
+      max-height: 80px;
+      overflow-y: auto;
+      font-family: monospace;
+    }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #ff6600;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 200;
+      max-width: 360px;
+    }
+    .toast.show    { opacity: 1; }
+    .toast.success { background: #27ae60; }
+    .toast.error   { background: #c0392b; }
+
+    @media (max-width: 600px) {
+      .config-var { grid-template-columns: 1fr; }
+      .connected-stats { gap: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-brand">
+    <div>🔥</div>
+    <div>
+      <h1>Firebox</h1>
+      <span>WhatsApp Bot Dashboard</span>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-page="pair" onclick="showPage('pair', this)">📲 Pair</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ══════════════ PAIR PAGE ══════════════ -->
+  <div id="page-pair" class="page active">
+    <div class="pair-page">
+
+      <!-- All bots list -->
+      <div id="bots-section" style="display:none; margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <h3 id="bots-heading" style="margin:0;color:#ff6600;font-size:1rem;font-weight:700;letter-spacing:.5px">CONNECTED BOTS</h3>
+          <button class="btn btn-primary btn-sm" onclick="openAddBot()" id="add-bot-btn">➕ Add Bot</button>
+        </div>
+        <div id="bots-list"></div>
+      </div>
+
+      <!-- Pairing card -->
+      <div id="pair-card" class="pair-card">
+        <div class="pair-card-header" id="pair-card-header">Connect a WhatsApp Number</div>
+
+        <div class="pair-methods">
+
+          <!-- Left: QR Code -->
+          <div class="pair-qr-side">
+            <div class="qr-frame" id="qr-frame" style="display:none">
+              <img id="qr-img" src="" alt="QR Code" />
+            </div>
+            <div class="qr-placeholder" id="qr-placeholder">
+              <span>📱</span>
+              <div style="text-align:center">Click <strong style="color:#ff6600">Start Pairing</strong><br>to generate QR</div>
+            </div>
+            <div class="qr-label">
+              Open WhatsApp → <strong>Linked Devices</strong><br>→ Link a Device → Scan
+            </div>
+          </div>
+
+          <!-- Right: Pairing Code -->
+          <div class="pair-code-side">
+            <h3>Use a Pairing Code instead</h3>
+            <p>Enter your WhatsApp number and we'll give you an 8-digit code to link without scanning.</p>
+
+            <div>
+              <div style="font-size:0.72rem;color:#666;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Phone Number</div>
+              <div class="pair-phone-row">
+                <input type="tel" id="pair-phone" placeholder="254712345678" />
+                <button class="btn btn-primary btn-sm" id="pairing-code-btn" onclick="getPairingCode()">Get Code</button>
+              </div>
+            </div>
+
+            <div id="pairing-code-display" style="display:none" class="pairing-code-display">
+              <div class="code" id="pairing-code-value">----</div>
+              <div class="code-hint">Enter this code in WhatsApp → Linked Devices → Link with phone number</div>
+              <button class="btn btn-gray btn-sm" style="margin-top:10px" onclick="copyPairingCode()">📋 Copy Code</button>
+            </div>
+
+            <button class="btn btn-full btn-primary" id="start-pair-btn" onclick="startPairing()">⚡ Start Pairing</button>
+            <button class="btn btn-full btn-cancel" id="cancel-pair-btn" onclick="cancelAddBot()" style="display:none;margin-top:8px">✕ Cancel</button>
+          </div>
+        </div>
+
+        <!-- Status strip -->
+        <div class="pair-status-strip">
+          <div class="status-dot dot-waiting" id="status-dot"></div>
+          <span id="status-text" style="color:#555">Waiting to start — click Start Pairing</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── State ─────────────────────────────────────────────────────────────────
+  let sessions = [];
+  let pairingSessionId = null;
+  let pollTimer = null;
+  let addingBot = false;
+  let pairingStarted = false;
+
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (type ? ' ' + type : '');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  // ── Navigation ────────────────────────────────────────────────────────────
+  function showPage(name, btn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    if (btn) btn.classList.add('active');
+    else document.querySelector(`[data-page="${name}"]`)?.classList.add('active');
+    if (name === 'pair') fetchSessions();
+  }
+
+  // ── Uptime formatter ──────────────────────────────────────────────────────
+  function fmtUptime(u) {
+    if (!u) return '—';
+    return `${u.hours}h ${u.minutes}m ${u.seconds}s`;
+  }
+
+  // ── Fetch all sessions & update Pair page ─────────────────────────────────
+  async function fetchSessions() {
+    try {
+      const res = await fetch('/api/sessions');
+      const data = await res.json();
+      sessions = data.sessions || [];
+      renderPairPage();
+    } catch (e) { console.error(e); }
+  }
+
+  function renderPairPage() {
+    const connected = sessions.filter(s => s.status === 'connected');
+    const connecting = sessions.filter(s => s.status === 'connecting');
+    const pairCard = document.getElementById('pair-card');
+    const botsSection = document.getElementById('bots-section');
+    const botsList = document.getElementById('bots-list');
+
+    // ── Bots list (all sessions) ───────────────────────────────────────────
+    if (sessions.length > 0) {
+      botsSection.style.display = 'block';
+      document.getElementById('bots-heading').textContent =
+        `CONNECTED BOTS (${connected.length}/${sessions.length})`;
+      botsList.innerHTML = sessions.map(s => {
+        const statusClass = s.status === 'connected' ? 'connected'
+                          : s.status === 'connecting' ? 'connecting' : 'disconnected';
+        const dotColor = s.status === 'connected' ? '#2ecc71'
+                       : s.status === 'connecting' ? '#f39c12' : '#e74c3c';
+        const subtitle = s.number ? '+' + s.number
+                       : s.status === 'connecting' ? 'Scanning / entering code…'
+                       : 'Disconnected';
+        const stats = s.status === 'connected'
+          ? `<div class="connected-stats" style="gap:18px">
+               <div class="stat-item"><div class="stat-val">${s.messageCount || 0}</div><div class="stat-lbl">Messages</div></div>
+               <div class="stat-item"><div class="stat-val">${s.commandCount || 0}</div><div class="stat-lbl">Commands</div></div>
+               <div class="stat-item"><div class="stat-val">${fmtUptime(s.uptime)}</div><div class="stat-lbl">Uptime</div></div>
+             </div>`
+          : `<span class="status-badge status-${statusClass}" style="margin-left:8px">${s.status}…</span>`;
+        return `<div class="connected-banner" style="margin-bottom:10px">
+          <div class="connected-banner-left">
+            <div class="connected-dot" style="background:${dotColor}"></div>
+            <div class="connected-info">
+              <h3 style="margin:0;font-size:1rem">${s.name || 'Bot'}</h3>
+              <p style="margin:0;color:#999;font-size:0.82rem">${subtitle}</p>
+            </div>
+          </div>
+          ${stats}
+          <div class="connected-actions">
+            <button class="btn btn-danger btn-sm" onclick="removeSession('${s.id}', '${(s.name || 'Bot').replace(/'/g, "\\'")}')">Disconnect</button>
+          </div>
+        </div>`;
+      }).join('');
+    } else {
+      botsSection.style.display = 'none';
+    }
+
+    // ── Pair card visibility ───────────────────────────────────────────────
+    if (connected.length === 0 || addingBot) {
+      pairCard.style.display = 'block';
+      document.getElementById('pair-card-header').textContent =
+        connected.length > 0 ? 'Connect Another Bot' : 'Connect a WhatsApp Number';
+      document.getElementById('cancel-pair-btn').style.display =
+        connected.length > 0 ? 'block' : 'none';
+    } else {
+      pairCard.style.display = 'none';
+    }
+
+    // ── If the session being paired just connected, close the pair card ────
+    if (pairingSessionId) {
+      const pairingSess = sessions.find(s => s.id === pairingSessionId);
+      if (!pairingSess || pairingSess.status === 'connected') {
+        // Session connected (or was merged/removed after connecting)
+        addingBot = false;
+        pairingSessionId = null;
+        clearInterval(pollTimer);
+        pairCard.style.display = 'none';
+        showToast('Bot connected! ✅', 'success');
+        return;
+      }
+      updatePairUI(pairingSess);
+    } else if (pairingStarted && addingBot && connecting.length === 0 && connected.length > 0) {
+      // Pairing was started and all sessions are now connected — close the card
+      addingBot = false;
+      pairingStarted = false;
+      clearInterval(pollTimer);
+      pairCard.style.display = 'none';
+    } else if (connecting.length > 0 && addingBot) {
+      updatePairUI(connecting[connecting.length - 1]);
+    }
+  }
+
+  // ── Add / Cancel bot ──────────────────────────────────────────────────────
+  function openAddBot() {
+    addingBot = true;
+    pairingStarted = false;
+    pairingSessionId = null;
+    const btn = document.getElementById('start-pair-btn');
+    btn.textContent = '⚡ Start Pairing';
+    btn.disabled = false;
+    document.getElementById('pairing-code-display').style.display = 'none';
+    document.getElementById('qr-frame').style.display = 'none';
+    document.getElementById('qr-placeholder').style.display = 'flex';
+    document.getElementById('status-dot').className = 'status-dot dot-waiting';
+    document.getElementById('status-text').style.color = '#555';
+    document.getElementById('status-text').textContent = 'Waiting to start — click Start Pairing';
+    renderPairPage();
+  }
+
+  function cancelAddBot() {
+    if (pairingSessionId) {
+      fetch(`/api/sessions/${pairingSessionId}`, { method: 'DELETE' }).catch(() => {});
+      pairingSessionId = null;
+    }
+    addingBot = false;
+    pairingStarted = false;
+    clearInterval(pollTimer);
+    renderPairPage();
+  }
+
+  function updatePairUI(sess) {
+    const dot  = document.getElementById('status-dot');
+    const txt  = document.getElementById('status-text');
+    const qrFrame = document.getElementById('qr-frame');
+    const qrImg   = document.getElementById('qr-img');
+    const qrPh    = document.getElementById('qr-placeholder');
+    const codeDisplay = document.getElementById('pairing-code-display');
+
+    if (sess.status === 'connected') {
+      dot.className = 'status-dot dot-connected';
+      txt.style.color = '#2ecc71';
+      txt.textContent = '✅ Connected to WhatsApp — ' + (sess.number ? '+' + sess.number : '');
+      qrFrame.style.display = 'none';
+      qrPh.style.display = 'none';
+    } else if (sess.status === 'connecting') {
+      dot.className = 'status-dot dot-connecting';
+      txt.style.color = '#f39c12';
+      txt.textContent = 'Waiting for you to scan or enter pairing code…';
+
+      if (sess.qrImage) {
+        qrImg.src = sess.qrImage;
+        qrFrame.style.display = 'inline-block';
+        qrPh.style.display = 'none';
+      }
+      if (sess.pairingCode) {
+        document.getElementById('pairing-code-value').textContent = sess.pairingCode;
+        codeDisplay.style.display = 'block';
+      }
+    }
+  }
+
+  // ── Start Pairing ─────────────────────────────────────────────────────────
+  async function startPairing() {
+    addingBot = true;
+    pairingStarted = true;
+    const btn = document.getElementById('start-pair-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Starting…';
+
+    const dot = document.getElementById('status-dot');
+    const txt = document.getElementById('status-text');
+    dot.className = 'status-dot dot-connecting';
+    txt.style.color = '#f39c12';
+    txt.textContent = 'Starting session, generating QR code…';
+
+    try {
+      const res = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Bot ' + (sessions.length + 1) })
+      });
+      const data = await res.json();
+      if (data.id) {
+        pairingSessionId = data.id;
+        btn.textContent = '🔄 Restart Pairing';
+        btn.disabled = false;
+        pollForQR();
+      } else {
+        showToast(data.error || 'Failed to start session.', 'error');
+        btn.disabled = false;
+        btn.textContent = '⚡ Start Pairing';
+      }
+    } catch (e) {
+      showToast('Error: ' + e.message, 'error');
+      btn.disabled = false;
+      btn.textContent = '⚡ Start Pairing';
+    }
+  }
+
+  function pollForQR() {
+    clearInterval(pollTimer);
+    pollTimer = setInterval(fetchSessions, 2000);
+  }
+
+  // ── Get Pairing Code ──────────────────────────────────────────────────────
+  async function getPairingCode() {
+    const phone = document.getElementById('pair-phone').value.replace(/[^0-9]/g, '');
+    if (!phone) { showToast('Enter your phone number first.'); return; }
+
+    // If no pairing session exists yet, start one first
+    if (!pairingSessionId) {
+      await startPairing();
+      await new Promise(r => setTimeout(r, 1500));
+    }
+
+    if (!pairingSessionId) { showToast('Could not start session.', 'error'); return; }
+
+    const btn = document.getElementById('pairing-code-btn');
+    btn.disabled = true;
+    btn.textContent = '…';
+
+    try {
+      const res = await fetch(`/api/sessions/${pairingSessionId}/pairing`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ number: phone })
+      });
+      const data = await res.json();
+      if (data.code) {
+        document.getElementById('pairing-code-value').textContent = data.code;
+        document.getElementById('pairing-code-display').style.display = 'block';
+        showToast('Pairing code ready!', 'success');
+        pollForQR();
+      } else {
+        showToast(data.error || 'Could not get pairing code.', 'error');
+      }
+    } catch (e) {
+      showToast('Error: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Get Code';
+    }
+  }
+
+  function copyPairingCode() {
+    const code = document.getElementById('pairing-code-value').textContent;
+    navigator.clipboard.writeText(code).then(() => showToast('Pairing code copied!', 'success'));
+  }
+
+  // ── Remove Session ────────────────────────────────────────────────────────
+  async function removeSession(id, name) {
+    if (!confirm(`Disconnect "${name}"?`)) return;
+    try {
+      const res = await fetch(`/api/sessions/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        if (id === pairingSessionId) {
+          pairingSessionId = null;
+          addingBot = false;
+          clearInterval(pollTimer);
+        }
+        showToast(`${name} disconnected.`);
+        fetchSessions();
+      }
+    } catch (e) {
+      showToast('Error: ' + e.message, 'error');
+    }
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  fetchSessions();
+  setInterval(fetchSessions, 4000);
+</script>
+</body>
+</html>
