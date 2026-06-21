@@ -14,7 +14,7 @@ RUN python3 -m pip install --break-system-packages yt-dlp 2>/dev/null || pip3 in
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY package.json ./
 RUN npm install --production
 
 COPY . .
