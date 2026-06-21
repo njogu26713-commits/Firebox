@@ -261,9 +261,11 @@ async function handleMessage(sock, msg, prefix, sessionState) {
       if (!isOwner) {
         await sock.sendMessage(from, {
           text: `🪙 *Bot Out of Coins!*\n\n` +
-                `The bot has run out of coins and is temporarily suspended.\n` +
-                `Please contact the owner to top up coins.\n\n` +
-                `_Contact: ${process.env.OWNER_NAME || 'Owner'}_`
+                `The bot has run out of coins and is temporarily suspended.\n\n` +
+                `💳 *To buy coins, send payment to:*\n` +
+                `📱 *0118234849*\n\n` +
+                `After payment, the admin will top up your coins and the bot will resume.\n\n` +
+                `💡 *Coin costs:* AI = 5 · Downloads = 3 · Regular = 1`
         }, { quoted: msg });
         return;
       }
