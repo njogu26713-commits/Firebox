@@ -269,10 +269,32 @@ app.post('/api/coins/set', (req, res) => {
   }
 });
 
+// ── GET /api/activity — activity across all sessions ─────────────────────────
+app.get('/api/activity', (req, res) => {
+  const { sessions } = require('./sessionManager');
+  const all = [];
+  for (const s of sessions.values()) {
+    for (const entry of (s.recentActivity || [])) {
+      all.push({ sessionId: s.id, sessionName: s.name, number: s.number, status: s.status, ...entry });
+    }
+  }
+  all.sort((a, b) => new Date(b.time) - new Date(a.time));
+  res.json({ activity: all.slice(0, 200) });
+});
+
+// ── GET /api/sessions/:id/activity — activity for one session ─────────────────
+app.get('/api/sessions/:id/activity', (req, res) => {
+  const { sessions } = require('./sessionManager');
+  const s = sessions.get(req.params.id);
+  if (!s) return res.status(404).json({ error: 'Session not found' });
+  res.json({ sessionId: s.id, sessionName: s.name, number: s.number, status: s.status, activity: s.recentActivity || [] });
+});
+
 app.get('/', (req, res) => res.redirect('/pair'));
-app.get('/pair',   (req, res) => res.sendFile(path.join(__dirname, '../public/pair.html')));
-app.get('/config', (req, res) => res.sendFile(path.join(__dirname, '../public/config.html')));
-app.get('/admin',  (req, res) => res.sendFile(path.join(__dirname, '../public/admin.html')));
+app.get('/pair',     (req, res) => res.sendFile(path.join(__dirname, '../public/pair.html')));
+app.get('/config',   (req, res) => res.sendFile(path.join(__dirname, '../public/config.html')));
+app.get('/admin',    (req, res) => res.sendFile(path.join(__dirname, '../public/admin.html')));
+app.get('/activity', (req, res) => res.sendFile(path.join(__dirname, '../public/activity.html')));
 
 app.use((req, res) => {
   res.redirect('/pair');

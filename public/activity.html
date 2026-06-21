@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Firebox — Activity Log</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #040810;
+      --bg2:     #070d1a;
+      --bg3:     #0b1425;
+      --border:  #152035;
+      --border2: #1e3050;
+      --blue:    #3b82f6;
+      --text:    #e2e8f0;
+      --muted:   #4a6080;
+      --muted2:  #2a3d55;
+      --gold:    #f59e0b;
+      --green:   #22c55e;
+      --red:     #ef4444;
+      --purple:  #a855f7;
+      --cyan:    #06b6d4;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse 80% 40% at 50% -20%, rgba(6,182,212,.07) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 30% at 80% 80%, rgba(168,85,247,.05) 0%, transparent 60%);
+    }
+
+    /* HEADER */
+    header {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(4,8,16,.88); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px; display: flex; align-items: center; gap: 24px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 14px 0; text-decoration: none; }
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; box-shadow: 0 0 20px rgba(245,158,11,.35);
+    }
+    .brand-text h1 { font-size: 1.15rem; font-weight: 800; color: #fff; }
+    .brand-text span { font-size: 0.72rem; color: var(--muted); }
+    nav { margin-left: auto; display: flex; gap: 2px; }
+    nav a {
+      padding: 7px 18px; text-decoration: none; color: var(--muted);
+      font-size: 0.85rem; font-weight: 600; border-radius: 8px; transition: all .2s;
+    }
+    nav a:hover { color: var(--text); background: var(--bg3); }
+    nav a.active { color: var(--cyan); background: rgba(6,182,212,.12); }
+
+    /* LAYOUT */
+    .container { max-width: 1040px; margin: 0 auto; padding: 32px 24px 64px; }
+    .page-header { margin-bottom: 24px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .page-header-left h2 { font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    .page-header-left p  { font-size: 0.85rem; color: var(--muted); }
+    .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    /* STATS ROW */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;
+    }
+    @media (max-width: 700px) { .stats-row { grid-template-columns: 1fr 1fr; } }
+    .stat-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 14px; padding: 16px 18px; position: relative; overflow: hidden;
+    }
+    .stat-card::before { content: ''; position: absolute; inset: 0; pointer-events: none; }
+    .stat-card.cyan::before   { background: radial-gradient(ellipse 80% 80% at 90% 50%, rgba(6,182,212,.06) 0%, transparent 70%); }
+    .stat-card.green::before  { background: radial-gradient(ellipse 80% 80% at 90% 50%, rgba(34,197,94,.06) 0%, transparent 70%); }
+    .stat-card.blue::before   { background: radial-gradient(ellipse 80% 80% at 90% 50%, rgba(59,130,246,.06) 0%, transparent 70%); }
+    .stat-card.purple::before { background: radial-gradient(ellipse 80% 80% at 90% 50%, rgba(168,85,247,.06) 0%, transparent 70%); }
+    .stat-label {
+      font-size: 0.65rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .sdot {
+      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    }
+    .sdot-cyan   { background: var(--cyan);   box-shadow: 0 0 6px var(--cyan); }
+    .sdot-green  { background: var(--green);  box-shadow: 0 0 6px var(--green); animation: pg 2s infinite; }
+    .sdot-blue   { background: var(--blue);   box-shadow: 0 0 6px var(--blue); }
+    .sdot-purple { background: var(--purple); box-shadow: 0 0 6px var(--purple); }
+    @keyframes pg { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .stat-val { font-size: 1.9rem; font-weight: 900; color: #fff; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .stat-val.cyan   { color: var(--cyan); }
+    .stat-val.green  { color: var(--green); }
+    .stat-val.blue   { color: var(--blue); }
+    .stat-val.purple { color: var(--purple); }
+    .stat-sub { font-size: 0.7rem; color: var(--muted); margin-top: 4px; }
+
+    /* CONTROLS */
+    .controls {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 18px;
+    }
+    .filter-group { display: flex; gap: 4px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 4px; }
+    .filter-btn {
+      padding: 6px 14px; border: none; border-radius: 7px; cursor: pointer;
+      font-size: 0.78rem; font-weight: 600; font-family: 'Inter', sans-serif;
+      color: var(--muted); background: transparent; transition: all .2s;
+    }
+    .filter-btn:hover { color: var(--text); }
+    .filter-btn.active { background: var(--bg3); color: var(--text); border: 1px solid var(--border2); }
+    .sess-select {
+      padding: 8px 14px; background: var(--bg2); border: 1px solid var(--border2);
+      border-radius: 10px; color: var(--text); font-size: 0.82rem;
+      font-family: 'Inter', sans-serif; cursor: pointer; min-width: 180px;
+    }
+    .sess-select:focus { outline: none; border-color: var(--cyan); }
+    .search-wrap { position: relative; flex: 1; min-width: 180px; }
+    .search-input {
+      width: 100%; padding: 8px 14px 8px 36px;
+      background: var(--bg2); border: 1px solid var(--border2);
+      border-radius: 10px; color: var(--text); font-size: 0.82rem;
+      font-family: 'Inter', sans-serif; transition: border-color .2s;
+    }
+    .search-input:focus { outline: none; border-color: var(--cyan); }
+    .search-icon {
+      position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+      font-size: 0.85rem; pointer-events: none; opacity: .5;
+    }
+    .controls-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+    .live-badge {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 12px; background: rgba(34,197,94,.1);
+      border: 1px solid rgba(34,197,94,.2); border-radius: 8px;
+      font-size: 0.74rem; font-weight: 600; color: var(--green);
+    }
+    .live-dot {
+      width: 7px; height: 7px; background: var(--green); border-radius: 50%;
+      animation: ld 2s infinite;
+    }
+    @keyframes ld { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ACTIVITY TABLE */
+    .activity-wrap {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 18px; overflow: hidden;
+    }
+    .act-hdr {
+      display: grid; grid-template-columns: 110px 120px 1fr 90px;
+      padding: 10px 20px;
+      background: rgba(0,0,0,.25); border-bottom: 1px solid var(--border);
+      font-size: 0.65rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1.1px; gap: 12px;
+    }
+    .act-row {
+      display: grid; grid-template-columns: 110px 120px 1fr 90px;
+      padding: 11px 20px; gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,.025);
+      align-items: center; transition: background .15s;
+    }
+    .act-row:last-child { border-bottom: none; }
+    .act-row:hover { background: rgba(255,255,255,.025); }
+
+    .type-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px; border-radius: 20px;
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+      white-space: nowrap;
+    }
+    .type-command  { background: rgba(59,130,246,.13);  color: var(--blue);   border: 1px solid rgba(59,130,246,.25); }
+    .type-message  { background: rgba(34,197,94,.1);    color: var(--green);  border: 1px solid rgba(34,197,94,.2); }
+    .type-system   { background: rgba(168,85,247,.12);  color: var(--purple); border: 1px solid rgba(168,85,247,.2); }
+    .type-error    { background: rgba(239,68,68,.1);    color: var(--red);    border: 1px solid rgba(239,68,68,.18); }
+    .type-info     { background: rgba(6,182,212,.1);    color: var(--cyan);   border: 1px solid rgba(6,182,212,.2); }
+
+    .sess-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.74rem; font-weight: 600; color: #94a3b8;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .sess-tag-dot {
+      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    }
+
+    .act-detail {
+      font-size: 0.82rem; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .act-detail code {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+      color: var(--blue); background: rgba(59,130,246,.08);
+      padding: 1px 5px; border-radius: 4px;
+    }
+    .act-time {
+      font-size: 0.72rem; color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      white-space: nowrap; text-align: right;
+    }
+
+    /* EMPTY / LOADING */
+    .act-empty {
+      padding: 64px 32px; text-align: center;
+    }
+    .act-empty-icon { font-size: 2.5rem; opacity: .35; margin-bottom: 14px; }
+    .act-empty-title { font-size: 1rem; font-weight: 700; color: #64748b; margin-bottom: 6px; }
+    .act-empty-sub   { font-size: 0.82rem; color: var(--muted); }
+
+    /* PER-SESSION CARDS (session selector view) */
+    .sess-cards { display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px; }
+    .sess-info-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 14px; padding: 16px 20px;
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    }
+    .sess-ic-avatar {
+      width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+      background: linear-gradient(135deg, rgba(6,182,212,.18), rgba(6,182,212,.08));
+      border: 1px solid rgba(6,182,212,.2);
+    }
+    .sess-ic-name { font-size: 0.9rem; font-weight: 700; color: #fff; }
+    .sess-ic-sub  { font-size: 0.74rem; color: var(--muted); margin-top: 2px; }
+    .badge { padding: 3px 10px; border-radius: 20px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; }
+    .badge-on  { background: rgba(34,197,94,.15);  color: var(--green); border: 1px solid rgba(34,197,94,.25); }
+    .badge-ing { background: rgba(245,158,11,.15);  color: #f59e0b;      border: 1px solid rgba(245,158,11,.25); }
+    .badge-off { background: rgba(239,68,68,.12);   color: var(--red);   border: 1px solid rgba(239,68,68,.2); }
+
+    /* BUTTONS */
+    .btn {
+      border: none; border-radius: 10px; cursor: pointer;
+      font-size: 0.84rem; font-weight: 600; padding: 9px 18px;
+      transition: all .2s; display: inline-flex; align-items: center; gap: 6px;
+      font-family: 'Inter', sans-serif;
+    }
+    .btn:hover { opacity: .85; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn-cyan  { background: rgba(6,182,212,.15); color: var(--cyan); border: 1px solid rgba(6,182,212,.25); }
+    .btn-ghost { background: var(--bg3); color: #94a3b8; border: 1px solid var(--border); }
+    .btn-sm    { padding: 7px 14px; font-size: 0.78rem; border-radius: 8px; }
+    .btn-red   { background: rgba(239,68,68,.1); color: var(--red); border: 1px solid rgba(239,68,68,.18); }
+
+    /* TOAST */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--bg3); color: var(--text); border: 1px solid var(--border2);
+      padding: 12px 20px; border-radius: 12px; font-size: 0.85rem;
+      opacity: 0; transition: opacity .3s, transform .3s; z-index: 200;
+      max-width: 340px; transform: translateY(8px);
+      box-shadow: 0 8px 32px rgba(0,0,0,.4);
+    }
+    .toast.show    { opacity: 1; transform: translateY(0); }
+    .toast.success { background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.3); color: var(--green); }
+    .toast.error   { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.2); color: var(--red); }
+
+    /* RESPONSIVE */
+    @media (max-width: 720px) {
+      header { padding: 0 16px; }
+      .brand-text span { display: none; }
+      nav a { padding: 6px 10px; font-size: 0.78rem; }
+      .container { padding: 20px 16px 48px; }
+      .act-hdr, .act-row { grid-template-columns: 90px 1fr 80px; }
+      .act-hdr .col-sess, .act-row .col-sess { display: none; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .toast { left: 16px; right: 16px; bottom: 16px; max-width: none; }
+      .page-header { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="/pair">
+    <div class="brand-icon">🔥</div>
+    <div class="brand-text"><h1>Firebox</h1><span>WhatsApp Bot</span></div>
+  </a>
+  <nav>
+    <a href="/pair">📲 Pair</a>
+    <a href="/config">⚙️ Config</a>
+    <a href="/admin">🛡️ Admin</a>
+    <a href="/activity" class="active">📋 Activity</a>
+  </nav>
+</header>
+
+<div class="container">
+
+  <div class="page-header">
+    <div class="page-header-left">
+      <h2>Activity Log</h2>
+      <p>Live commands and messages across all connected bot sessions.</p>
+    </div>
+    <div class="header-actions">
+      <div class="live-badge">
+        <span class="live-dot"></span> Live · auto-refreshes
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="clearFilter()">↺ Reset</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card cyan">
+      <div class="stat-label"><span class="sdot sdot-cyan"></span>Total Events</div>
+      <div class="stat-val cyan" id="stat-total">0</div>
+      <div class="stat-sub">Across all sessions</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label"><span class="sdot sdot-green"></span>Commands</div>
+      <div class="stat-val green" id="stat-commands">0</div>
+      <div class="stat-sub">Bot commands run</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-label"><span class="sdot sdot-blue"></span>Sessions</div>
+      <div class="stat-val blue" id="stat-sessions">0</div>
+      <div class="stat-sub">With activity</div>
+    </div>
+    <div class="stat-card purple">
+      <div class="stat-label"><span class="sdot sdot-purple"></span>Connected</div>
+      <div class="stat-val purple" id="stat-connected">0</div>
+      <div class="stat-sub">Online bots</div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <div class="filter-group">
+      <button class="filter-btn active" data-type="all"    onclick="setTypeFilter('all')">All</button>
+      <button class="filter-btn"        data-type="command" onclick="setTypeFilter('command')">⚡ Commands</button>
+      <button class="filter-btn"        data-type="message" onclick="setTypeFilter('message')">💬 Messages</button>
+      <button class="filter-btn"        data-type="system"  onclick="setTypeFilter('system')">🔧 System</button>
+    </div>
+
+    <select class="sess-select" id="sess-filter" onchange="setSessFilter(this.value)">
+      <option value="all">All Sessions</option>
+    </select>
+
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input" id="search-input" placeholder="Search activity…" oninput="applyFilters()" />
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="activity-wrap">
+    <div class="act-hdr">
+      <div>Type</div>
+      <div class="col-sess">Session</div>
+      <div>Detail</div>
+      <div style="text-align:right">Time</div>
+    </div>
+    <div id="act-body">
+      <div class="act-empty">
+        <div class="act-empty-icon">⏳</div>
+        <div class="act-empty-title">Loading…</div>
+        <div class="act-empty-sub">Fetching activity data.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let allActivity = [];
+  let sessionsMap = {};
+  let typeFilter = 'all';
+  let sessFilter = 'all';
+
+  function toast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (type ? ' ' + type : '');
+    clearTimeout(t._t);
+    t._t = setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  function fmtTime(iso) {
+    const d = new Date(iso);
+    const now = new Date();
+    const diff = Math.floor((now - d) / 1000);
+    if (diff < 5)   return 'just now';
+    if (diff < 60)  return diff + 's ago';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function typePill(type) {
+    const map = {
+      command: ['⚡', 'command', 'Cmd'],
+      message: ['💬', 'message', 'Msg'],
+      system:  ['🔧', 'system',  'Sys'],
+      error:   ['❌', 'error',   'Err'],
+      info:    ['ℹ️', 'info',    'Info'],
+    };
+    const [icon, cls, label] = map[type] || ['•', 'info', type];
+    return `<span class="type-pill type-${cls}">${icon} ${label}</span>`;
+  }
+
+  function sessionDot(sessId) {
+    const s = sessionsMap[sessId];
+    if (!s) return '';
+    const colors = ['#3b82f6','#a855f7','#06b6d4','#f59e0b','#22c55e','#ef4444'];
+    const color = colors[Math.abs(hashStr(sessId)) % colors.length];
+    return `<span class="sdot" style="background:${color};box-shadow:0 0 6px ${color}"></span>`;
+  }
+
+  function hashStr(str) {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+    return h;
+  }
+
+  function escHtml(str) {
+    return String(str || '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function highlightCmd(detail) {
+    return escHtml(detail).replace(/\.(\w+)/g, '<code>.$1</code>');
+  }
+
+  function applyFilters() {
+    const search = document.getElementById('search-input').value.toLowerCase();
+    let rows = allActivity;
+    if (typeFilter !== 'all') rows = rows.filter(r => r.type === typeFilter);
+    if (sessFilter !== 'all') rows = rows.filter(r => r.sessionId === sessFilter);
+    if (search) rows = rows.filter(r =>
+      (r.detail || '').toLowerCase().includes(search) ||
+      (r.sessionName || '').toLowerCase().includes(search) ||
+      (r.type || '').toLowerCase().includes(search)
+    );
+    renderRows(rows);
+  }
+
+  function setTypeFilter(type) {
+    typeFilter = type;
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.type === type);
+    });
+    applyFilters();
+  }
+
+  function setSessFilter(val) {
+    sessFilter = val;
+    applyFilters();
+  }
+
+  function clearFilter() {
+    typeFilter = 'all';
+    sessFilter = 'all';
+    document.getElementById('search-input').value = '';
+    document.getElementById('sess-filter').value = 'all';
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.type === 'all');
+    });
+    applyFilters();
+  }
+
+  function renderRows(rows) {
+    const body = document.getElementById('act-body');
+    if (!rows.length) {
+      body.innerHTML = `
+        <div class="act-empty">
+          <div class="act-empty-icon">📭</div>
+          <div class="act-empty-title">No activity found</div>
+          <div class="act-empty-sub">No events match your current filters, or the bot hasn't received any messages yet.</div>
+        </div>`;
+      return;
+    }
+    body.innerHTML = rows.map(r => `
+      <div class="act-row">
+        <div>${typePill(r.type)}</div>
+        <div class="col-sess">
+          <div class="sess-tag">
+            ${sessionDot(r.sessionId)}
+            <span title="${escHtml(r.sessionId)}">${escHtml(r.sessionName || r.sessionId)}</span>
+          </div>
+        </div>
+        <div class="act-detail">${highlightCmd(r.detail)}</div>
+        <div class="act-time">${fmtTime(r.time)}</div>
+      </div>`).join('');
+  }
+
+  async function loadSessions() {
+    try {
+      const res  = await fetch('/api/sessions');
+      const data = await res.json();
+      const sessions = data.sessions || [];
+      sessionsMap = {};
+      let connected = 0;
+      sessions.forEach(s => {
+        sessionsMap[s.id] = s;
+        if (s.status === 'connected') connected++;
+      });
+      document.getElementById('stat-sessions').textContent  = sessions.length;
+      document.getElementById('stat-connected').textContent = connected;
+
+      const sel = document.getElementById('sess-filter');
+      const current = sel.value;
+      sel.innerHTML = '<option value="all">All Sessions</option>' +
+        sessions.map(s =>
+          `<option value="${escHtml(s.id)}">${escHtml(s.name || s.id)}${s.number ? ' · ' + s.number : ''}</option>`
+        ).join('');
+      if (current && current !== 'all') sel.value = current;
+    } catch(e) { console.error(e); }
+  }
+
+  async function loadActivity() {
+    try {
+      const res  = await fetch('/api/activity');
+      const data = await res.json();
+      allActivity = data.activity || [];
+
+      const commands = allActivity.filter(r => r.type === 'command').length;
+      document.getElementById('stat-total').textContent    = allActivity.length;
+      document.getElementById('stat-commands').textContent = commands;
+
+      applyFilters();
+    } catch(e) { console.error(e); }
+  }
+
+  async function refresh() {
+    await Promise.all([loadSessions(), loadActivity()]);
+  }
+
+  refresh();
+  setInterval(refresh, 5000);
+</script>
+</body>
+</html>
