@@ -24,5 +24,6 @@
     "254751308464@s.whatsapp.net"
   ],
   "autoRecord": true,
-  "deadMode": 1
+  "deadMode": 0,
+  "anticallDm": 1
 }
