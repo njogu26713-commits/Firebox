@@ -3,324 +3,395 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>📲 Pair — Firebox</title>
+  <title>Firebox — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', sans-serif; background: #050d1a; color: #e2e8f0; min-height: 100vh; }
+    :root {
+      --bg:       #040810;
+      --bg2:      #070d1a;
+      --bg3:      #0b1425;
+      --border:   #152035;
+      --border2:  #1e3050;
+      --blue:     #3b82f6;
+      --blue-dim: #1d3d7a;
+      --text:     #e2e8f0;
+      --muted:    #4a6080;
+      --muted2:   #2a3d55;
+      --gold:     #f59e0b;
+      --gold-dim: #78430a;
+      --green:    #22c55e;
+      --red:      #ef4444;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse 80% 40% at 50% -20%, rgba(59,130,246,.12) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 30% at 80% 80%, rgba(245,158,11,.06) 0%, transparent 60%);
+    }
 
+    /* ── HEADER ─────────────────────────────────────────────────────────── */
     header {
-      background: linear-gradient(135deg, #0a1628, #0d2248);
-      border-bottom: 2px solid #2563eb;
-      padding: 0 28px;
-      display: flex;
-      align-items: center;
-      gap: 24px;
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(4,8,16,.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      display: flex; align-items: center; gap: 24px;
     }
-    .brand { display: flex; align-items: center; gap: 12px; padding: 16px 0; text-decoration: none; }
-    .brand h1 { font-size: 1.5rem; color: #60a5fa; }
-    .brand span { font-size: 0.82rem; color: #64748b; }
-
-    nav { margin-left: auto; display: flex; gap: 4px; }
+    .brand {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 0; text-decoration: none;
+    }
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0;
+      box-shadow: 0 0 20px rgba(245,158,11,.35);
+    }
+    .brand-text h1 { font-size: 1.15rem; font-weight: 800; color: #fff; }
+    .brand-text span { font-size: 0.72rem; color: var(--muted); font-weight: 500; }
+    nav { margin-left: auto; display: flex; gap: 2px; }
     nav a {
-      padding: 8px 22px;
-      text-decoration: none;
-      color: #94a3b8;
-      font-size: 0.9rem;
-      font-weight: 600;
-      border-bottom: 3px solid transparent;
-      transition: all 0.2s;
+      padding: 7px 18px; text-decoration: none;
+      color: var(--muted); font-size: 0.85rem; font-weight: 600;
+      border-radius: 8px; transition: all .2s;
+      display: flex; align-items: center; gap: 6px;
     }
-    nav a:hover { color: #cbd5e1; }
-    nav a.active { color: #60a5fa; border-bottom-color: #2563eb; }
+    nav a:hover { color: var(--text); background: var(--bg3); }
+    nav a.active { color: var(--blue); background: rgba(59,130,246,.12); }
 
-    .container { max-width: 900px; margin: 0 auto; padding: 36px 24px; }
+    /* ── LAYOUT ─────────────────────────────────────────────────────────── */
+    .container { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
+    .page-header { margin-bottom: 28px; }
+    .page-header h2 { font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    .page-header p  { font-size: 0.85rem; color: var(--muted); }
 
-    .page-title { font-size: 1.4rem; color: #fff; margin-bottom: 6px; }
-    .page-sub   { font-size: 0.87rem; color: #555; margin-bottom: 28px; }
-
-    /* Connected banner */
-    .connected-banner {
-      background: #0d2b18;
-      border: 1px solid #27ae60;
-      border-radius: 14px;
-      padding: 22px 28px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
-      margin-bottom: 24px;
-    }
-    .connected-left { display: flex; align-items: center; gap: 16px; }
-    .live-dot {
-      width: 14px; height: 14px;
-      background: #27ae60;
-      border-radius: 50%;
-      box-shadow: 0 0 10px #27ae60;
-      flex-shrink: 0;
-      animation: glow 2s infinite;
-    }
-    @keyframes glow { 0%,100%{box-shadow:0 0 10px #27ae60} 50%{box-shadow:0 0 20px #27ae60} }
-    .connected-info h3 { font-size: 1.1rem; color: #2ecc71; font-weight: 700; }
-    .connected-info p  { font-size: 0.82rem; color: #888; margin-top: 3px; }
-    .stats { display: flex; gap: 28px; }
-    .stat { text-align: center; }
-    .stat-val { font-size: 1.2rem; font-weight: 700; color: #fff; }
-    .stat-lbl { font-size: 0.68rem; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-    .banner-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-
-    /* Pairing card */
-    .pair-card {
-      background: #0a1628;
-      border: 1px solid #1a2d4a;
-      border-radius: 16px;
+    /* ── COINS HERO ─────────────────────────────────────────────────────── */
+    .coins-hero {
+      background: linear-gradient(135deg, var(--bg2) 0%, #0d1e38 100%);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 28px 30px;
+      margin-bottom: 20px;
+      position: relative;
       overflow: hidden;
     }
-    .pair-card-hdr {
-      padding: 15px 26px;
-      background: #080f1c;
-      border-bottom: 1px solid #0f1e33;
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: #475569;
-      text-transform: uppercase;
-      letter-spacing: 1.2px;
+    .coins-hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 60% 80% at 90% 50%, rgba(245,158,11,.08) 0%, transparent 70%);
+      pointer-events: none;
     }
+    .coins-hero-inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; position: relative; }
+    .coins-left { display: flex; align-items: center; gap: 20px; }
+    .coin-orb {
+      width: 68px; height: 68px; flex-shrink: 0;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+      box-shadow: 0 0 32px rgba(245,158,11,.4), 0 0 8px rgba(245,158,11,.2);
+      animation: coin-pulse 3s ease-in-out infinite;
+    }
+    @keyframes coin-pulse {
+      0%, 100% { box-shadow: 0 0 32px rgba(245,158,11,.4), 0 0 8px rgba(245,158,11,.2); }
+      50%       { box-shadow: 0 0 48px rgba(245,158,11,.6), 0 0 16px rgba(245,158,11,.3); }
+    }
+    .coin-info label {
+      font-size: 0.68rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1.2px; display: block; margin-bottom: 6px;
+    }
+    .coin-balance-row { display: flex; align-items: center; gap: 12px; }
+    #coin-balance {
+      font-size: 2.4rem; font-weight: 900; color: #fff;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 30px rgba(245,158,11,.3);
+    }
+    .coin-badge {
+      padding: 3px 10px; border-radius: 20px; font-size: 0.68rem; font-weight: 700;
+      background: rgba(34,197,94,.15); color: var(--green);
+      border: 1px solid rgba(34,197,94,.25);
+    }
+    .coin-spent { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
+    .coin-spent span { color: #94a3b8; font-weight: 600; }
 
-    .pair-body {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+    .coins-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .coin-input {
+      width: 120px; padding: 10px 14px;
+      background: var(--bg); border: 1px solid var(--border2);
+      border-radius: 10px; color: #fff; font-size: 0.88rem; font-family: 'Inter', sans-serif;
+      transition: border-color .2s;
     }
+    .coin-input:focus { outline: none; border-color: var(--gold); }
+
+    /* ── RATE CARDS ─────────────────────────────────────────────────────── */
+    .rate-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+    @media (max-width: 580px) { .rate-grid { grid-template-columns: 1fr; } }
+    .rate-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 14px; padding: 18px 20px;
+      display: flex; align-items: center; gap: 14px;
+      transition: border-color .2s, transform .2s;
+    }
+    .rate-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+    .rate-icon {
+      width: 42px; height: 42px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; flex-shrink: 0;
+    }
+    .rate-icon.ai       { background: rgba(139,92,246,.15); }
+    .rate-icon.dl       { background: rgba(59,130,246,.15); }
+    .rate-icon.regular  { background: rgba(34,197,94,.15); }
+    .rate-label { font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 3px; }
+    .rate-cost  { font-size: 1.3rem; font-weight: 800; color: #fff; }
+    .rate-unit  { font-size: 0.7rem; color: var(--muted); }
+
+    /* ── BUY BANNER ─────────────────────────────────────────────────────── */
+    .buy-banner {
+      background: linear-gradient(135deg, rgba(59,130,246,.08), rgba(59,130,246,.04));
+      border: 1px solid rgba(59,130,246,.25);
+      border-radius: 14px;
+      padding: 18px 24px;
+      margin-bottom: 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    }
+    .buy-left { display: flex; align-items: center; gap: 14px; }
+    .buy-icon { font-size: 1.8rem; }
+    .buy-label { font-size: 0.68rem; color: var(--blue); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+    .buy-number { font-size: 1.3rem; font-weight: 900; color: #fff; letter-spacing: 2px; font-family: 'JetBrains Mono', monospace; }
+    .buy-note { font-size: 0.72rem; color: var(--muted); margin-top: 3px; }
+
+    /* ── COIN HISTORY ───────────────────────────────────────────────────── */
+    .history-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden; margin-bottom: 24px;
+    }
+    .card-hdr {
+      padding: 14px 22px; background: rgba(0,0,0,.2);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.7rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1.2px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .history-list { padding: 4px 0; max-height: 180px; overflow-y: auto; }
+    .history-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 22px; border-bottom: 1px solid rgba(255,255,255,.03);
+      font-size: 0.82rem; gap: 12px;
+    }
+    .history-item:last-child { border-bottom: none; }
+    .history-note { color: #94a3b8; }
+    .history-amount { font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    .history-amount.plus  { color: var(--green); }
+    .history-amount.minus { color: var(--red); }
+    .history-date { font-size: 0.7rem; color: var(--muted); }
+    .history-empty { padding: 28px 22px; text-align: center; color: var(--muted); font-size: 0.82rem; }
+
+    /* ── CONNECTED BANNER ───────────────────────────────────────────────── */
+    .connected-banner {
+      background: linear-gradient(135deg, rgba(22,163,74,.1), rgba(22,163,74,.05));
+      border: 1px solid rgba(34,197,94,.25);
+      border-radius: 16px; padding: 22px 28px; margin-bottom: 24px;
+      display: none; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    }
+    .connected-banner.show { display: flex; }
+    .live-dot {
+      width: 12px; height: 12px; background: var(--green); border-radius: 50%;
+      box-shadow: 0 0 12px var(--green); flex-shrink: 0;
+      animation: pulse-green 2s infinite;
+    }
+    @keyframes pulse-green { 0%,100%{box-shadow:0 0 12px var(--green)} 50%{box-shadow:0 0 24px var(--green)} }
+    .connected-left { display: flex; align-items: center; gap: 16px; }
+    .connected-info h3 { font-size: 1rem; color: var(--green); font-weight: 700; }
+    .connected-info p  { font-size: 0.8rem; color: var(--muted); margin-top: 3px; }
+    .stats { display: flex; gap: 28px; }
+    .stat { text-align: center; }
+    .stat-val { font-size: 1.15rem; font-weight: 800; color: #fff; }
+    .stat-lbl { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+    .banner-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* ── PAIR CARD ──────────────────────────────────────────────────────── */
+    .pair-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 20px; overflow: hidden; margin-bottom: 24px;
+    }
+    .pair-body { display: grid; grid-template-columns: 1fr 1fr; }
     @media (max-width: 580px) { .pair-body { grid-template-columns: 1fr; } }
 
-    /* QR side */
     .qr-side {
-      border-right: 1px solid #0f1e33;
-      padding: 40px 28px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 18px;
+      border-right: 1px solid var(--border);
+      padding: 40px 32px;
+      display: flex; flex-direction: column; align-items: center; gap: 20px;
     }
     .qr-wrap {
-      background: #fff;
-      border-radius: 14px;
-      padding: 10px;
-      line-height: 0;
+      background: #fff; border-radius: 16px; padding: 12px;
+      line-height: 0; box-shadow: 0 0 40px rgba(59,130,246,.2);
     }
-    .qr-wrap img { width: 190px; height: 190px; border-radius: 6px; display: block; }
+    .qr-wrap img { width: 190px; height: 190px; border-radius: 8px; display: block; }
     .qr-empty {
       width: 190px; height: 190px;
-      background: #080f1c;
-      border-radius: 14px;
-      border: 2px dashed #1a2d4a;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      color: #334155;
+      background: var(--bg); border-radius: 16px;
+      border: 2px dashed var(--border2);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 12px; color: var(--muted2);
     }
-    .qr-empty .icon { font-size: 2.4rem; }
-    .qr-empty p { font-size: 0.8rem; text-align: center; line-height: 1.5; }
-    .qr-empty strong { color: #2563eb; }
-    .qr-hint { font-size: 0.78rem; color: #475569; text-align: center; line-height: 1.6; }
+    .qr-empty-icon { font-size: 2.5rem; opacity: .5; }
+    .qr-empty p { font-size: 0.78rem; text-align: center; line-height: 1.6; }
+    .qr-hint { font-size: 0.76rem; color: var(--muted); text-align: center; line-height: 1.7; }
     .qr-hint strong { color: #64748b; }
 
-    /* Code side */
     .code-side {
-      padding: 40px 32px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      justify-content: center;
+      padding: 40px 36px;
+      display: flex; flex-direction: column; gap: 22px; justify-content: center;
     }
-    .code-side h3 { font-size: 1rem; color: #e2e8f0; font-weight: 700; }
-    .code-side p  { font-size: 0.83rem; color: #475569; line-height: 1.6; }
-
-    .input-lbl { font-size: 0.7rem; font-weight: 700; color: #60a5fa; letter-spacing: 1px; margin-bottom: 8px; }
+    .code-side h3 { font-size: 1rem; font-weight: 700; color: #fff; }
+    .code-side p  { font-size: 0.82rem; color: var(--muted); line-height: 1.7; }
+    .input-lbl { font-size: 0.68rem; font-weight: 700; color: var(--blue); letter-spacing: 1px; margin-bottom: 8px; }
     .phone-row { display: flex; gap: 8px; }
     .phone-row input {
-      flex: 1;
-      padding: 11px 14px;
-      background: #050d1a;
-      border: 1px solid #1a2d4a;
-      border-radius: 9px;
-      color: #fff;
-      font-size: 0.9rem;
-      transition: border-color 0.2s;
+      flex: 1; padding: 11px 14px;
+      background: var(--bg); border: 1px solid var(--border2);
+      border-radius: 10px; color: #fff; font-size: 0.9rem; font-family: 'Inter', sans-serif;
+      transition: border-color .2s;
     }
-    .phone-row input:focus { outline: none; border-color: #2563eb; }
+    .phone-row input:focus { outline: none; border-color: var(--blue); }
 
     .code-display {
-      background: #061228;
-      border: 1px solid #2563eb;
-      border-radius: 12px;
-      padding: 16px 20px;
-      text-align: center;
+      background: var(--bg); border: 1px solid var(--blue);
+      border-radius: 14px; padding: 20px; text-align: center;
+      box-shadow: 0 0 24px rgba(59,130,246,.1);
     }
     .code-digits {
-      font-size: 2.2rem;
-      font-weight: 900;
-      color: #60a5fa;
-      letter-spacing: 8px;
-      font-family: monospace;
+      font-size: 2.4rem; font-weight: 900; color: var(--blue);
+      letter-spacing: 8px; font-family: 'JetBrains Mono', monospace;
+      text-shadow: 0 0 20px rgba(59,130,246,.4);
     }
-    .code-hint-txt {
-      font-size: 0.73rem;
-      color: #475569;
-      margin-top: 8px;
-      line-height: 1.5;
-    }
+    .code-hint-txt { font-size: 0.72rem; color: var(--muted); margin-top: 8px; line-height: 1.6; }
 
-    /* Footer status */
     .pair-footer {
-      padding: 13px 26px;
-      background: #060c18;
-      border-top: 1px solid #0f1e33;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.82rem;
+      padding: 14px 28px; background: rgba(0,0,0,.2);
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px; font-size: 0.82rem;
     }
-    .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-    .dot-idle { background: #1e3a5f; }
-    .dot-busy { background: #f39c12; animation: blink 1s infinite; }
-    .dot-on   { background: #27ae60; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dot-idle { background: var(--muted2); }
+    .dot-busy { background: #f59e0b; animation: blink 1s infinite; }
+    .dot-on   { background: var(--green); }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-    /* Active sessions */
-    .sessions-box { margin-top: 30px; }
-    .sessions-box h3 { font-size: 0.72rem; color: #334155; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
+    /* ── SESSIONS ───────────────────────────────────────────────────────── */
+    .sessions-box { margin-top: 8px; }
+    .section-title {
+      font-size: 0.68rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 12px;
+    }
     .sess-row {
-      background: #0a1628;
-      border: 1px solid #1a2d4a;
-      border-radius: 11px;
-      padding: 14px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; margin-bottom: 8px; flex-wrap: wrap;
+      transition: border-color .2s;
     }
+    .sess-row:hover { border-color: var(--border2); }
     .sess-left { display: flex; align-items: center; gap: 12px; }
-    .sess-name { font-size: 0.9rem; font-weight: 700; color: #e2e8f0; }
-    .sess-num  { font-size: 0.78rem; color: #475569; margin-top: 2px; }
+    .sess-name { font-size: 0.88rem; font-weight: 700; color: var(--text); }
+    .sess-num  { font-size: 0.76rem; color: var(--muted); margin-top: 2px; }
     .badge {
-      display: inline-block;
-      padding: 3px 11px;
-      border-radius: 20px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
     }
-    .badge-on  { background: #1a4028; color: #2ecc71; }
-    .badge-ing { background: #3d2e00; color: #f1c40f; }
-    .badge-off { background: #3d1010; color: #e74c3c; }
+    .badge-on  { background: rgba(34,197,94,.15);  color: var(--green); border: 1px solid rgba(34,197,94,.25); }
+    .badge-ing { background: rgba(245,158,11,.15);  color: #f59e0b;      border: 1px solid rgba(245,158,11,.25); }
+    .badge-off { background: rgba(239,68,68,.12);   color: var(--red);   border: 1px solid rgba(239,68,68,.2); }
     .sess-actions { display: flex; gap: 8px; }
 
-    /* Buttons */
+    /* ── BUTTONS ────────────────────────────────────────────────────────── */
     .btn {
-      border: none; border-radius: 9px; cursor: pointer;
-      font-size: 0.88rem; font-weight: 600; padding: 10px 20px;
-      transition: opacity 0.2s;
+      border: none; border-radius: 10px; cursor: pointer;
+      font-size: 0.86rem; font-weight: 600; padding: 10px 20px;
+      transition: all .2s; display: inline-flex; align-items: center; gap: 6px;
+      font-family: 'Inter', sans-serif;
     }
-    .btn:hover { opacity: 0.82; }
-    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .btn-orange { background: #2563eb; color: #fff; }
-    .btn-green  { background: #27ae60; color: #fff; }
-    .btn-red    { background: #c0392b; color: #fff; }
-    .btn-gray   { background: #1a2d4a; color: #cbd5e1; }
-    .btn-sm     { padding: 6px 14px; font-size: 0.8rem; }
-    .btn-full   { width: 100%; padding: 13px; font-size: 0.95rem; border-radius: 10px; }
+    .btn:hover { opacity: .85; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+    .btn-blue   { background: var(--blue); color: #fff; box-shadow: 0 4px 14px rgba(59,130,246,.3); }
+    .btn-gold   { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; box-shadow: 0 4px 14px rgba(245,158,11,.3); }
+    .btn-green  { background: rgba(34,197,94,.15); color: var(--green); border: 1px solid rgba(34,197,94,.25); }
+    .btn-red    { background: rgba(239,68,68,.12); color: var(--red); border: 1px solid rgba(239,68,68,.2); }
+    .btn-ghost  { background: var(--bg3); color: #94a3b8; border: 1px solid var(--border); }
+    .btn-sm     { padding: 7px 14px; font-size: 0.78rem; border-radius: 8px; }
+    .btn-full   { width: 100%; justify-content: center; padding: 13px; font-size: 0.95rem; border-radius: 12px; }
 
-    /* Export modal */
+    /* ── MODAL ──────────────────────────────────────────────────────────── */
     .overlay {
       display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,.75); z-index: 100;
-      align-items: center; justify-content: center;
+      background: rgba(0,0,0,.8); z-index: 100;
+      align-items: center; justify-content: center; backdrop-filter: blur(4px);
     }
     .overlay.open { display: flex; }
     .modal {
-      background: #0a1628; border: 1px solid #1a2d4a;
-      border-radius: 14px; padding: 28px;
-      width: 480px; max-width: 94vw;
+      background: var(--bg2); border: 1px solid var(--border2);
+      border-radius: 20px; padding: 32px;
+      width: 500px; max-width: 94vw;
+      box-shadow: 0 24px 80px rgba(0,0,0,.6);
     }
-    .modal h3 { color: #fff; margin-bottom: 16px; font-size: 1.1rem; }
+    .modal h3 { color: #fff; margin-bottom: 18px; font-size: 1.1rem; font-weight: 700; }
+    .export-steps {
+      background: rgba(59,130,246,.06); border: 1px solid rgba(59,130,246,.15);
+      border-radius: 12px; padding: 16px 20px; margin-bottom: 16px;
+    }
+    .export-steps p { font-size: 0.78rem; color: var(--blue); font-weight: 700; margin-bottom: 10px; }
+    .export-steps ol { font-size: 0.78rem; color: #94a3b8; padding-left: 18px; line-height: 2.2; }
     .export-box {
-      background: #050d1a; border: 1px solid #1a2d4a; border-radius: 8px;
-      padding: 12px; word-break: break-all; font-size: 0.7rem;
-      color: #94a3b8; max-height: 90px; overflow-y: auto; font-family: monospace;
-      margin-top: 10px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+      padding: 12px 14px; word-break: break-all; font-size: 0.68rem;
+      color: #64748b; max-height: 80px; overflow-y: auto; font-family: 'JetBrains Mono', monospace;
     }
-    .modal-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+    .modal-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
 
-    /* Toast */
+    /* ── TOAST ──────────────────────────────────────────────────────────── */
     .toast {
       position: fixed; bottom: 24px; right: 24px;
-      background: #2563eb; color: #fff;
-      padding: 12px 20px; border-radius: 9px;
-      font-size: 0.88rem; opacity: 0;
-      transition: opacity 0.3s; z-index: 200; max-width: 340px;
+      background: var(--bg3); color: var(--text); border: 1px solid var(--border2);
+      padding: 12px 20px; border-radius: 12px; font-size: 0.85rem;
+      opacity: 0; transition: opacity .3s, transform .3s;
+      z-index: 200; max-width: 340px; transform: translateY(8px);
+      box-shadow: 0 8px 32px rgba(0,0,0,.4);
     }
-    .toast.show    { opacity: 1; }
-    .toast.success { background: #27ae60; }
-    .toast.error   { background: #c0392b; }
+    .toast.show    { opacity: 1; transform: translateY(0); }
+    .toast.success { background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.3); color: var(--green); }
+    .toast.error   { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.2); color: var(--red); }
 
-    /* ── Mobile responsive ──────────────────────────────────────────────── */
+    /* ── RESPONSIVE ─────────────────────────────────────────────────────── */
     @media (max-width: 640px) {
-      header { padding: 0 14px; flex-wrap: wrap; gap: 0; }
-      .brand { padding: 12px 0; }
-      .brand h1 { font-size: 1.2rem; }
-      nav { margin-left: auto; gap: 0; }
+      header { padding: 0 16px; }
+      .brand-text span { display: none; }
       nav a { padding: 6px 12px; font-size: 0.78rem; }
-
-      .container { padding: 18px 14px; }
-      .page-title { font-size: 1.15rem; }
-
-      /* Buy coins banner */
-      .buy-banner { flex-direction: column !important; align-items: flex-start !important; padding: 14px 16px !important; }
-      .buy-banner > div:last-child { width: 100%; text-align: left; }
-
-      /* Connected banner */
-      .connected-banner { flex-direction: column; align-items: flex-start; padding: 16px; }
+      .container { padding: 20px 16px 48px; }
+      .coins-hero { padding: 20px; }
+      .coins-hero-inner { flex-direction: column; align-items: flex-start; }
+      #coin-balance { font-size: 2rem; }
+      .coin-orb { width: 52px; height: 52px; font-size: 1.6rem; }
+      .coins-actions { width: 100%; }
+      .coin-input { flex: 1; }
+      .buy-banner { flex-direction: column; }
+      .connected-banner { flex-direction: column; align-items: flex-start; }
       .stats { gap: 16px; flex-wrap: wrap; }
-      .stat-val { font-size: 1rem; }
-      .banner-actions { width: 100%; }
-      .banner-actions .btn { flex: 1; text-align: center; }
-
-      /* Pair card */
-      .qr-side { border-right: none; border-bottom: 1px solid #0f1e33; padding: 24px 16px; }
-      .code-side { padding: 24px 16px; }
+      .qr-side { border-right: none; border-bottom: 1px solid var(--border); padding: 28px 20px; }
       .qr-wrap img { width: 160px; height: 160px; }
       .qr-empty { width: 160px; height: 160px; }
-      .code-digits { font-size: 1.6rem; letter-spacing: 5px; }
-
-      /* Session rows */
-      .sess-row { flex-direction: column; align-items: flex-start; padding: 12px 14px; }
-      .sess-actions { width: 100%; display: flex; gap: 8px; }
-      .sess-actions .btn { flex: 1; text-align: center; }
-
-      /* Coin widget */
-      #coin-widget { flex-direction: column; align-items: flex-start; padding: 14px 16px; }
-      #coin-widget > div:last-child { width: 100%; display: flex; gap: 8px; flex-wrap: wrap; }
-      #coin-widget > div:last-child input { flex: 1; min-width: 80px; }
-      #coin-widget > div:last-child .btn { flex: 1; }
-
-      /* Buy coins banner inline styles override */
-      .buy-banner-inner { flex-direction: column !important; }
-
-      /* Toast */
-      .toast { left: 14px; right: 14px; bottom: 14px; max-width: none; }
-
-      /* Pair footer */
-      .pair-footer { padding: 10px 14px; font-size: 0.76rem; }
-    }
-
-    @media (max-width: 400px) {
-      .brand span { display: none; }
-      .code-digits { font-size: 1.3rem; letter-spacing: 3px; }
+      .code-side { padding: 24px 20px; }
+      .code-digits { font-size: 1.8rem; letter-spacing: 5px; }
+      .toast { left: 16px; right: 16px; bottom: 16px; max-width: none; }
     }
   </style>
 </head>
@@ -328,65 +399,92 @@
 
 <header>
   <a class="brand" href="/pair">
-    <div>🔥</div>
-    <div><h1>Firebox</h1><span>WhatsApp Bot</span></div>
+    <div class="brand-icon">🔥</div>
+    <div class="brand-text"><h1>Firebox</h1><span>WhatsApp Bot</span></div>
   </a>
   <nav>
     <a href="/pair" class="active">📲 Pair</a>
-    <a href="/config">⚙️ Config Vars</a>
+    <a href="/config">⚙️ Config</a>
   </nav>
 </header>
 
 <div class="container">
 
-  <h2 class="page-title">Pair a WhatsApp Number</h2>
-  <p class="page-sub">Scan the QR code or use a pairing code to connect your WhatsApp and go live instantly.</p>
-
-  <!-- Buy Coins Banner -->
-  <div class="buy-banner" style="background:linear-gradient(135deg,#0a1e38,#0d2248);border:1px solid #2563eb;border-radius:14px;padding:16px 22px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
-    <div style="display:flex;align-items:center;gap:12px">
-      <div style="font-size:1.6rem">💳</div>
-      <div>
-        <div style="font-size:0.68rem;color:#60a5fa;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Buy Coins — Send Payment To</div>
-        <div style="font-size:1.35rem;font-weight:900;color:#fff;letter-spacing:2px">0118234849</div>
-        <div style="font-size:0.7rem;color:#475569;margin-top:2px">After payment, the admin will top up your coins manually</div>
-      </div>
-    </div>
-    <div style="font-size:0.72rem;color:#60a5fa;background:#0a1628;border:1px solid #1a2d4a;border-radius:8px;padding:8px 14px;text-align:center;line-height:1.7">
-      💡 <strong style="color:#fff">Coin Rates</strong><br>
-      AI = 5 &nbsp;·&nbsp; Downloads = 3 &nbsp;·&nbsp; Regular = 1
-    </div>
+  <div class="page-header">
+    <h2>Bot Dashboard</h2>
+    <p>Manage sessions, monitor your coin balance, and connect WhatsApp.</p>
   </div>
 
-  <!-- Coin Widget -->
-  <div id="coin-widget" style="background:#0a1628;border:1px solid #1a2d4a;border-radius:14px;padding:18px 24px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
-    <div style="display:flex;align-items:center;gap:14px">
-      <div style="font-size:2rem">🪙</div>
-      <div>
-        <div style="font-size:0.72rem;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Coin Balance</div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <span id="coin-balance" style="font-size:1.6rem;font-weight:900;color:#fff">—</span>
-          <span id="coin-status-badge" style="font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:20px;background:#1e4d2b;color:#2ecc71">ACTIVE</span>
+  <!-- ── COINS HERO ─────────────────────────────────────────────────────── -->
+  <div class="coins-hero">
+    <div class="coins-hero-inner">
+      <div class="coins-left">
+        <div class="coin-orb">🪙</div>
+        <div class="coin-info">
+          <label>Coin Balance</label>
+          <div class="coin-balance-row">
+            <span id="coin-balance">—</span>
+            <span class="coin-badge" id="coin-badge">ACTIVE</span>
+          </div>
+          <div class="coin-spent">Total spent: <span id="coin-spent">0</span> coins</div>
         </div>
-        <div style="font-size:0.72rem;color:#475569;margin-top:4px">Total spent: <span id="coin-spent">0</span> coins</div>
+      </div>
+      <div class="coins-actions">
+        <input type="number" class="coin-input" id="coin-add-input" placeholder="Amount" min="1" max="1000000" />
+        <button class="btn btn-gold" onclick="addCoins()">➕ Add Coins</button>
+        <button class="btn btn-ghost btn-sm" onclick="fetchCoins()">🔄</button>
       </div>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <input type="number" id="coin-add-input" placeholder="Amount" min="1" max="1000000"
-        style="width:110px;padding:9px 12px;background:#050d1a;border:1px solid #1a2d4a;border-radius:8px;color:#fff;font-size:0.88rem" />
-      <button class="btn btn-orange btn-sm" onclick="addCoins()">➕ Add Coins</button>
-      <button class="btn btn-gray btn-sm" onclick="fetchCoins()">🔄 Refresh</button>
+  </div>
+
+  <!-- ── RATE CARDS ─────────────────────────────────────────────────────── -->
+  <div class="rate-grid">
+    <div class="rate-card">
+      <div class="rate-icon ai">🤖</div>
+      <div>
+        <div class="rate-label">AI Commands</div>
+        <div class="rate-cost">5 <span class="rate-unit">coins each</span></div>
+      </div>
+    </div>
+    <div class="rate-card">
+      <div class="rate-icon dl">⬇️</div>
+      <div>
+        <div class="rate-label">Downloads</div>
+        <div class="rate-cost">3 <span class="rate-unit">coins each</span></div>
+      </div>
+    </div>
+    <div class="rate-card">
+      <div class="rate-icon regular">⚡</div>
+      <div>
+        <div class="rate-label">Regular Commands</div>
+        <div class="rate-cost">1 <span class="rate-unit">coin each</span></div>
+      </div>
     </div>
   </div>
 
-  <!-- Coin history strip (compact) -->
-  <div id="coin-history-box" style="display:none;background:#080f1c;border:1px solid #0f1e33;border-radius:10px;padding:14px 20px;margin-bottom:20px;margin-top:-14px">
-    <div style="font-size:0.7rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Recent Coin Activity</div>
-    <div id="coin-history-list" style="font-size:0.78rem;color:#94a3b8;line-height:2"></div>
+  <!-- ── BUY COINS BANNER ───────────────────────────────────────────────── -->
+  <div class="buy-banner">
+    <div class="buy-left">
+      <div class="buy-icon">💳</div>
+      <div>
+        <div class="buy-label">Buy Coins — Send Payment To</div>
+        <div class="buy-number">0118234849</div>
+        <div class="buy-note">After payment, admin will top up your coins manually</div>
+      </div>
+    </div>
   </div>
 
-  <!-- Connected banner -->
-  <div id="connected-banner" class="connected-banner" style="display:none">
+  <!-- ── COIN HISTORY ───────────────────────────────────────────────────── -->
+  <div class="history-card" id="history-card" style="display:none">
+    <div class="card-hdr">
+      <span>Recent Coin Activity</span>
+      <span id="history-count" style="color:var(--muted)"></span>
+    </div>
+    <div class="history-list" id="coin-history-list"></div>
+  </div>
+
+  <!-- ── CONNECTED BANNER ───────────────────────────────────────────────── -->
+  <div id="connected-banner" class="connected-banner">
     <div class="connected-left">
       <div class="live-dot"></div>
       <div class="connected-info">
@@ -396,87 +494,87 @@
     </div>
     <div class="stats" id="banner-stats"></div>
     <div class="banner-actions">
-      <button class="btn btn-green btn-sm" onclick="exportPrimary()">📤 Export Session ID</button>
+      <button class="btn btn-green btn-sm" onclick="exportPrimary()">📤 Export Session</button>
       <button class="btn btn-red btn-sm" onclick="removePrimary()">Disconnect</button>
     </div>
   </div>
 
-  <!-- Pairing card -->
+  <!-- ── PAIR CARD ──────────────────────────────────────────────────────── -->
   <div class="pair-card" id="pair-card">
-    <div class="pair-card-hdr">Connect via QR or Pairing Code</div>
-
+    <div class="card-hdr">
+      <span>Connect via QR or Pairing Code</span>
+    </div>
     <div class="pair-body">
 
-      <!-- QR Code -->
       <div class="qr-side">
         <div class="qr-wrap" id="qr-wrap" style="display:none">
           <img id="qr-img" src="" alt="QR Code" />
         </div>
         <div class="qr-empty" id="qr-empty">
-          <div class="icon">📱</div>
-          <p>Click <strong>Start Pairing</strong><br>to generate the QR code</p>
+          <div class="qr-empty-icon">📱</div>
+          <p>Click <strong style="color:var(--blue)">Start Pairing</strong><br>to generate the QR code</p>
         </div>
         <div class="qr-hint">
-          Open WhatsApp → <strong>Linked Devices</strong><br>→ Link a Device → Scan
+          WhatsApp → <strong>Linked Devices</strong><br>→ Link a Device → Scan
         </div>
       </div>
 
-      <!-- Pairing Code -->
       <div class="code-side">
-        <h3>Use a Pairing Code</h3>
-        <p>Enter your number below to get an 8-digit code — no camera needed.</p>
+        <div>
+          <h3>Use a Pairing Code</h3>
+          <p>Enter your number to get an 8-digit code — no camera needed.</p>
+        </div>
 
         <div>
           <div class="input-lbl">PHONE NUMBER</div>
           <div class="phone-row">
             <input type="tel" id="pair-phone" placeholder="254712345678" />
-            <button class="btn btn-gray btn-sm" id="get-code-btn" onclick="getPairingCode()">Get Code</button>
+            <button class="btn btn-ghost btn-sm" id="get-code-btn" onclick="getPairingCode()">Get Code</button>
           </div>
         </div>
 
         <div class="code-display" id="code-display" style="display:none">
           <div class="code-digits" id="code-value">—</div>
           <div class="code-hint-txt">WhatsApp → Linked Devices → Link with phone number → enter code</div>
-          <button class="btn btn-gray btn-sm" style="margin-top:10px" onclick="copyCode()">📋 Copy</button>
+          <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="copyCode()">📋 Copy Code</button>
         </div>
 
-        <button class="btn btn-full btn-orange" id="start-btn" onclick="startPairing()">⚡ Start Pairing</button>
+        <button class="btn btn-blue btn-full" id="start-btn" onclick="startPairing()">⚡ Start Pairing</button>
       </div>
-
     </div>
 
     <div class="pair-footer">
       <div class="dot dot-idle" id="status-dot"></div>
-      <span id="status-txt" style="color:#444">Idle — click Start Pairing to begin</span>
+      <span id="status-txt" style="color:var(--muted)">Idle — click Start Pairing to begin</span>
     </div>
   </div>
 
-  <!-- Other sessions -->
+  <!-- ── ACTIVE SESSIONS ────────────────────────────────────────────────── -->
   <div class="sessions-box" id="sessions-box" style="display:none">
-    <h3>Other Active Sessions</h3>
+    <div class="section-title">Other Active Sessions</div>
     <div id="sessions-list"></div>
   </div>
 
 </div>
 
-<!-- Export modal -->
+<!-- ── EXPORT MODAL ───────────────────────────────────────────────────────── -->
 <div class="overlay" id="export-overlay">
   <div class="modal">
-    <h3>📤 Session ID</h3>
-    <div style="background:#061228;border:1px solid #2563eb;border-radius:9px;padding:14px;margin-bottom:4px">
-      <p style="font-size:0.78rem;color:#60a5fa;font-weight:700;margin-bottom:6px">🚀 Deploy on a new Replit:</p>
-      <ol style="font-size:0.76rem;color:#a0aec0;padding-left:18px;line-height:2">
+    <h3>📤 Export Session ID</h3>
+    <div class="export-steps">
+      <p>🚀 Deploy on a new Replit</p>
+      <ol>
         <li>Copy the Session ID below</li>
         <li>Open your new Replit running Firebox</li>
-        <li>Go to <strong style="color:#2563eb">⚙️ Config Vars</strong></li>
-        <li>Paste in <code style="background:#080f1c;padding:1px 6px;border-radius:4px;color:#60a5fa">SESSION_ID</code> → <strong>Save & Apply</strong> ✅</li>
+        <li>Go to <strong style="color:var(--blue)">⚙️ Config</strong></li>
+        <li>Paste in <code style="background:var(--bg);padding:1px 6px;border-radius:4px;color:var(--blue);font-family:monospace">SESSION_ID</code> → Save ✅</li>
       </ol>
     </div>
-    <p style="font-size:0.75rem;color:#555;margin-top:10px">Session ID:</p>
+    <div style="font-size:0.72rem;color:var(--muted);margin-bottom:8px">Session ID:</div>
     <div class="export-box" id="export-val"></div>
     <div class="modal-row">
-      <button class="btn btn-gray" onclick="closeExport()">Close</button>
-      <button class="btn btn-orange" onclick="copyExport()">📋 Copy</button>
+      <button class="btn btn-ghost" onclick="closeExport()">Close</button>
+      <button class="btn btn-blue" onclick="copyExport()">📋 Copy</button>
     </div>
   </div>
 </div>
@@ -498,9 +596,94 @@
 
   function fmtUp(u) {
     if (!u) return '—';
-    return `${u.hours}h ${u.minutes}m ${u.seconds}s`;
+    return `${u.hours}h ${u.minutes}m`;
   }
 
+  // ── Coins ──────────────────────────────────────────────────────────────
+  async function fetchCoins() {
+    try {
+      const res = await fetch('/api/coins');
+      const d = await res.json();
+      const bal = d.balance ?? 0;
+      const spent = d.totalSpent ?? 0;
+      animateNumber('coin-balance', bal);
+      document.getElementById('coin-spent').textContent = spent.toLocaleString();
+      const badge = document.getElementById('coin-badge');
+      if (bal <= 0) {
+        badge.textContent = 'EMPTY';
+        badge.style.background = 'rgba(239,68,68,.12)';
+        badge.style.color = 'var(--red)';
+        badge.style.borderColor = 'rgba(239,68,68,.2)';
+      } else if (bal < 20) {
+        badge.textContent = 'LOW';
+        badge.style.background = 'rgba(245,158,11,.12)';
+        badge.style.color = '#f59e0b';
+        badge.style.borderColor = 'rgba(245,158,11,.2)';
+      } else {
+        badge.textContent = 'ACTIVE';
+        badge.style.background = 'rgba(34,197,94,.15)';
+        badge.style.color = 'var(--green)';
+        badge.style.borderColor = 'rgba(34,197,94,.25)';
+      }
+      // history
+      const hist = d.history || [];
+      const box = document.getElementById('history-card');
+      const list = document.getElementById('coin-history-list');
+      if (hist.length > 0) {
+        box.style.display = 'block';
+        document.getElementById('history-count').textContent = hist.length + ' entries';
+        list.innerHTML = hist.slice(0, 8).map(h => {
+          const isPlus = h.amount > 0;
+          const dt = h.date ? new Date(h.date).toLocaleString() : '';
+          return `<div class="history-item">
+            <div>
+              <div class="history-note">${h.note || 'Transaction'}</div>
+              <div class="history-date">${dt}</div>
+            </div>
+            <div class="history-amount ${isPlus ? 'plus' : 'minus'}">${isPlus ? '+' : ''}${h.amount}</div>
+          </div>`;
+        }).join('');
+      } else {
+        box.style.display = 'none';
+      }
+    } catch(e) {}
+  }
+
+  function animateNumber(id, target) {
+    const el = document.getElementById(id);
+    const current = parseInt(el.textContent.replace(/\D/g,'')) || 0;
+    if (current === target) { el.textContent = target.toLocaleString(); return; }
+    const diff = target - current;
+    const steps = 30;
+    let step = 0;
+    const timer = setInterval(() => {
+      step++;
+      const val = Math.round(current + diff * (step / steps));
+      el.textContent = val.toLocaleString();
+      if (step >= steps) clearInterval(timer);
+    }, 20);
+  }
+
+  async function addCoins() {
+    const input = document.getElementById('coin-add-input');
+    const amt = parseInt(input.value);
+    if (!amt || amt <= 0) { toast('Enter a valid amount', 'error'); return; }
+    try {
+      const res = await fetch('/api/coins/add', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ amount: amt, note: 'Dashboard top-up' })
+      });
+      const d = await res.json();
+      if (d.success) {
+        toast(`✅ Added ${amt} coins. New balance: ${d.balance.toLocaleString()}`, 'success');
+        input.value = '';
+        fetchCoins();
+      } else { toast(d.error || 'Failed', 'error'); }
+    } catch(e) { toast('Error: ' + e.message, 'error'); }
+  }
+
+  // ── Sessions ───────────────────────────────────────────────────────────
   async function fetchSessions() {
     try {
       const res = await fetch('/api/sessions');
@@ -510,17 +693,16 @@
   }
 
   function render() {
-    const connected  = sessions.filter(s => s.status === 'connected');
-    const others = sessions.filter((s, i) => !(s.status === 'connected' && i === 0));
+    const connected = sessions.filter(s => s.status === 'connected');
+    const others    = sessions.filter((s, i) => !(s.status === 'connected' && i === 0));
 
-    // Banner
     const banner = document.getElementById('connected-banner');
     const card   = document.getElementById('pair-card');
 
     if (connected.length > 0) {
       const p = connected[0];
-      banner.style.display = 'flex';
-      document.getElementById('banner-name').textContent = p.name || 'Bot';
+      banner.classList.add('show');
+      document.getElementById('banner-name').textContent   = p.name || 'Bot';
       document.getElementById('banner-number').textContent = p.number ? '+' + p.number : 'WhatsApp Live';
       document.getElementById('banner-stats').innerHTML = `
         <div class="stat"><div class="stat-val">${p.messageCount||0}</div><div class="stat-lbl">Messages</div></div>
@@ -529,16 +711,12 @@
       `;
       banner.dataset.id   = p.id;
       banner.dataset.name = p.name || 'Bot';
-
-      if (!pairingId || p.id === pairingId) {
-        card.style.display = 'none';
-      }
+      if (!pairingId || p.id === pairingId) card.style.display = 'none';
     } else {
-      banner.style.display = 'none';
+      banner.classList.remove('show');
       card.style.display = 'block';
     }
 
-    // Live QR / pairing code update
     if (pairingId) {
       const s = sessions.find(s => s.id === pairingId);
       if (s) updateCard(s);
@@ -547,7 +725,6 @@
       if (connecting) { pairingId = connecting.id; updateCard(connecting); }
     }
 
-    // Others list
     const box = document.getElementById('sessions-box');
     const list = document.getElementById('sessions-list');
     if (others.length > 0) {
@@ -559,11 +736,11 @@
             <span class="badge ${cls}">${s.status}</span>
             <div>
               <div class="sess-name">${s.name||'Session'}</div>
-              <div class="sess-num">${s.number?'+'+s.number:s.id}</div>
+              <div class="sess-num">${s.number ? '+'+s.number : s.id}</div>
             </div>
           </div>
           <div class="sess-actions">
-            <button class="btn btn-green btn-sm" onclick="exportSess('${s.id}')">📤 Export ID</button>
+            <button class="btn btn-green btn-sm" onclick="exportSess('${s.id}')">📤 Export</button>
             <button class="btn btn-red btn-sm" onclick="removeSess('${s.id}','${s.name||'Session'}')">Remove</button>
           </div>
         </div>`;
@@ -574,20 +751,20 @@
   }
 
   function updateCard(s) {
-    const dot  = document.getElementById('status-dot');
-    const txt  = document.getElementById('status-txt');
-    const wrap = document.getElementById('qr-wrap');
-    const img  = document.getElementById('qr-img');
+    const dot   = document.getElementById('status-dot');
+    const txt   = document.getElementById('status-txt');
+    const wrap  = document.getElementById('qr-wrap');
+    const img   = document.getElementById('qr-img');
     const empty = document.getElementById('qr-empty');
     const codeBox = document.getElementById('code-display');
 
     if (s.status === 'connected') {
       dot.className = 'dot dot-on';
-      txt.style.color = '#2ecc71';
+      txt.style.color = 'var(--green)';
       txt.textContent = '✅ Connected — ' + (s.number ? '+' + s.number : '');
     } else if (s.status === 'connecting') {
       dot.className = 'dot dot-busy';
-      txt.style.color = '#f39c12';
+      txt.style.color = '#f59e0b';
       txt.textContent = 'Waiting for scan or pairing code…';
       if (s.qrImage) {
         img.src = s.qrImage;
@@ -601,199 +778,121 @@
     }
   }
 
+  function setStatus(dotCls, color, text) {
+    document.getElementById('status-dot').className = 'dot ' + dotCls;
+    const t = document.getElementById('status-txt');
+    t.style.color = color; t.textContent = text;
+  }
+
   async function startPairing() {
     const btn = document.getElementById('start-btn');
     btn.disabled = true; btn.textContent = '⏳ Starting…';
-    setStatus('dot-busy', '#f39c12', 'Starting session…');
-
+    setStatus('dot-busy', '#f59e0b', 'Starting session…');
     try {
-      const r = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ name: 'My Bot' })
+      const res = await fetch('/api/sessions', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ name: 'Bot ' + (sessions.length + 1) })
       });
-      const d = await r.json();
-      if (d.id) {
-        pairingId = d.id;
-        btn.textContent = '🔄 Restart'; btn.disabled = false;
-        clearInterval(pollTimer);
-        pollTimer = setInterval(fetchSessions, 2000);
-      } else {
-        toast(d.error || 'Failed to start.', 'error');
-        btn.disabled = false; btn.textContent = '⚡ Start Pairing';
-        setStatus('dot-idle', '#444', 'Idle — click Start Pairing to begin');
-      }
-    } catch (e) {
-      toast('Error: ' + e.message, 'error');
-      btn.disabled = false; btn.textContent = '⚡ Start Pairing';
-    }
+      const s = await res.json();
+      if (s.id) {
+        pairingId = s.id;
+        toast('Session started — scan the QR or use a pairing code');
+        schedPoll();
+      } else { toast(s.error || 'Failed to start', 'error'); }
+    } catch(e) { toast('Error: ' + e.message, 'error'); }
+    btn.disabled = false; btn.textContent = '⚡ Start Pairing';
   }
 
   async function getPairingCode() {
-    const phone = document.getElementById('pair-phone').value.replace(/\D/g,'');
-    if (!phone) { toast('Enter your phone number first.'); return; }
-
-    if (!pairingId) {
-      await startPairing();
-      await new Promise(r => setTimeout(r, 1800));
-    }
-    if (!pairingId) { toast('Could not start session.', 'error'); return; }
-
+    const phone = document.getElementById('pair-phone').value.trim();
+    if (!phone) { toast('Enter your phone number', 'error'); return; }
+    if (!pairingId) { toast('Click Start Pairing first', 'error'); return; }
     const btn = document.getElementById('get-code-btn');
     btn.disabled = true; btn.textContent = '…';
     try {
-      const r = await fetch(`/api/sessions/${pairingId}/pairing`, {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
+      const res = await fetch(`/api/sessions/${pairingId}/pairing`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ number: phone })
       });
-      const d = await r.json();
+      const d = await res.json();
       if (d.code) {
         document.getElementById('code-value').textContent = d.code;
         document.getElementById('code-display').style.display = 'block';
-        toast('Pairing code ready!', 'success');
-        clearInterval(pollTimer);
-        pollTimer = setInterval(fetchSessions, 2000);
-      } else {
-        toast(d.error || 'Could not get code.', 'error');
-      }
-    } catch (e) { toast('Error: ' + e.message, 'error'); }
-    finally { btn.disabled = false; btn.textContent = 'Get Code'; }
+        toast('Pairing code generated!', 'success');
+      } else { toast(d.error || 'Failed to get code', 'error'); }
+    } catch(e) { toast('Error: ' + e.message, 'error'); }
+    btn.disabled = false; btn.textContent = 'Get Code';
   }
 
   function copyCode() {
-    navigator.clipboard.writeText(document.getElementById('code-value').textContent)
-      .then(() => toast('Code copied!', 'success'));
+    const code = document.getElementById('code-value').textContent;
+    navigator.clipboard.writeText(code).then(() => toast('Code copied!', 'success'));
   }
 
-  function setStatus(dotCls, color, msg) {
-    document.getElementById('status-dot').className = 'dot ' + dotCls;
-    const txt = document.getElementById('status-txt');
-    txt.style.color = color; txt.textContent = msg;
-  }
-
-  async function exportPrimary() {
-    const id = document.getElementById('connected-banner').dataset.id;
-    if (id) exportSess(id);
-  }
-
-  async function exportSess(id) {
-    toast('Generating Session ID…');
+  async function removePrimary() {
+    const banner = document.getElementById('connected-banner');
+    const id = banner.dataset.id;
+    if (!id || !confirm(`Disconnect ${banner.dataset.name}?`)) return;
     try {
-      const r = await fetch(`/api/sessions/${id}/export`);
-      const d = await r.json();
-      if (d.sessionId) {
-        document.getElementById('export-val').textContent = d.sessionId;
-        document.getElementById('export-overlay').classList.add('open');
-      } else toast(d.error || 'Export failed.', 'error');
-    } catch (e) { toast('Error: ' + e.message, 'error'); }
-  }
-
-  function copyExport() {
-    navigator.clipboard.writeText(document.getElementById('export-val').textContent)
-      .then(() => toast('Session ID copied!', 'success'));
-  }
-  function closeExport() { document.getElementById('export-overlay').classList.remove('open'); }
-
-  function removePrimary() {
-    const b = document.getElementById('connected-banner');
-    removeSess(b.dataset.id, b.dataset.name);
+      await fetch('/api/sessions/' + id, { method: 'DELETE' });
+      toast('Session disconnected');
+      pairingId = null;
+      fetchSessions();
+    } catch(e) { toast('Error: ' + e.message, 'error'); }
   }
 
   async function removeSess(id, name) {
-    if (!confirm(`Disconnect "${name}"?`)) return;
+    if (!confirm(`Remove session "${name}"?`)) return;
     try {
-      const r = await fetch(`/api/sessions/${id}`, { method: 'DELETE' });
-      if (r.ok) {
-        if (id === pairingId) {
-          pairingId = null;
-          clearInterval(pollTimer);
-          document.getElementById('pair-card').style.display = 'block';
-          document.getElementById('start-btn').textContent = '⚡ Start Pairing';
-          document.getElementById('start-btn').disabled = false;
-          document.getElementById('code-display').style.display = 'none';
-          document.getElementById('qr-wrap').style.display = 'none';
-          document.getElementById('qr-empty').style.display = 'flex';
-          setStatus('dot-idle', '#444', 'Idle — click Start Pairing to begin');
-        }
-        toast('Disconnected.');
-        fetchSessions();
-      }
-    } catch (e) { toast('Error: ' + e.message, 'error'); }
+      await fetch('/api/sessions/' + id, { method: 'DELETE' });
+      toast('Session removed');
+      if (pairingId === id) pairingId = null;
+      fetchSessions();
+    } catch(e) { toast('Error: ' + e.message, 'error'); }
   }
 
-  fetchSessions();
-  setInterval(fetchSessions, 4000);
-
-  // ── Coin widget ──────────────────────────────────────────────────────────────
-  async function fetchCoins() {
-    try {
-      const r = await fetch('/api/coins');
-      const d = await r.json();
-      const bal = d.balance ?? 0;
-      document.getElementById('coin-balance').textContent = bal.toLocaleString();
-      document.getElementById('coin-spent').textContent = (d.totalSpent ?? 0).toLocaleString();
-
-      const badge = document.getElementById('coin-status-badge');
-      if (bal <= 0) {
-        badge.textContent = 'SUSPENDED';
-        badge.style.background = '#4d1e1e';
-        badge.style.color = '#e74c3c';
-        document.getElementById('coin-widget').style.borderColor = '#7f1d1d';
-      } else if (bal <= 50) {
-        badge.textContent = 'LOW';
-        badge.style.background = '#4d3b1e';
-        badge.style.color = '#f39c12';
-        document.getElementById('coin-widget').style.borderColor = '#78350f';
-      } else {
-        badge.textContent = 'ACTIVE';
-        badge.style.background = '#1e4d2b';
-        badge.style.color = '#2ecc71';
-        document.getElementById('coin-widget').style.borderColor = '#1a2d4a';
-      }
-
-      const histBox = document.getElementById('coin-history-box');
-      const histList = document.getElementById('coin-history-list');
-      if (d.history && d.history.length > 0) {
-        const icons = { add: '➕', spend: '➖', set: '🔧' };
-        const lines = d.history.slice(0, 6).map(h => {
-          const t = new Date(h.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const sign = h.type === 'spend' ? '-' : '+';
-          return `<span style="color:${h.type==='spend'?'#e74c3c':'#2ecc71'}">${icons[h.type]||'·'} ${sign}${h.amount}</span> <span style="color:#64748b">${h.note}</span> <span style="color:#334155;float:right">${t}</span>`;
-        }).join('<br>');
-        histList.innerHTML = lines;
-        histBox.style.display = 'block';
-      } else {
-        histBox.style.display = 'none';
-      }
-    } catch (e) {
-      document.getElementById('coin-balance').textContent = 'Error';
-    }
+  function exportPrimary() {
+    const banner = document.getElementById('connected-banner');
+    exportSess(banner.dataset.id);
   }
 
-  async function addCoins() {
-    const input = document.getElementById('coin-add-input');
-    const amt = parseInt(input.value);
-    if (!amt || amt <= 0) return toast('Enter a valid amount!', 'error');
+  async function exportSess(id) {
     try {
-      const r = await fetch('/api/coins/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: amt, note: 'Dashboard top-up' })
-      });
-      const d = await r.json();
-      if (d.success) {
-        input.value = '';
-        toast(`✅ Added ${amt.toLocaleString()} coins! Balance: ${d.balance.toLocaleString()}`, 'success');
-        fetchCoins();
-      } else {
-        toast(d.error || 'Failed to add coins', 'error');
-      }
-    } catch (e) { toast('Error: ' + e.message, 'error'); }
+      const res = await fetch('/api/sessions/' + id + '/export');
+      const d = await res.json();
+      if (d.sessionId) {
+        document.getElementById('export-val').textContent = d.sessionId;
+        document.getElementById('export-overlay').classList.add('open');
+      } else { toast(d.error || 'Export failed', 'error'); }
+    } catch(e) { toast('Error: ' + e.message, 'error'); }
   }
+
+  function closeExport() {
+    document.getElementById('export-overlay').classList.remove('open');
+  }
+
+  function copyExport() {
+    const val = document.getElementById('export-val').textContent;
+    navigator.clipboard.writeText(val).then(() => toast('Session ID copied!', 'success'));
+  }
+
+  function schedPoll() {
+    clearInterval(pollTimer);
+    pollTimer = setInterval(() => {
+      fetchSessions();
+      const s = sessions.find(s => s.id === pairingId);
+      if (s?.status === 'connected') clearInterval(pollTimer);
+    }, 3000);
+  }
+
+  document.getElementById('export-overlay').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeExport();
+  });
 
   fetchCoins();
-  setInterval(fetchCoins, 8000);
+  fetchSessions();
+  setInterval(fetchSessions, 6000);
+  setInterval(fetchCoins, 30000);
 </script>
 </body>
 </html>

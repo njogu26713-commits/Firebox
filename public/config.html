@@ -3,172 +3,251 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>⚙️ Config Vars — Firebox</title>
+  <title>Firebox — Config Vars</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', sans-serif; background: #050d1a; color: #e2e8f0; min-height: 100vh; }
+    :root {
+      --bg:       #040810;
+      --bg2:      #070d1a;
+      --bg3:      #0b1425;
+      --border:   #152035;
+      --border2:  #1e3050;
+      --blue:     #3b82f6;
+      --text:     #e2e8f0;
+      --muted:    #4a6080;
+      --muted2:   #2a3d55;
+      --gold:     #f59e0b;
+      --green:    #22c55e;
+      --red:      #ef4444;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse 80% 40% at 50% -20%, rgba(59,130,246,.1) 0%, transparent 70%);
+    }
 
+    /* ── HEADER ─────────────────────────────────────────────────────────── */
     header {
-      background: linear-gradient(135deg, #0a1628, #0d2248);
-      border-bottom: 2px solid #2563eb;
-      padding: 0 28px;
-      display: flex;
-      align-items: center;
-      gap: 24px;
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(4,8,16,.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      display: flex; align-items: center; gap: 24px;
     }
-    .brand { display: flex; align-items: center; gap: 12px; padding: 16px 0; text-decoration: none; }
-    .brand h1 { font-size: 1.5rem; color: #60a5fa; }
-    .brand span { font-size: 0.82rem; color: #64748b; }
-
-    nav { margin-left: auto; display: flex; gap: 4px; }
+    .brand {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 0; text-decoration: none;
+    }
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0;
+      box-shadow: 0 0 20px rgba(245,158,11,.35);
+    }
+    .brand-text h1 { font-size: 1.15rem; font-weight: 800; color: #fff; }
+    .brand-text span { font-size: 0.72rem; color: var(--muted); font-weight: 500; }
+    nav { margin-left: auto; display: flex; gap: 2px; }
     nav a {
-      padding: 8px 22px;
-      text-decoration: none;
-      color: #94a3b8;
-      font-size: 0.9rem;
-      font-weight: 600;
-      border-bottom: 3px solid transparent;
-      transition: all 0.2s;
+      padding: 7px 18px; text-decoration: none;
+      color: var(--muted); font-size: 0.85rem; font-weight: 600;
+      border-radius: 8px; transition: all .2s;
+      display: flex; align-items: center; gap: 6px;
     }
-    nav a:hover { color: #cbd5e1; }
-    nav a.active { color: #60a5fa; border-bottom-color: #2563eb; }
+    nav a:hover { color: var(--text); background: var(--bg3); }
+    nav a.active { color: var(--blue); background: rgba(59,130,246,.12); }
 
-    .container { max-width: 760px; margin: 0 auto; padding: 36px 24px; }
+    /* ── LAYOUT ─────────────────────────────────────────────────────────── */
+    .container { max-width: 800px; margin: 0 auto; padding: 32px 24px 64px; }
+    .page-header { margin-bottom: 28px; }
+    .page-header h2 { font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    .page-header p  { font-size: 0.85rem; color: var(--muted); }
 
-    .page-title { font-size: 1.4rem; color: #fff; margin-bottom: 6px; }
-    .page-sub   { font-size: 0.87rem; color: #475569; margin-bottom: 28px; }
-
-    /* Hero */
-    .hero {
-      background: linear-gradient(135deg, #061228, #0a1628);
-      border: 1px solid #2563eb;
+    /* ── COINS MINI WIDGET ───────────────────────────────────────────────── */
+    .coins-mini {
+      background: linear-gradient(135deg, var(--bg2), #0d1e38);
+      border: 1px solid var(--border2);
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+      position: relative; overflow: hidden;
+    }
+    .coins-mini::after {
+      content: '🪙';
+      position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+      font-size: 4rem; opacity: .06; pointer-events: none;
+    }
+    .coins-mini-left { display: flex; align-items: center; gap: 16px; }
+    .coin-mini-icon {
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
       border-radius: 14px;
-      padding: 22px 26px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(245,158,11,.3);
+    }
+    .coin-mini-label {
+      font-size: 0.68rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;
+    }
+    .coin-mini-val {
+      font-size: 1.6rem; font-weight: 900; color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+    .coin-mini-spent { font-size: 0.72rem; color: var(--muted); margin-top: 3px; }
+    .coins-mini-rates {
+      display: flex; gap: 10px; flex-wrap: wrap;
+    }
+    .mini-rate {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 14px;
+      text-align: center; font-size: 0.72rem;
+    }
+    .mini-rate-label { color: var(--muted); margin-bottom: 3px; }
+    .mini-rate-val { font-weight: 800; color: #fff; font-size: 1rem; }
+
+    /* ── DEPLOY HERO ─────────────────────────────────────────────────────── */
+    .deploy-hero {
+      background: linear-gradient(135deg, rgba(59,130,246,.08), rgba(59,130,246,.04));
+      border: 1px solid rgba(59,130,246,.2);
+      border-radius: 16px;
+      padding: 22px 28px;
       margin-bottom: 28px;
     }
-    .hero h3 { font-size: 1rem; color: #60a5fa; margin-bottom: 8px; }
-    .hero ol  { font-size: 0.84rem; color: #94a3b8; padding-left: 20px; line-height: 2.1; }
-    .hero ol code {
-      background: #0a1628;
-      color: #60a5fa;
-      padding: 1px 7px;
-      border-radius: 4px;
-      font-size: 0.82rem;
+    .deploy-hero-hdr {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+    }
+    .deploy-hero-hdr h3 { font-size: 0.95rem; font-weight: 700; color: var(--blue); }
+    .deploy-steps {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    }
+    @media (max-width: 580px) { .deploy-steps { grid-template-columns: repeat(2, 1fr); } }
+    .step {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px;
+    }
+    .step-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: rgba(59,130,246,.2); color: var(--blue);
+      font-size: 0.72rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 8px;
+    }
+    .step-text { font-size: 0.76rem; color: #94a3b8; line-height: 1.5; }
+    .step-text code {
+      background: var(--bg); padding: 1px 5px; border-radius: 4px;
+      color: var(--blue); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
     }
 
-    /* Config sections */
+    /* ── CONFIG SECTIONS ─────────────────────────────────────────────────── */
     .section {
-      background: #0a1628;
-      border: 1px solid #1a2d4a;
-      border-radius: 14px;
-      overflow: hidden;
-      margin-bottom: 18px;
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden; margin-bottom: 16px;
     }
     .section-hdr {
-      padding: 13px 22px;
-      background: #080f1c;
-      border-bottom: 1px solid #0f1e33;
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: #475569;
-      text-transform: uppercase;
-      letter-spacing: 1.2px;
+      padding: 14px 24px; background: rgba(0,0,0,.2);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.7rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1.2px;
+      display: flex; align-items: center; gap: 8px;
     }
     .row {
-      display: grid;
-      grid-template-columns: 190px 1fr;
-      align-items: start;
-      padding: 18px 22px;
-      border-bottom: 1px solid #0f1e33;
-      gap: 18px;
+      display: grid; grid-template-columns: 200px 1fr;
+      align-items: start; padding: 20px 24px;
+      border-bottom: 1px solid rgba(255,255,255,.03);
+      gap: 20px;
     }
     .row:last-child { border-bottom: none; }
-    @media (max-width: 580px) { .row { grid-template-columns: 1fr; } }
-    .row-key  { font-size: 0.85rem; font-weight: 700; color: #60a5fa; font-family: monospace; margin-bottom: 5px; }
-    .row-desc { font-size: 0.74rem; color: #475569; line-height: 1.5; }
-    .row-input { display: flex; flex-direction: column; gap: 7px; }
+    @media (max-width: 560px) { .row { grid-template-columns: 1fr; } }
+    .row-key  {
+      font-size: 0.82rem; font-weight: 700; color: var(--blue);
+      font-family: 'JetBrains Mono', monospace; margin-bottom: 5px;
+    }
+    .row-desc { font-size: 0.74rem; color: var(--muted); line-height: 1.6; }
+    .row-input { display: flex; flex-direction: column; gap: 8px; }
     .row-input input,
     .row-input textarea {
-      width: 100%;
-      padding: 10px 13px;
-      background: #050d1a;
-      border: 1px solid #1a2d4a;
-      border-radius: 9px;
-      color: #fff;
-      font-size: 0.86rem;
-      font-family: 'Segoe UI', sans-serif;
-      transition: border-color 0.2s;
+      width: 100%; padding: 10px 14px;
+      background: var(--bg); border: 1px solid var(--border2);
+      border-radius: 10px; color: #fff;
+      font-size: 0.86rem; font-family: 'Inter', sans-serif;
+      transition: border-color .2s, box-shadow .2s;
     }
     .row-input input:focus,
-    .row-input textarea:focus { outline: none; border-color: #2563eb; }
+    .row-input textarea:focus {
+      outline: none; border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(59,130,246,.1);
+    }
     .row-input textarea {
-      height: 95px;
-      resize: vertical;
-      font-size: 0.74rem;
-      font-family: monospace;
-      line-height: 1.5;
+      height: 100px; resize: vertical;
+      font-size: 0.76rem; font-family: 'JetBrains Mono', monospace; line-height: 1.6;
     }
     .row-status { font-size: 0.72rem; }
-    .row-status.ok  { color: #27ae60; }
-    .row-status.dim { color: #334155; font-family: monospace; }
+    .row-status.ok  { color: var(--green); }
+    .row-status.dim { color: var(--muted); }
+    .prefix-hint { font-size: 0.72rem; color: var(--muted); }
+    .prefix-hint code {
+      background: var(--bg); padding: 1px 6px; border-radius: 4px;
+      color: #94a3b8; font-family: 'JetBrains Mono', monospace;
+    }
 
-    /* Save bar */
+    /* ── SAVE BAR ────────────────────────────────────────────────────────── */
     .save-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 22px 0 0;
-      flex-wrap: wrap;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; padding: 24px 0 0; flex-wrap: wrap;
     }
-    .save-msg { font-size: 0.84rem; color: #475569; }
-    .save-msg code { background: #0a1628; padding: 1px 6px; border-radius: 4px; font-size: 0.78rem; color: #94a3b8; }
+    .save-msg { font-size: 0.83rem; color: var(--muted); }
+    .save-msg code {
+      background: var(--bg2); padding: 2px 7px; border-radius: 5px;
+      font-size: 0.78rem; color: #94a3b8; font-family: 'JetBrains Mono', monospace;
+    }
 
-    /* Buttons */
+    /* ── BUTTONS ─────────────────────────────────────────────────────────── */
     .btn {
-      border: none; border-radius: 9px; cursor: pointer;
-      font-size: 0.9rem; font-weight: 600; padding: 11px 24px;
-      transition: opacity 0.2s;
+      border: none; border-radius: 10px; cursor: pointer;
+      font-size: 0.88rem; font-weight: 600; padding: 11px 26px;
+      transition: all .2s; font-family: 'Inter', sans-serif;
+      display: inline-flex; align-items: center; gap: 6px;
     }
-    .btn:hover { opacity: 0.82; }
-    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .btn-orange { background: #2563eb; color: #fff; }
+    .btn:hover { opacity: .85; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+    .btn-blue  { background: var(--blue); color: #fff; box-shadow: 0 4px 14px rgba(59,130,246,.3); }
+    .btn-ghost { background: var(--bg3); color: #94a3b8; border: 1px solid var(--border); }
 
-    /* Toast */
+    /* ── TOAST ───────────────────────────────────────────────────────────── */
     .toast {
       position: fixed; bottom: 24px; right: 24px;
-      background: #2563eb; color: #fff;
-      padding: 12px 20px; border-radius: 9px;
-      font-size: 0.88rem; opacity: 0;
-      transition: opacity 0.3s; z-index: 200; max-width: 360px;
+      background: var(--bg3); color: var(--text); border: 1px solid var(--border2);
+      padding: 12px 20px; border-radius: 12px; font-size: 0.85rem;
+      opacity: 0; transition: opacity .3s, transform .3s;
+      z-index: 200; max-width: 360px; transform: translateY(8px);
+      box-shadow: 0 8px 32px rgba(0,0,0,.4);
     }
-    .toast.show    { opacity: 1; }
-    .toast.success { background: #27ae60; }
-    .toast.error   { background: #c0392b; }
+    .toast.show    { opacity: 1; transform: translateY(0); }
+    .toast.success { background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.3); color: var(--green); }
+    .toast.error   { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.2); color: var(--red); }
 
-    /* ── Mobile responsive ──────────────────────────────────────────────── */
+    /* ── RESPONSIVE ──────────────────────────────────────────────────────── */
     @media (max-width: 640px) {
-      header { padding: 0 14px; }
-      .brand h1 { font-size: 1.2rem; }
+      header { padding: 0 16px; }
+      .brand-text span { display: none; }
       nav a { padding: 6px 12px; font-size: 0.78rem; }
-
-      .container { padding: 18px 14px; }
-      .page-title { font-size: 1.15rem; }
-
-      .hero { padding: 16px; }
-      .hero ol { font-size: 0.8rem; }
-
-      .row { grid-template-columns: 1fr; padding: 14px 16px; }
-      .section-hdr { padding: 11px 16px; }
-
+      .container { padding: 20px 16px 48px; }
+      .coins-mini { padding: 16px 18px; }
+      .coins-mini-rates { display: none; }
+      .section-hdr { padding: 12px 16px; }
+      .row { padding: 16px; }
       .save-bar { flex-direction: column; align-items: stretch; }
-      .save-bar .btn { width: 100%; text-align: center; }
-
-      .toast { left: 14px; right: 14px; bottom: 14px; max-width: none; }
-    }
-
-    @media (max-width: 400px) {
-      .brand span { display: none; }
+      .save-bar .btn { width: 100%; justify-content: center; }
+      .toast { left: 16px; right: 16px; bottom: 16px; max-width: none; }
     }
   </style>
 </head>
@@ -176,36 +255,81 @@
 
 <header>
   <a class="brand" href="/pair">
-    <div>🔥</div>
-    <div><h1>Firebox</h1><span>WhatsApp Bot</span></div>
+    <div class="brand-icon">🔥</div>
+    <div class="brand-text"><h1>Firebox</h1><span>WhatsApp Bot</span></div>
   </a>
   <nav>
     <a href="/pair">📲 Pair</a>
-    <a href="/config" class="active">⚙️ Config Vars</a>
+    <a href="/config" class="active">⚙️ Config</a>
   </nav>
 </header>
 
 <div class="container">
 
-  <h2 class="page-title">Config Vars</h2>
-  <p class="page-sub">Set your Session ID and bot settings below. Changes apply immediately.</p>
-
-  <div class="hero">
-    <h3>⚡ Deploy via Session ID</h3>
-    <ol>
-      <li>Get your Session ID from WhatsApp — the bot messages it to you when it first connects</li>
-      <li>Paste it in the <code>SESSION_ID</code> field below</li>
-      <li>Fill in your number and click <strong>Save & Apply</strong> — bot goes live instantly ✅</li>
-    </ol>
+  <div class="page-header">
+    <h2>Config Vars</h2>
+    <p>Set your session and bot settings below. Changes apply immediately without a restart.</p>
   </div>
 
-  <!-- Session -->
+  <!-- ── COINS MINI WIDGET ──────────────────────────────────────────────── -->
+  <div class="coins-mini">
+    <div class="coins-mini-left">
+      <div class="coin-mini-icon">🪙</div>
+      <div>
+        <div class="coin-mini-label">Current Coin Balance</div>
+        <div class="coin-mini-val" id="coin-balance">—</div>
+        <div class="coin-mini-spent">Spent: <span id="coin-spent">0</span> coins total</div>
+      </div>
+    </div>
+    <div class="coins-mini-rates">
+      <div class="mini-rate">
+        <div class="mini-rate-label">🤖 AI</div>
+        <div class="mini-rate-val">5</div>
+      </div>
+      <div class="mini-rate">
+        <div class="mini-rate-label">⬇️ Download</div>
+        <div class="mini-rate-val">3</div>
+      </div>
+      <div class="mini-rate">
+        <div class="mini-rate-label">⚡ Regular</div>
+        <div class="mini-rate-val">1</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DEPLOY GUIDE ───────────────────────────────────────────────────── -->
+  <div class="deploy-hero">
+    <div class="deploy-hero-hdr">
+      <span>⚡</span>
+      <h3>Deploy via Session ID</h3>
+    </div>
+    <div class="deploy-steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">Pair your WhatsApp on the Pair tab to get a Session ID</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">Export the Session ID using the 📤 button</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">Paste it in the <code>SESSION_ID</code> field below</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text">Click <strong>Save & Apply</strong> — bot goes live ✅</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SESSION ───────────────────────────────────────────────────────── -->
   <div class="section">
     <div class="section-hdr">🔑 Session</div>
     <div class="row">
       <div>
         <div class="row-key">SESSION_ID</div>
-        <div class="row-desc">Paste any Session ID. Supports Firebox, CYPHER-X, CYPHER-MD, Baileys JSON, ZIP format.</div>
+        <div class="row-desc">Paste any Session ID. Supports Firebox, CYPHER-X, CYPHER-MD, Baileys JSON, and ZIP format.</div>
       </div>
       <div class="row-input">
         <textarea id="cfg-SESSION_ID" placeholder="Paste your Session ID here…"></textarea>
@@ -214,22 +338,22 @@
     </div>
   </div>
 
-  <!-- Owner -->
+  <!-- ── OWNER ─────────────────────────────────────────────────────────── -->
   <div class="section">
     <div class="section-hdr">👤 Owner Settings</div>
     <div class="row">
       <div>
         <div class="row-key">OWNER_NUMBER</div>
-        <div class="row-desc">Your WhatsApp number with country code. No + or spaces.</div>
+        <div class="row-desc">Your WhatsApp number with country code. No + or spaces (e.g. 254712345678).</div>
       </div>
       <div class="row-input">
-        <input type="tel" id="cfg-OWNER_NUMBER" placeholder="e.g. 254712345678" />
+        <input type="tel" id="cfg-OWNER_NUMBER" placeholder="254712345678" />
       </div>
     </div>
     <div class="row">
       <div>
         <div class="row-key">OWNER_NAME</div>
-        <div class="row-desc">Your name, shown in bot messages.</div>
+        <div class="row-desc">Your name, shown in bot messages and greetings.</div>
       </div>
       <div class="row-input">
         <input type="text" id="cfg-OWNER_NAME" placeholder="e.g. John" />
@@ -237,22 +361,24 @@
     </div>
   </div>
 
-  <!-- Bot -->
+  <!-- ── BOT SETTINGS ───────────────────────────────────────────────────── -->
   <div class="section">
     <div class="section-hdr">🤖 Bot Settings</div>
     <div class="row">
       <div>
         <div class="row-key">PREFIX</div>
-        <div class="row-desc">Command prefix character. Default is <code style="background:#0a1628;color:#60a5fa;padding:1px 6px;border-radius:4px">.</code></div>
+        <div class="row-desc">Command prefix character.<br>
+          <span class="prefix-hint">Default: <code>.</code></span>
+        </div>
       </div>
       <div class="row-input">
-        <input type="text" id="cfg-PREFIX" placeholder="." maxlength="3" style="max-width:80px" />
+        <input type="text" id="cfg-PREFIX" placeholder="." maxlength="3" style="max-width:90px" />
       </div>
     </div>
     <div class="row">
       <div>
         <div class="row-key">BOT_NAME</div>
-        <div class="row-desc">Display name for the bot.</div>
+        <div class="row-desc">Display name for the bot shown in responses.</div>
       </div>
       <div class="row-input">
         <input type="text" id="cfg-BOT_NAME" placeholder="e.g. Firebox" />
@@ -260,9 +386,10 @@
     </div>
   </div>
 
+  <!-- ── SAVE BAR ───────────────────────────────────────────────────────── -->
   <div class="save-bar">
-    <div class="save-msg" id="save-msg">Saved to <code>.env</code> and applied live.</div>
-    <button class="btn btn-orange" id="save-btn" onclick="saveConfig()">💾 Save & Apply</button>
+    <div class="save-msg" id="save-msg">Changes are saved to <code>.env</code> and applied live.</div>
+    <button class="btn btn-blue" id="save-btn" onclick="saveConfig()">💾 Save & Apply</button>
   </div>
 
 </div>
@@ -276,6 +403,15 @@
     t.className = 'toast show' + (type ? ' ' + type : '');
     clearTimeout(t._t);
     t._t = setTimeout(() => t.classList.remove('show'), 3800);
+  }
+
+  async function loadCoins() {
+    try {
+      const res = await fetch('/api/coins');
+      const d = await res.json();
+      document.getElementById('coin-balance').textContent = (d.balance ?? 0).toLocaleString();
+      document.getElementById('coin-spent').textContent = (d.totalSpent ?? 0).toLocaleString();
+    } catch {}
   }
 
   async function loadConfig() {
@@ -294,20 +430,20 @@
             : 'Paste your Session ID here…';
           const st = document.getElementById('cfg-SESSION_ID-status');
           if (st) {
-            st.textContent = masked ? '✅ Session ID configured' : '';
+            st.textContent = masked ? '✅ Session ID is configured' : '';
             st.className = masked ? 'row-status ok' : 'row-status dim';
           }
         } else {
           field.value = value || '';
         }
       }
-    } catch (e) { console.error(e); }
+    } catch(e) { console.error(e); }
   }
 
   async function saveConfig() {
     const btn   = document.getElementById('save-btn');
     const msgEl = document.getElementById('save-msg');
-    btn.disabled = true; btn.textContent = 'Saving…';
+    btn.disabled = true; btn.innerHTML = '⏳ Saving…';
 
     const updates = {};
     const keys = ['SESSION_ID','OWNER_NUMBER','OWNER_NAME','PREFIX','BOT_NAME'];
@@ -324,24 +460,25 @@
       });
       const d = await res.json();
       if (d.success) {
-        toast(d.message || 'Saved!', 'success');
-        msgEl.textContent = '✅ ' + (d.message || 'Config saved. Bot is connecting…');
-        msgEl.style.color = '#27ae60';
+        toast('✅ ' + (d.message || 'Config saved!'), 'success');
+        msgEl.textContent = '✅ Config saved and applied live.';
+        msgEl.style.color = 'var(--green)';
         await loadConfig();
         setTimeout(() => { window.location.href = '/pair'; }, 1800);
       } else {
         toast(d.error || 'Save failed.', 'error');
         msgEl.textContent = '❌ ' + (d.error || 'Failed to save.');
-        msgEl.style.color = '#e74c3c';
+        msgEl.style.color = 'var(--red)';
       }
-    } catch (e) {
+    } catch(e) {
       toast('Error: ' + e.message, 'error');
     } finally {
-      btn.disabled = false; btn.textContent = '💾 Save & Apply';
+      btn.disabled = false; btn.innerHTML = '💾 Save & Apply';
     }
   }
 
   loadConfig();
+  loadCoins();
 </script>
 </body>
 </html>
