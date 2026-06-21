@@ -3,7 +3,6 @@ const path = require('path');
 const fs = require('fs');
 const QRCode = require('qrcode');
 const db = require('./database');
-const { execSync } = require('child_process');
 
 const app = express();
 const PORT = 5000;
@@ -241,23 +240,18 @@ app.use((req, res) => {
 });
 
 function startServer() {
-  // Kill anything on the port before binding
-  try { execSync(`fuser -k ${PORT}/tcp 2>/dev/null`); } catch {}
-  try { execSync(`lsof -ti:${PORT} | xargs kill -9 2>/dev/null`); } catch {}
-
-  setTimeout(() => {
-    const server = app.listen(PORT, '0.0.0.0', () => {
-      console.log(`[SERVER] Dashboard running on port ${PORT}`);
-    });
-    server.on('error', (err) => {
-      if (err.code === 'EADDRINUSE') {
-        console.log(`[SERVER] Port ${PORT} busy, retrying in 2s...`);
-        setTimeout(() => startServer(), 2000);
-      } else {
-        console.error('[SERVER] Error:', err.message);
-      }
-    });
-  }, 500);
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`[SERVER] Dashboard running on port ${PORT}`);
+  });
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`[SERVER] Port ${PORT} in use, waiting 3s then retrying...`);
+      server.close();
+      setTimeout(() => startServer(), 3000);
+    } else {
+      console.error('[SERVER] Error:', err.message);
+    }
+  });
 }
 
 module.exports = { startServer };
