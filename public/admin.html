@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Firebox — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #040810;
+      --bg2:     #070d1a;
+      --bg3:     #0b1425;
+      --border:  #152035;
+      --border2: #1e3050;
+      --blue:    #3b82f6;
+      --text:    #e2e8f0;
+      --muted:   #4a6080;
+      --muted2:  #2a3d55;
+      --gold:    #f59e0b;
+      --green:   #22c55e;
+      --red:     #ef4444;
+      --purple:  #a855f7;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse 80% 40% at 50% -20%, rgba(168,85,247,.08) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 30% at 80% 80%, rgba(245,158,11,.05) 0%, transparent 60%);
+    }
+
+    /* HEADER */
+    header {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(4,8,16,.88); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px; display: flex; align-items: center; gap: 24px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 14px 0; text-decoration: none; }
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; box-shadow: 0 0 20px rgba(245,158,11,.35);
+    }
+    .brand-text h1 { font-size: 1.15rem; font-weight: 800; color: #fff; }
+    .brand-text span { font-size: 0.72rem; color: var(--muted); }
+    nav { margin-left: auto; display: flex; gap: 2px; }
+    nav a {
+      padding: 7px 18px; text-decoration: none; color: var(--muted);
+      font-size: 0.85rem; font-weight: 600; border-radius: 8px; transition: all .2s;
+    }
+    nav a:hover { color: var(--text); background: var(--bg3); }
+    nav a.active { color: var(--purple); background: rgba(168,85,247,.12); }
+
+    /* LAYOUT */
+    .container { max-width: 1000px; margin: 0 auto; padding: 32px 24px 64px; }
+    .page-header { margin-bottom: 28px; }
+    .page-header h2 { font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    .page-header p  { font-size: 0.85rem; color: var(--muted); }
+
+    /* STATS ROW */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 28px;
+    }
+    @media (max-width: 640px) { .stats-row { grid-template-columns: 1fr 1fr; } }
+    .stat-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px 22px; position: relative; overflow: hidden;
+    }
+    .stat-card::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+    }
+    .stat-card.gold::before  { background: radial-gradient(ellipse 80% 80% at 90% 50%, rgba(245,158,11,.06) 0%, transparent 70%); }
+    .stat-card.blue::before  { background: radial-gradient(ellipse 80% 80% at 90% 50%, rgba(59,130,246,.06) 0%, transparent 70%); }
+    .stat-card.green::before { background: radial-gradient(ellipse 80% 80% at 90% 50%, rgba(34,197,94,.06) 0%, transparent 70%); }
+    .stat-label {
+      font-size: 0.68rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .stat-label-dot {
+      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    }
+    .dot-gold  { background: var(--gold); box-shadow: 0 0 8px var(--gold); }
+    .dot-blue  { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+    .dot-green { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse-g 2s infinite; }
+    @keyframes pulse-g { 0%,100%{box-shadow:0 0 8px var(--green)} 50%{box-shadow:0 0 18px var(--green)} }
+    .stat-val {
+      font-size: 2rem; font-weight: 900; color: #fff;
+      font-variant-numeric: tabular-nums; line-height: 1.1;
+    }
+    .stat-val.gold  { color: var(--gold); }
+    .stat-val.blue  { color: var(--blue); }
+    .stat-val.green { color: var(--green); }
+    .stat-sub { font-size: 0.73rem; color: var(--muted); margin-top: 5px; }
+
+    /* SECTION HEADER */
+    .sec-hdr {
+      font-size: 0.68rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .sec-hdr-line { flex: 1; height: 1px; background: var(--border); }
+
+    /* SESSION CARDS */
+    .sessions-wrap { display: flex; flex-direction: column; gap: 14px; margin-bottom: 32px; }
+    .sess-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 18px; overflow: hidden; transition: border-color .2s;
+    }
+    .sess-card:hover { border-color: var(--border2); }
+    .sess-card-top {
+      padding: 18px 22px; display: flex; align-items: center;
+      justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    }
+    .sess-left { display: flex; align-items: center; gap: 14px; }
+    .sess-avatar {
+      width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+      background: linear-gradient(135deg, rgba(59,130,246,.2), rgba(168,85,247,.15));
+      border: 1px solid rgba(59,130,246,.2);
+    }
+    .sess-avatar.connected {
+      background: linear-gradient(135deg, rgba(34,197,94,.18), rgba(34,197,94,.08));
+      border-color: rgba(34,197,94,.25);
+    }
+    .sess-name { font-size: 0.95rem; font-weight: 700; color: #fff; }
+    .sess-sub  { font-size: 0.76rem; color: var(--muted); margin-top: 3px; }
+    .sess-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .sess-mini-stats { display: flex; gap: 18px; }
+    .mini-stat { text-align: center; }
+    .mini-stat-val { font-size: 0.95rem; font-weight: 700; color: #fff; }
+    .mini-stat-lbl { font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-top: 1px; }
+
+    .badge { padding: 3px 10px; border-radius: 20px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; }
+    .badge-on  { background: rgba(34,197,94,.15);  color: var(--green); border: 1px solid rgba(34,197,94,.25); }
+    .badge-ing { background: rgba(245,158,11,.15);  color: #f59e0b;      border: 1px solid rgba(245,158,11,.25); }
+    .badge-off { background: rgba(239,68,68,.12);   color: var(--red);   border: 1px solid rgba(239,68,68,.2); }
+
+    /* COIN GIVE PANEL (inside each session card) */
+    .coin-panel {
+      border-top: 1px solid var(--border);
+      padding: 18px 22px;
+      background: rgba(0,0,0,.15);
+    }
+    .coin-panel-title {
+      font-size: 0.7rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .quick-amounts { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .qa-btn {
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 8px; padding: 7px 16px;
+      color: #94a3b8; font-size: 0.8rem; font-weight: 700;
+      cursor: pointer; transition: all .2s; font-family: 'Inter', sans-serif;
+    }
+    .qa-btn:hover, .qa-btn.sel { background: rgba(245,158,11,.15); border-color: var(--gold); color: var(--gold); }
+    .give-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .give-input {
+      width: 140px; padding: 10px 14px;
+      background: var(--bg); border: 1px solid var(--border2);
+      border-radius: 10px; color: #fff; font-size: 0.9rem;
+      font-family: 'Inter', sans-serif; transition: border-color .2s;
+    }
+    .give-input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,158,11,.1); }
+    .give-note-input {
+      flex: 1; min-width: 140px; padding: 10px 14px;
+      background: var(--bg); border: 1px solid var(--border2);
+      border-radius: 10px; color: #fff; font-size: 0.86rem;
+      font-family: 'Inter', sans-serif; transition: border-color .2s;
+    }
+    .give-note-input:focus { outline: none; border-color: var(--blue); }
+    .give-note-input::placeholder { color: var(--muted2); }
+
+    /* GLOBAL COIN POOL */
+    .pool-card {
+      background: linear-gradient(135deg, var(--bg2), #0d1e38);
+      border: 1px solid var(--border2); border-radius: 20px;
+      padding: 26px 28px; margin-bottom: 28px;
+      position: relative; overflow: hidden;
+    }
+    .pool-card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 60% 80% at 90% 50%, rgba(245,158,11,.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .pool-inner { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; position: relative; }
+    .pool-orb {
+      width: 64px; height: 64px; flex-shrink: 0;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; box-shadow: 0 0 32px rgba(245,158,11,.4);
+      animation: orb-pulse 3s ease-in-out infinite;
+    }
+    @keyframes orb-pulse {
+      0%,100% { box-shadow: 0 0 32px rgba(245,158,11,.4); }
+      50%      { box-shadow: 0 0 52px rgba(245,158,11,.65); }
+    }
+    .pool-info { flex: 1; }
+    .pool-info-label {
+      font-size: 0.68rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 6px;
+    }
+    .pool-balance {
+      font-size: 2.6rem; font-weight: 900; color: #fff;
+      font-variant-numeric: tabular-nums; line-height: 1;
+    }
+    .pool-sub { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
+    .pool-sub span { color: #94a3b8; font-weight: 600; }
+    .pool-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .pool-set-wrap { display: flex; gap: 8px; align-items: center; }
+    .pool-input {
+      width: 130px; padding: 10px 14px;
+      background: var(--bg); border: 1px solid var(--border2);
+      border-radius: 10px; color: #fff; font-size: 0.9rem;
+      font-family: 'Inter', sans-serif; transition: border-color .2s;
+    }
+    .pool-input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,158,11,.1); }
+
+    /* HISTORY */
+    .history-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden; margin-bottom: 24px;
+    }
+    .card-hdr {
+      padding: 13px 20px; background: rgba(0,0,0,.2);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.68rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1.2px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .history-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 20px; border-bottom: 1px solid rgba(255,255,255,.03);
+      font-size: 0.82rem; gap: 12px;
+    }
+    .history-item:last-child { border-bottom: none; }
+    .history-left { display: flex; align-items: center; gap: 10px; }
+    .history-icon {
+      width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 0.85rem;
+    }
+    .history-icon.add   { background: rgba(34,197,94,.12); }
+    .history-icon.spend { background: rgba(239,68,68,.1); }
+    .history-icon.set   { background: rgba(59,130,246,.12); }
+    .history-note { color: #94a3b8; }
+    .history-date { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+    .history-amount { font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; }
+    .history-amount.plus  { color: var(--green); }
+    .history-amount.minus { color: var(--red); }
+    .history-amount.set   { color: var(--blue); }
+    .history-empty { padding: 28px 20px; text-align: center; color: var(--muted); font-size: 0.82rem; }
+
+    /* BUTTONS */
+    .btn {
+      border: none; border-radius: 10px; cursor: pointer;
+      font-size: 0.86rem; font-weight: 600; padding: 10px 20px;
+      transition: all .2s; display: inline-flex; align-items: center; gap: 6px;
+      font-family: 'Inter', sans-serif;
+    }
+    .btn:hover { opacity: .85; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+    .btn-gold  { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; box-shadow: 0 4px 14px rgba(245,158,11,.3); }
+    .btn-blue  { background: var(--blue); color: #fff; box-shadow: 0 4px 14px rgba(59,130,246,.3); }
+    .btn-ghost { background: var(--bg3); color: #94a3b8; border: 1px solid var(--border); }
+    .btn-sm    { padding: 8px 16px; font-size: 0.8rem; border-radius: 8px; }
+    .btn-red   { background: rgba(239,68,68,.12); color: var(--red); border: 1px solid rgba(239,68,68,.2); }
+
+    /* EMPTY STATE */
+    .empty-state {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 18px; padding: 48px 32px;
+      text-align: center; margin-bottom: 28px;
+    }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 14px; opacity: .5; }
+    .empty-title { font-size: 1rem; font-weight: 700; color: #64748b; margin-bottom: 6px; }
+    .empty-sub   { font-size: 0.82rem; color: var(--muted); }
+
+    /* TOAST */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--bg3); color: var(--text); border: 1px solid var(--border2);
+      padding: 12px 20px; border-radius: 12px; font-size: 0.85rem;
+      opacity: 0; transition: opacity .3s, transform .3s; z-index: 200;
+      max-width: 340px; transform: translateY(8px);
+      box-shadow: 0 8px 32px rgba(0,0,0,.4);
+    }
+    .toast.show    { opacity: 1; transform: translateY(0); }
+    .toast.success { background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.3); color: var(--green); }
+    .toast.error   { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.2); color: var(--red); }
+
+    /* RESPONSIVE */
+    @media (max-width: 640px) {
+      header { padding: 0 16px; }
+      .brand-text span { display: none; }
+      nav a { padding: 6px 12px; font-size: 0.78rem; }
+      .container { padding: 20px 16px 48px; }
+      .pool-card { padding: 20px; }
+      .pool-inner { flex-direction: column; align-items: flex-start; }
+      .pool-balance { font-size: 2rem; }
+      .pool-orb { width: 52px; height: 52px; font-size: 1.5rem; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .sess-card-top { flex-direction: column; align-items: flex-start; }
+      .toast { left: 16px; right: 16px; bottom: 16px; max-width: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="/pair">
+    <div class="brand-icon">🔥</div>
+    <div class="brand-text"><h1>Firebox</h1><span>WhatsApp Bot</span></div>
+  </a>
+  <nav>
+    <a href="/pair">📲 Pair</a>
+    <a href="/config">⚙️ Config</a>
+    <a href="/admin" class="active">🛡️ Admin</a>
+  </nav>
+</header>
+
+<div class="container">
+
+  <div class="page-header">
+    <h2>Admin — Coin Manager</h2>
+    <p>Give coins to connected bots and manage the shared coin pool.</p>
+  </div>
+
+  <!-- ── STATS ROW ───────────────────────────────────────────────────────── -->
+  <div class="stats-row">
+    <div class="stat-card gold">
+      <div class="stat-label">
+        <span class="stat-label-dot dot-gold"></span>Coin Balance
+      </div>
+      <div class="stat-val gold" id="stat-balance">—</div>
+      <div class="stat-sub">Total spent: <span id="stat-spent">0</span></div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">
+        <span class="stat-label-dot dot-green"></span>Connected Bots
+      </div>
+      <div class="stat-val green" id="stat-connected">0</div>
+      <div class="stat-sub">Active WhatsApp sessions</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-label">
+        <span class="stat-label-dot dot-blue"></span>Total Sessions
+      </div>
+      <div class="stat-val blue" id="stat-total">0</div>
+      <div class="stat-sub">All registered sessions</div>
+    </div>
+  </div>
+
+  <!-- ── GLOBAL COIN POOL ───────────────────────────────────────────────── -->
+  <div class="sec-hdr">
+    <span>🪙 Global Coin Pool</span>
+    <div class="sec-hdr-line"></div>
+  </div>
+
+  <div class="pool-card">
+    <div class="pool-inner">
+      <div class="pool-orb">🪙</div>
+      <div class="pool-info">
+        <div class="pool-info-label">Shared Coin Balance</div>
+        <div class="pool-balance" id="pool-balance">—</div>
+        <div class="pool-sub">All bots draw from this pool · Total spent: <span id="pool-spent">0</span> coins</div>
+      </div>
+      <div class="pool-actions">
+        <div class="pool-set-wrap">
+          <input type="number" class="pool-input" id="pool-set-input" placeholder="Amount" min="0" max="9999999" />
+          <button class="btn btn-blue btn-sm" onclick="setPoolCoins()">🔄 Set Balance</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CONNECTED BOTS ─────────────────────────────────────────────────── -->
+  <div class="sec-hdr">
+    <span>📱 Connected Bots</span>
+    <div class="sec-hdr-line"></div>
+  </div>
+
+  <div class="sessions-wrap" id="sessions-wrap">
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">📵</div>
+      <div class="empty-title">No sessions found</div>
+      <div class="empty-sub">Pair a WhatsApp account on the Pair tab first.</div>
+    </div>
+  </div>
+
+  <!-- ── COIN HISTORY ───────────────────────────────────────────────────── -->
+  <div class="sec-hdr" style="margin-top:4px">
+    <span>📋 Coin History</span>
+    <div class="sec-hdr-line"></div>
+  </div>
+
+  <div class="history-card" id="history-card">
+    <div class="card-hdr">
+      <span>Recent Transactions</span>
+      <span id="history-count" style="color:var(--muted2)">0 entries</span>
+    </div>
+    <div id="history-list">
+      <div class="history-empty">No transactions yet.</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── helpers ────────────────────────────────────────────────────────────────
+  function toast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (type ? ' ' + type : '');
+    clearTimeout(t._t);
+    t._t = setTimeout(() => t.classList.remove('show'), 3800);
+  }
+
+  function fmtUptime(u) {
+    if (!u) return '—';
+    if (u.hours > 0) return `${u.hours}h ${u.minutes}m`;
+    if (u.minutes > 0) return `${u.minutes}m ${u.seconds}s`;
+    return `${u.seconds}s`;
+  }
+
+  function fmtTime(ts) {
+    const d = new Date(ts);
+    return d.toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+
+  function statusBadge(s) {
+    if (s === 'connected')    return '<span class="badge badge-on">● Connected</span>';
+    if (s === 'connecting')   return '<span class="badge badge-ing">◌ Connecting</span>';
+    return '<span class="badge badge-off">✕ Offline</span>';
+  }
+
+  // ── coin data ──────────────────────────────────────────────────────────────
+  let coinData = { balance: 0, totalSpent: 0, history: [] };
+
+  async function loadCoins() {
+    try {
+      const res = await fetch('/api/coins');
+      coinData = await res.json();
+      const bal = coinData.balance ?? 0;
+      const spent = coinData.totalSpent ?? 0;
+      ['stat-balance', 'pool-balance'].forEach(id => {
+        document.getElementById(id).textContent = bal.toLocaleString();
+      });
+      ['stat-spent', 'pool-spent'].forEach(id => {
+        document.getElementById(id).textContent = spent.toLocaleString();
+      });
+      renderHistory(coinData.history || []);
+    } catch(e) { console.error(e); }
+  }
+
+  function renderHistory(history) {
+    const list = document.getElementById('history-list');
+    const count = document.getElementById('history-count');
+    count.textContent = history.length + ' entries';
+    if (!history.length) {
+      list.innerHTML = '<div class="history-empty">No transactions yet.</div>';
+      return;
+    }
+    list.innerHTML = history.map(h => {
+      const isAdd   = h.type === 'add';
+      const isSpend = h.type === 'spend';
+      const icon    = isAdd ? '➕' : isSpend ? '➖' : '🔄';
+      const iconCls = isAdd ? 'add' : isSpend ? 'spend' : 'set';
+      const amtCls  = isAdd ? 'plus' : isSpend ? 'minus' : 'set';
+      const prefix  = isAdd ? '+' : isSpend ? '-' : '=';
+      return `
+        <div class="history-item">
+          <div class="history-left">
+            <div class="history-icon ${iconCls}">${icon}</div>
+            <div>
+              <div class="history-note">${h.note || 'Transaction'}</div>
+              <div class="history-date">${fmtTime(h.ts)}</div>
+            </div>
+          </div>
+          <div class="history-amount ${amtCls}">${prefix}${(h.amount ?? 0).toLocaleString()}</div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── sessions ───────────────────────────────────────────────────────────────
+  async function loadSessions() {
+    try {
+      const res  = await fetch('/api/sessions');
+      const data = await res.json();
+      const sessions = data.sessions || [];
+
+      const connected = sessions.filter(s => s.status === 'connected').length;
+      document.getElementById('stat-connected').textContent = connected;
+      document.getElementById('stat-total').textContent     = sessions.length;
+
+      const wrap  = document.getElementById('sessions-wrap');
+      const empty = document.getElementById('empty-state');
+
+      if (!sessions.length) {
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+
+      wrap.innerHTML = sessions.map(s => buildSessionCard(s)).join('');
+    } catch(e) { console.error(e); }
+  }
+
+  function buildSessionCard(s) {
+    const isConnected = s.status === 'connected';
+    return `
+      <div class="sess-card" id="sess-${s.id}">
+        <div class="sess-card-top">
+          <div class="sess-left">
+            <div class="sess-avatar ${isConnected ? 'connected' : ''}">
+              ${isConnected ? '📱' : '💤'}
+            </div>
+            <div>
+              <div class="sess-name">${escHtml(s.name || s.id)}</div>
+              <div class="sess-sub">${s.number ? '📞 ' + escHtml(s.number) : 'Not paired'} · ⏱ ${fmtUptime(s.uptime)}</div>
+            </div>
+          </div>
+          <div class="sess-right">
+            <div class="sess-mini-stats">
+              <div class="mini-stat">
+                <div class="mini-stat-val">${(s.messageCount || 0).toLocaleString()}</div>
+                <div class="mini-stat-lbl">Messages</div>
+              </div>
+              <div class="mini-stat">
+                <div class="mini-stat-val">${(s.commandCount || 0).toLocaleString()}</div>
+                <div class="mini-stat-lbl">Commands</div>
+              </div>
+            </div>
+            ${statusBadge(s.status)}
+          </div>
+        </div>
+        <div class="coin-panel">
+          <div class="coin-panel-title">🪙 Give Coins to this Bot</div>
+          <div class="quick-amounts" id="qa-${s.id}">
+            <button class="qa-btn" onclick="selectQuick('${s.id}', 100)">+100</button>
+            <button class="qa-btn" onclick="selectQuick('${s.id}', 500)">+500</button>
+            <button class="qa-btn" onclick="selectQuick('${s.id}', 1000)">+1,000</button>
+            <button class="qa-btn" onclick="selectQuick('${s.id}', 5000)">+5,000</button>
+            <button class="qa-btn" onclick="selectQuick('${s.id}', 10000)">+10,000</button>
+          </div>
+          <div class="give-row">
+            <input
+              type="number"
+              class="give-input"
+              id="give-amt-${s.id}"
+              placeholder="Amount"
+              min="1" max="1000000"
+            />
+            <input
+              type="text"
+              class="give-note-input"
+              id="give-note-${s.id}"
+              placeholder="Note (optional) — e.g. Admin top-up for ${escHtml(s.name || s.id)}"
+              value="Admin top-up for ${escHtml(s.name || s.id)}"
+            />
+            <button class="btn btn-gold btn-sm" onclick="giveCoins('${s.id}')">🪙 Give Coins</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── quick select ───────────────────────────────────────────────────────────
+  function selectQuick(id, amount) {
+    document.getElementById('give-amt-' + id).value = amount;
+    document.querySelectorAll('#qa-' + id + ' .qa-btn').forEach(b => b.classList.remove('sel'));
+    event.target.classList.add('sel');
+  }
+
+  // ── give coins to a session ────────────────────────────────────────────────
+  async function giveCoins(sessId) {
+    const amtEl  = document.getElementById('give-amt-'  + sessId);
+    const noteEl = document.getElementById('give-note-' + sessId);
+    const amt    = parseInt(amtEl.value);
+    if (!amt || amt < 1 || amt > 1000000) {
+      toast('Enter a valid amount (1 – 1,000,000)', 'error'); return;
+    }
+    const note = noteEl.value.trim() || `Admin top-up for ${sessId}`;
+
+    const btn = event.target;
+    btn.disabled = true; btn.textContent = '⏳ Sending…';
+
+    try {
+      const res = await fetch('/api/coins/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: amt, note })
+      });
+      const d = await res.json();
+      if (res.ok && d.success) {
+        toast(`✅ +${amt.toLocaleString()} coins added · Balance: ${d.balance.toLocaleString()}`, 'success');
+        amtEl.value = '';
+        document.querySelectorAll(`#qa-${sessId} .qa-btn`).forEach(b => b.classList.remove('sel'));
+        await loadCoins();
+      } else {
+        toast(d.error || 'Failed to add coins', 'error');
+      }
+    } catch(e) {
+      toast('Error: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = '🪙 Give Coins';
+    }
+  }
+
+  // ── set pool balance ───────────────────────────────────────────────────────
+  async function setPoolCoins() {
+    const input = document.getElementById('pool-set-input');
+    const amt   = parseInt(input.value);
+    if (isNaN(amt) || amt < 0) {
+      toast('Enter a valid amount (0 or more)', 'error'); return;
+    }
+    const btn = event.target;
+    btn.disabled = true; btn.textContent = '⏳ Saving…';
+    try {
+      const res = await fetch('/api/coins/set', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: amt })
+      });
+      const d = await res.json();
+      if (res.ok && d.success) {
+        toast(`✅ Balance set to ${d.balance.toLocaleString()} coins`, 'success');
+        input.value = '';
+        await loadCoins();
+      } else {
+        toast(d.error || 'Failed to set balance', 'error');
+      }
+    } catch(e) {
+      toast('Error: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = '🔄 Set Balance';
+    }
+  }
+
+  // ── init & auto-refresh ────────────────────────────────────────────────────
+  async function init() {
+    await Promise.all([loadCoins(), loadSessions()]);
+  }
+
+  init();
+  setInterval(init, 8000);
+</script>
+</body>
+</html>

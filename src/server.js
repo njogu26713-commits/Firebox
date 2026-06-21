@@ -272,6 +272,7 @@ app.post('/api/coins/set', (req, res) => {
 app.get('/', (req, res) => res.redirect('/pair'));
 app.get('/pair',   (req, res) => res.sendFile(path.join(__dirname, '../public/pair.html')));
 app.get('/config', (req, res) => res.sendFile(path.join(__dirname, '../public/config.html')));
+app.get('/admin',  (req, res) => res.sendFile(path.join(__dirname, '../public/admin.html')));
 
 app.use((req, res) => {
   res.redirect('/pair');
