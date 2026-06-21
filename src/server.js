@@ -9,7 +9,13 @@ const PORT = 5000;
 const SESSION_BASE = path.join(__dirname, '../session');
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
+app.use(express.static(path.join(__dirname, '../public'), { etag: false, lastModified: false }));
 
 // ── helper: build per-session JSON ───────────────────────────────────────────
 
