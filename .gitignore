@@ -7,6 +7,9 @@ session/
 # Dependencies
 node_modules/
 
+# Runtime data (regenerated on start)
+data/
+
 # Temp files
 tmp/
 *.zip
