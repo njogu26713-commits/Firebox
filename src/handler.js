@@ -253,6 +253,33 @@ async function handleMessage(sock, msg, prefix, sessionState) {
     return;
   }
 
+  // ── Coin gate — owner/admin coin commands always bypass ────────────────────
+  const COIN_BYPASS_CMDS = new Set(['coins', 'addcoins', 'setcoins', 'coinhistory']);
+  if (!COIN_BYPASS_CMDS.has(command)) {
+    const { balance } = db.getCoins();
+    if (balance <= 0) {
+      if (!isOwner) {
+        await sock.sendMessage(from, {
+          text: `🪙 *Bot Out of Coins!*\n\n` +
+                `The bot has run out of coins and is temporarily suspended.\n` +
+                `Please contact the owner to top up coins.\n\n` +
+                `_Contact: ${process.env.OWNER_NAME || 'Owner'}_`
+        }, { quoted: msg });
+        return;
+      }
+    }
+  }
+
+  // ── Coin cost classification ───────────────────────────────────────────────
+  const AI_CMDS = new Set(['ai','ask','gemini','gpt','code','programming','blackbox','story','summarize','recipe','teach','analyze','translate','translate2','simi','dalle','imagine','generate','gen','txt2img','deepseek','ds','doppleai','doppel','roleplay']);
+  const DL_CMDS = new Set(['play','ytmp3','song','song2','video','ytmp4','tiktok','tt','tiktokaudio','ttaudio','instagram','ig','facebook','fb','twitter','x','pin','pinterest','image','img','apk','mediafire','mf','gdrive','gd','gitclone','git','itunes','telesticker','tgsticker','videodoc','vdoc','download','dl','wallpaper','wp','remini','enhance']);
+  const OWNER_CMDS = new Set(['delete','del','block','unblock','restart','react','setprefix','forward','join','leave','setbio','aichat','aibot','autoreply','ar','dead','away','mode','dmgroup','dmall','autoviewstatus','avs','autoreactstatus','ars','statusstats','clearstatusstats','autostatusreply','asr','antideletestatus','ads','broadcaststatus','tostatus','inbox','sharecf','clearcf','schedule','schedulelist','schedules','cancelschedule','broadcast','bc','addbc','removebc','listbc','clearbc','disk','hostip','online','lastseen','ppprivacy','readreceipts','gcaddprivacy','toviewonce','vo','vv2','openvo','dlvo','unblockall','listblocked','groupid','gid','deljunk','update','setprofilepic','spp','aza','setaza','resetaza','autosavestatus','modestatus','setstickercmd','delstickercmd','addsudo','delsudo','listsudo','addignorelist','delignorelist','listignorelist','addcountrycode','delcountrycode','listcountrycode','addbadword','gbw','deletebadword','delbw','listbadword','lbw','alwaysonline','ao','antibug','antiviewonce','avo','autobio','autoblock','autoreact','autoread','autorecord','autorecordtyping','autotype','chatbot','statusdelay','setbotname','setownername','setownernumber','settimezone','setstickerauthor','setstickerpackname','setwatermark','setstatusemoji','setcontextlink','setfont','setmenu','setmenuimage','setwarn','anticalldm','setanticallmsg','delanticallmsg','showanticallmsg','testanticallmsg','delwelcome','showwelcome','testwelcome','delgoodbye','showgoodbye','testgoodbye','getsettings','resetsetting','statussettings','antidelete','antiedit','coins','addcoins','setcoins','coinhistory']);
+
+  let coinCost = 0;
+  if (!isOwner && !COIN_BYPASS_CMDS.has(command)) {
+    coinCost = AI_CMDS.has(command) ? 5 : DL_CMDS.has(command) ? 3 : OWNER_CMDS.has(command) ? 0 : 1;
+  }
+
   sessionState.commandCount++;
   console.log(`[CMD][${isGroup ? 'GROUP' : 'DM'}] ${sender?.split('@')[0]} → .${command}${text ? ' ' + text.slice(0, 40) : ''}`);
   addActivity(sessionState, 'command', `${sender.split('@')[0]} used .${command}${text ? ' ' + text.slice(0, 30) : ''}`);
@@ -634,7 +661,76 @@ async function handleMessage(sock, msg, prefix, sessionState) {
     case 'hack':                           return hacking.hack(ctx);
     case 'fakecall': case 'fc':           return hacking.fakecall(ctx);
 
+    // ── COIN COMMANDS ─────────────────────────────────────────────────────────
+    case 'coins': {
+      const coinData = db.getCoins();
+      const icon = coinData.balance > 200 ? '🟢' : coinData.balance > 50 ? '🟡' : '🔴';
+      await sock.sendMessage(from, {
+        text: `🪙 *Coin Balance*\n\n` +
+              `${icon} *Balance:* ${coinData.balance} coins\n` +
+              `📊 *Total Spent:* ${coinData.totalSpent} coins\n\n` +
+              `💡 *Costs:* AI = 5 | Downloads = 3 | Regular = 1\n` +
+              `_Use .addcoins <amount> to top up (owner only)_`
+      }, { quoted: msg });
+      return;
+    }
+
+    case 'addcoins': {
+      if (!isOwner) return sock.sendMessage(from, { text: '❌ Owner only!' }, { quoted: msg });
+      const amt = parseInt(args[0]);
+      if (!amt || amt <= 0) return sock.sendMessage(from, { text: '❌ Usage: .addcoins <amount>\nExample: .addcoins 500' }, { quoted: msg });
+      const newBal = db.addCoins(amt, `Added by ${sender.split('@')[0]}`);
+      await sock.sendMessage(from, {
+        text: `✅ *Coins Added!*\n\n🪙 Added: *${amt} coins*\n💰 New Balance: *${newBal} coins*\n\n_Bot is now active!_`
+      }, { quoted: msg });
+      return;
+    }
+
+    case 'setcoins': {
+      if (!isOwner) return sock.sendMessage(from, { text: '❌ Owner only!' }, { quoted: msg });
+      const amt = parseInt(args[0]);
+      if (isNaN(amt) || amt < 0) return sock.sendMessage(from, { text: '❌ Usage: .setcoins <amount>' }, { quoted: msg });
+      const newBal = db.setCoins(amt);
+      await sock.sendMessage(from, {
+        text: `✅ *Coins Set!*\n\n💰 Balance: *${newBal} coins*`
+      }, { quoted: msg });
+      return;
+    }
+
+    case 'coinhistory': {
+      if (!isOwner) return sock.sendMessage(from, { text: '❌ Owner only!' }, { quoted: msg });
+      const coinData = db.getCoins();
+      const recent = coinData.history.slice(0, 10);
+      if (!recent.length) return sock.sendMessage(from, { text: '🪙 No coin history yet.' }, { quoted: msg });
+      const lines = recent.map(h => {
+        const t = new Date(h.ts).toLocaleTimeString();
+        const icon = h.type === 'add' ? '➕' : h.type === 'set' ? '🔧' : '➖';
+        return `${icon} ${h.type === 'spend' ? '-' : '+'}${h.amount} — ${h.note} (${t})`;
+      }).join('\n');
+      await sock.sendMessage(from, {
+        text: `🪙 *Coin History (last 10)*\n\n${lines}\n\n💰 *Current:* ${coinData.balance} coins`
+      }, { quoted: msg });
+      return;
+    }
+
     default: break;
+  }
+
+  // ── Deduct coins after successful command ──────────────────────────────────
+  if (coinCost > 0) {
+    const remaining = db.spendCoins(coinCost, `.${command}`);
+    if (remaining === 0) {
+      console.log(`[COINS] Balance hit 0 — bot suspended until coins are topped up`);
+      const ownerNumber = process.env.OWNER_NUMBER;
+      if (ownerNumber) {
+        try {
+          const ownerJid = ownerNumber + '@s.whatsapp.net';
+          await sock.sendMessage(ownerJid, {
+            text: `⚠️ *Firebox Alert: Coins Depleted!*\n\nThe bot has run out of coins and is now suspended.\n\n💡 Top up using:\n*.addcoins <amount>*\nor via the dashboard.\n\n_Last command: .${command}_`
+          });
+        } catch (_) {}
+      }
+    }
   }
 }
 

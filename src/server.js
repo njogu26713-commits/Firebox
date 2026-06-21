@@ -231,6 +231,38 @@ app.get('/api/sessions/:id/export', (req, res) => {
   }
 });
 
+// ── GET /api/coins ────────────────────────────────────────────────────────────
+app.get('/api/coins', (req, res) => {
+  const data = db.getCoins();
+  res.json(data);
+});
+
+// ── POST /api/coins/add — add coins ───────────────────────────────────────────
+app.post('/api/coins/add', (req, res) => {
+  try {
+    const { amount, note } = req.body;
+    const amt = parseInt(amount);
+    if (!amt || amt <= 0 || amt > 1000000) return res.status(400).json({ error: 'Invalid amount (1–1000000)' });
+    const newBalance = db.addCoins(amt, note || 'Dashboard top-up');
+    res.json({ success: true, balance: newBalance });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/coins/set — set coins ───────────────────────────────────────────
+app.post('/api/coins/set', (req, res) => {
+  try {
+    const { amount } = req.body;
+    const amt = parseInt(amount);
+    if (isNaN(amt) || amt < 0) return res.status(400).json({ error: 'Invalid amount' });
+    const newBalance = db.setCoins(amt);
+    res.json({ success: true, balance: newBalance });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/', (req, res) => res.redirect('/pair'));
 app.get('/pair',   (req, res) => res.sendFile(path.join(__dirname, '../public/pair.html')));
 app.get('/config', (req, res) => res.sendFile(path.join(__dirname, '../public/config.html')));

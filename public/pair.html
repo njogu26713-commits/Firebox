@@ -287,6 +287,33 @@
   <h2 class="page-title">Pair a WhatsApp Number</h2>
   <p class="page-sub">Scan the QR code or use a pairing code to connect your WhatsApp and go live instantly.</p>
 
+  <!-- Coin Widget -->
+  <div id="coin-widget" style="background:#0a1628;border:1px solid #1a2d4a;border-radius:14px;padding:18px 24px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="font-size:2rem">🪙</div>
+      <div>
+        <div style="font-size:0.72rem;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Coin Balance</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span id="coin-balance" style="font-size:1.6rem;font-weight:900;color:#fff">—</span>
+          <span id="coin-status-badge" style="font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:20px;background:#1e4d2b;color:#2ecc71">ACTIVE</span>
+        </div>
+        <div style="font-size:0.72rem;color:#475569;margin-top:4px">Total spent: <span id="coin-spent">0</span> coins &nbsp;·&nbsp; AI=5 · Downloads=3 · Regular=1</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input type="number" id="coin-add-input" placeholder="Amount" min="1" max="1000000"
+        style="width:110px;padding:9px 12px;background:#050d1a;border:1px solid #1a2d4a;border-radius:8px;color:#fff;font-size:0.88rem" />
+      <button class="btn btn-orange btn-sm" onclick="addCoins()">➕ Add Coins</button>
+      <button class="btn btn-gray btn-sm" onclick="fetchCoins()">🔄 Refresh</button>
+    </div>
+  </div>
+
+  <!-- Coin history strip (compact) -->
+  <div id="coin-history-box" style="display:none;background:#080f1c;border:1px solid #0f1e33;border-radius:10px;padding:14px 20px;margin-bottom:20px;margin-top:-14px">
+    <div style="font-size:0.7rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Recent Coin Activity</div>
+    <div id="coin-history-list" style="font-size:0.78rem;color:#94a3b8;line-height:2"></div>
+  </div>
+
   <!-- Connected banner -->
   <div id="connected-banner" class="connected-banner" style="display:none">
     <div class="connected-left">
@@ -626,6 +653,76 @@
 
   fetchSessions();
   setInterval(fetchSessions, 4000);
+
+  // ── Coin widget ──────────────────────────────────────────────────────────────
+  async function fetchCoins() {
+    try {
+      const r = await fetch('/api/coins');
+      const d = await r.json();
+      const bal = d.balance ?? 0;
+      document.getElementById('coin-balance').textContent = bal.toLocaleString();
+      document.getElementById('coin-spent').textContent = (d.totalSpent ?? 0).toLocaleString();
+
+      const badge = document.getElementById('coin-status-badge');
+      if (bal <= 0) {
+        badge.textContent = 'SUSPENDED';
+        badge.style.background = '#4d1e1e';
+        badge.style.color = '#e74c3c';
+        document.getElementById('coin-widget').style.borderColor = '#7f1d1d';
+      } else if (bal <= 50) {
+        badge.textContent = 'LOW';
+        badge.style.background = '#4d3b1e';
+        badge.style.color = '#f39c12';
+        document.getElementById('coin-widget').style.borderColor = '#78350f';
+      } else {
+        badge.textContent = 'ACTIVE';
+        badge.style.background = '#1e4d2b';
+        badge.style.color = '#2ecc71';
+        document.getElementById('coin-widget').style.borderColor = '#1a2d4a';
+      }
+
+      const histBox = document.getElementById('coin-history-box');
+      const histList = document.getElementById('coin-history-list');
+      if (d.history && d.history.length > 0) {
+        const icons = { add: '➕', spend: '➖', set: '🔧' };
+        const lines = d.history.slice(0, 6).map(h => {
+          const t = new Date(h.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const sign = h.type === 'spend' ? '-' : '+';
+          return `<span style="color:${h.type==='spend'?'#e74c3c':'#2ecc71'}">${icons[h.type]||'·'} ${sign}${h.amount}</span> <span style="color:#64748b">${h.note}</span> <span style="color:#334155;float:right">${t}</span>`;
+        }).join('<br>');
+        histList.innerHTML = lines;
+        histBox.style.display = 'block';
+      } else {
+        histBox.style.display = 'none';
+      }
+    } catch (e) {
+      document.getElementById('coin-balance').textContent = 'Error';
+    }
+  }
+
+  async function addCoins() {
+    const input = document.getElementById('coin-add-input');
+    const amt = parseInt(input.value);
+    if (!amt || amt <= 0) return toast('Enter a valid amount!', 'error');
+    try {
+      const r = await fetch('/api/coins/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: amt, note: 'Dashboard top-up' })
+      });
+      const d = await r.json();
+      if (d.success) {
+        input.value = '';
+        toast(`✅ Added ${amt.toLocaleString()} coins! Balance: ${d.balance.toLocaleString()}`, 'success');
+        fetchCoins();
+      } else {
+        toast(d.error || 'Failed to add coins', 'error');
+      }
+    } catch (e) { toast('Error: ' + e.message, 'error'); }
+  }
+
+  fetchCoins();
+  setInterval(fetchCoins, 8000);
 </script>
 </body>
 </html>

@@ -11,6 +11,7 @@ const SCHEDULES_FILE    = path.join(DATA_DIR, 'schedules.json');
 const CONFESSIONS_FILE  = path.join(DATA_DIR, 'confessions.json');
 const BROADCAST_FILE    = path.join(DATA_DIR, 'broadcast.json');
 const STATUS_STATS_FILE = path.join(DATA_DIR, 'statusstats.json');
+const COINS_FILE        = path.join(DATA_DIR, 'coins.json');
 
 function ensureDir() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -38,7 +39,50 @@ function initialize() {
   if (!fs.existsSync(CONFESSIONS_FILE)) writeJson(CONFESSIONS_FILE, []);
   if (!fs.existsSync(BROADCAST_FILE))  writeJson(BROADCAST_FILE, []);
   if (!fs.existsSync(STATUS_STATS_FILE)) writeJson(STATUS_STATS_FILE, {});
+  if (!fs.existsSync(COINS_FILE))       writeJson(COINS_FILE, { balance: 1000, totalSpent: 0, history: [] });
   console.log('[DB] JSON database initialized');
+}
+
+// ── coins ─────────────────────────────────────────────────────────────────────
+const COIN_LOG_LIMIT = 50;
+
+function getCoins() {
+  const data = readJson(COINS_FILE, { balance: 1000, totalSpent: 0, history: [] });
+  if (typeof data.balance !== 'number') data.balance = 1000;
+  if (typeof data.totalSpent !== 'number') data.totalSpent = 0;
+  if (!Array.isArray(data.history)) data.history = [];
+  return data;
+}
+
+function addCoins(amount, note) {
+  const data = getCoins();
+  data.balance += amount;
+  data.history.unshift({ type: 'add', amount, note: note || 'Top-up', ts: Date.now() });
+  if (data.history.length > COIN_LOG_LIMIT) data.history = data.history.slice(0, COIN_LOG_LIMIT);
+  writeJson(COINS_FILE, data);
+  console.log(`[COINS] +${amount} coins added. Balance: ${data.balance}`);
+  return data.balance;
+}
+
+function spendCoins(amount, note) {
+  const data = getCoins();
+  if (data.balance <= 0) return 0;
+  const spent = Math.min(amount, data.balance);
+  data.balance = Math.max(0, data.balance - amount);
+  data.totalSpent += spent;
+  data.history.unshift({ type: 'spend', amount: spent, note: note || 'Command', ts: Date.now() });
+  if (data.history.length > COIN_LOG_LIMIT) data.history = data.history.slice(0, COIN_LOG_LIMIT);
+  writeJson(COINS_FILE, data);
+  return data.balance;
+}
+
+function setCoins(amount) {
+  const data = getCoins();
+  data.balance = Math.max(0, amount);
+  data.history.unshift({ type: 'set', amount, note: 'Manual set', ts: Date.now() });
+  if (data.history.length > COIN_LOG_LIMIT) data.history = data.history.slice(0, COIN_LOG_LIMIT);
+  writeJson(COINS_FILE, data);
+  return data.balance;
 }
 
 function addConfession(confession) {
@@ -282,5 +326,6 @@ module.exports = {
   addConfession, getConfessions, removeConfession, getConfession,
   getBroadcastList, addToBroadcast, removeFromBroadcast, clearBroadcast,
   recordStatusReact, getStatusAnalytics, clearStatusAnalytics,
-  getAiChatTargets, addAiChatTarget, removeAiChatTarget, clearAiChatTargets
+  getAiChatTargets, addAiChatTarget, removeAiChatTarget, clearAiChatTargets,
+  getCoins, addCoins, spendCoins, setCoins
 };
