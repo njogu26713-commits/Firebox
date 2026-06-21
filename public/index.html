@@ -8,15 +8,15 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #0d0d0d;
-      color: #e0e0e0;
+      background: #050d1a;
+      color: #e2e8f0;
       min-height: 100vh;
     }
 
     /* ── Header ── */
     header {
-      background: linear-gradient(135deg, #1a1a1a, #2a1500);
-      border-bottom: 1px solid #ff6600;
+      background: linear-gradient(135deg, #0a1628, #0d2248);
+      border-bottom: 1px solid #2563eb;
       padding: 0 24px;
       display: flex;
       align-items: center;
@@ -28,8 +28,8 @@
       gap: 12px;
       padding: 16px 0;
     }
-    header h1 { font-size: 1.5rem; color: #ff6600; }
-    header span { font-size: 0.85rem; color: #888; }
+    header h1 { font-size: 1.5rem; color: #60a5fa; }
+    header span { font-size: 0.85rem; color: #64748b; }
 
     .nav-tabs { display: flex; gap: 4px; margin-left: auto; }
     .nav-tab {
@@ -37,15 +37,15 @@
       background: none;
       border: none;
       border-bottom: 3px solid transparent;
-      color: #888;
+      color: #94a3b8;
       cursor: pointer;
       font-size: 0.9rem;
       font-weight: 600;
       transition: all 0.2s;
       white-space: nowrap;
     }
-    .nav-tab:hover { color: #ccc; }
-    .nav-tab.active { color: #ff6600; border-bottom-color: #ff6600; }
+    .nav-tab:hover { color: #cbd5e1; }
+    .nav-tab.active { color: #60a5fa; border-bottom-color: #2563eb; }
 
     .container { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
     .page { display: none; }
@@ -63,11 +63,11 @@
     }
     .btn:hover { opacity: 0.85; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-primary  { background: #ff6600; color: #fff; }
+    .btn-primary  { background: #2563eb; color: #fff; }
     .btn-danger   { background: #c0392b; color: #fff; }
     .btn-green    { background: #27ae60; color: #fff; }
-    .btn-blue     { background: #2980b9; color: #fff; }
-    .btn-gray     { background: #333; color: #ccc; }
+    .btn-blue     { background: #1d4ed8; color: #fff; }
+    .btn-gray     { background: #1a2d4a; color: #cbd5e1; }
     .btn-sm       { padding: 6px 14px; font-size: 0.82rem; }
     .btn-full     { width: 100%; padding: 13px; font-size: 0.95rem; border-radius: 10px; }
 
@@ -96,6 +96,7 @@
       flex-wrap: wrap;
       margin-bottom: 24px;
     }
+
     .connected-banner-left { display: flex; align-items: center; gap: 14px; }
     .connected-dot {
       width: 14px; height: 14px;
@@ -117,17 +118,17 @@
 
     /* Pairing card */
     .pair-card {
-      background: #161616;
-      border: 1px solid #2a2a2a;
+      background: #0a1628;
+      border: 1px solid #1a2d4a;
       border-radius: 14px;
       overflow: hidden;
     }
     .pair-card-header {
       padding: 16px 24px;
-      background: #111;
-      border-bottom: 1px solid #222;
+      background: #080f1c;
+      border-bottom: 1px solid #0f1e33;
       font-size: 0.82rem;
-      color: #666;
+      color: #475569;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1px;
@@ -149,7 +150,7 @@
       align-items: center;
       justify-content: center;
       padding: 32px 24px;
-      border-right: 1px solid #1e1e1e;
+      border-right: 1px solid #0f1e33;
       gap: 16px;
     }
     .qr-frame {
@@ -162,25 +163,25 @@
     .qr-frame img { border-radius: 4px; display: block; width: 180px; height: 180px; }
     .qr-placeholder {
       width: 180px; height: 180px;
-      background: #1a1a1a;
+      background: #080f1c;
       border-radius: 8px;
-      border: 2px dashed #333;
+      border: 2px dashed #1a2d4a;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: #444;
+      color: #334155;
       font-size: 0.82rem;
       gap: 8px;
     }
     .qr-placeholder span { font-size: 2rem; }
     .qr-label {
       font-size: 0.8rem;
-      color: #555;
+      color: #475569;
       text-align: center;
       line-height: 1.5;
     }
-    .qr-label strong { color: #888; }
+    .qr-label strong { color: #64748b; }
 
     /* Divider */
     .pair-divider {
@@ -189,7 +190,7 @@
       align-items: center;
       justify-content: center;
       padding: 16px 0;
-      color: #333;
+      color: #1e3a5f;
       font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 1px;
@@ -200,7 +201,7 @@
       content: '';
       flex: 1;
       width: 1px;
-      background: #1e1e1e;
+      background: #0f1e33;
     }
     @media (min-width: 561px) {
       .pair-divider { display: none; }
@@ -214,8 +215,8 @@
       padding: 32px 28px;
       gap: 16px;
     }
-    .pair-code-side h3 { font-size: 1rem; color: #ccc; font-weight: 700; }
-    .pair-code-side p  { font-size: 0.82rem; color: #666; line-height: 1.5; }
+    .pair-code-side h3 { font-size: 1rem; color: #cbd5e1; font-weight: 700; }
+    .pair-code-side p  { font-size: 0.82rem; color: #475569; line-height: 1.5; }
 
     .pair-phone-row {
       display: flex;
@@ -224,18 +225,18 @@
     .pair-phone-row input {
       flex: 1;
       padding: 10px 12px;
-      background: #0d0d0d;
-      border: 1px solid #333;
+      background: #050d1a;
+      border: 1px solid #1a2d4a;
       border-radius: 8px;
       color: #fff;
       font-size: 0.88rem;
       transition: border-color 0.2s;
     }
-    .pair-phone-row input:focus { outline: none; border-color: #ff6600; }
+    .pair-phone-row input:focus { outline: none; border-color: #2563eb; }
 
     .pairing-code-display {
-      background: #1a0d00;
-      border: 1px solid #ff6600;
+      background: #061228;
+      border: 1px solid #2563eb;
       border-radius: 10px;
       padding: 14px 20px;
       text-align: center;
@@ -243,21 +244,21 @@
     .pairing-code-display .code {
       font-size: 2rem;
       font-weight: 900;
-      color: #ff6600;
+      color: #60a5fa;
       letter-spacing: 6px;
       font-family: monospace;
     }
     .pairing-code-display .code-hint {
       font-size: 0.75rem;
-      color: #555;
+      color: #475569;
       margin-top: 6px;
     }
 
     /* Status strip */
     .pair-status-strip {
       padding: 12px 24px;
-      background: #0d0d0d;
-      border-top: 1px solid #1e1e1e;
+      background: #060c18;
+      border-top: 1px solid #0f1e33;
       font-size: 0.8rem;
       display: flex;
       align-items: center;
@@ -268,7 +269,7 @@
       border-radius: 50%;
       flex-shrink: 0;
     }
-    .dot-waiting    { background: #555; }
+    .dot-waiting    { background: #1e3a5f; }
     .dot-connecting { background: #f39c12; animation: pulse 1.2s infinite; }
     .dot-connected  { background: #27ae60; }
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
@@ -277,15 +278,15 @@
     .sessions-section { margin-top: 28px; }
     .sessions-section h3 {
       font-size: 0.8rem;
-      color: #555;
+      color: #475569;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1px;
       margin-bottom: 14px;
     }
     .session-row {
-      background: #161616;
-      border: 1px solid #2a2a2a;
+      background: #0a1628;
+      border: 1px solid #1a2d4a;
       border-radius: 10px;
       padding: 14px 20px;
       display: flex;
@@ -296,8 +297,8 @@
       flex-wrap: wrap;
     }
     .session-row-left { display: flex; align-items: center; gap: 12px; }
-    .session-row-name { font-size: 0.9rem; font-weight: 700; color: #ddd; }
-    .session-row-number { font-size: 0.78rem; color: #666; margin-top: 2px; }
+    .session-row-name { font-size: 0.9rem; font-weight: 700; color: #e2e8f0; }
+    .session-row-number { font-size: 0.78rem; color: #64748b; margin-top: 2px; }
     .session-row-actions { display: flex; gap: 8px; }
 
     .status-badge {
@@ -312,34 +313,34 @@
     .status-connecting   { background: #4d3a00; color: #f1c40f; }
     .status-disconnected { background: #4d1414; color: #e74c3c; }
 
-    /* ── Config Vars Page (unchanged) ── */
+    /* ── Config Vars Page ── */
     .config-page { max-width: 720px; }
 
     .config-hero {
-      background: linear-gradient(135deg, #1f1200, #1a1a2a);
-      border: 1px solid #ff6600;
+      background: linear-gradient(135deg, #061228, #0a1628);
+      border: 1px solid #2563eb;
       border-radius: 12px;
       padding: 20px 24px;
       margin-bottom: 28px;
     }
-    .config-hero h2 { font-size: 1.1rem; color: #ff6600; margin-bottom: 6px; }
-    .config-hero p  { font-size: 0.85rem; color: #aaa; line-height: 1.6; }
-    .config-hero ol { font-size: 0.85rem; color: #ccc; padding-left: 20px; margin-top: 10px; line-height: 2; }
+    .config-hero h2 { font-size: 1.1rem; color: #60a5fa; margin-bottom: 6px; }
+    .config-hero p  { font-size: 0.85rem; color: #94a3b8; line-height: 1.6; }
+    .config-hero ol { font-size: 0.85rem; color: #cbd5e1; padding-left: 20px; margin-top: 10px; line-height: 2; }
 
     .config-section {
-      background: #1a1a1a;
-      border: 1px solid #2a2a2a;
+      background: #0a1628;
+      border: 1px solid #1a2d4a;
       border-radius: 12px;
       overflow: hidden;
       margin-bottom: 20px;
     }
     .config-section-header {
       padding: 14px 20px;
-      background: #141414;
-      border-bottom: 1px solid #2a2a2a;
+      background: #080f1c;
+      border-bottom: 1px solid #0f1e33;
       font-size: 0.8rem;
       font-weight: 700;
-      color: #888;
+      color: #64748b;
       text-transform: uppercase;
       letter-spacing: 1px;
     }
@@ -348,19 +349,19 @@
       grid-template-columns: 180px 1fr;
       align-items: start;
       padding: 16px 20px;
-      border-bottom: 1px solid #1e1e1e;
+      border-bottom: 1px solid #0f1e33;
       gap: 16px;
     }
     .config-var:last-child { border-bottom: none; }
-    .config-var-key  { font-size: 0.85rem; font-weight: 700; color: #ff9944; font-family: monospace; margin-bottom: 4px; }
-    .config-var-desc { font-size: 0.75rem; color: #666; line-height: 1.4; }
+    .config-var-key  { font-size: 0.85rem; font-weight: 700; color: #60a5fa; font-family: monospace; margin-bottom: 4px; }
+    .config-var-desc { font-size: 0.75rem; color: #475569; line-height: 1.4; }
     .config-var-input { display: flex; flex-direction: column; gap: 6px; }
     .config-var-input input,
     .config-var-input textarea {
       width: 100%;
       padding: 9px 12px;
-      background: #111;
-      border: 1px solid #333;
+      background: #050d1a;
+      border: 1px solid #1a2d4a;
       border-radius: 8px;
       color: #fff;
       font-size: 0.85rem;
@@ -368,7 +369,7 @@
       transition: border-color 0.2s;
     }
     .config-var-input input:focus,
-    .config-var-input textarea:focus { outline: none; border-color: #ff6600; }
+    .config-var-input textarea:focus { outline: none; border-color: #2563eb; }
     .config-var-input textarea {
       height: 90px;
       resize: vertical;
@@ -376,7 +377,7 @@
       font-family: monospace;
     }
     .config-var-set { font-size: 0.72rem; color: #27ae60; }
-    .config-var-masked { font-size: 0.75rem; color: #555; font-family: monospace; }
+    .config-var-masked { font-size: 0.75rem; color: #475569; font-family: monospace; }
 
     .config-save-bar {
       display: flex;
@@ -386,7 +387,7 @@
       padding: 20px 0;
       flex-wrap: wrap;
     }
-    .config-save-msg { font-size: 0.85rem; color: #666; }
+    .config-save-msg { font-size: 0.85rem; color: #475569; }
 
     /* ── Modals ── */
     .modal-overlay {
@@ -400,8 +401,8 @@
     }
     .modal-overlay.open { display: flex; }
     .modal {
-      background: #1a1a1a;
-      border: 1px solid #333;
+      background: #0a1628;
+      border: 1px solid #1a2d4a;
       border-radius: 14px;
       padding: 28px;
       width: 400px;
@@ -411,8 +412,8 @@
     .modal input {
       width: 100%;
       padding: 10px 14px;
-      background: #111;
-      border: 1px solid #444;
+      background: #050d1a;
+      border: 1px solid #1a2d4a;
       border-radius: 8px;
       color: #fff;
       font-size: 0.9rem;
@@ -422,8 +423,8 @@
       width: 100%;
       height: 100px;
       padding: 10px 14px;
-      background: #111;
-      border: 1px solid #444;
+      background: #050d1a;
+      border: 1px solid #1a2d4a;
       border-radius: 8px;
       color: #fff;
       font-size: 0.8rem;
@@ -431,17 +432,17 @@
       resize: vertical;
     }
     .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
-    .btn-cancel  { background: #333; color: #ccc; }
+    .btn-cancel  { background: #1a2d4a; color: #cbd5e1; }
 
     .export-box {
-      background: #111;
-      border: 1px solid #333;
+      background: #050d1a;
+      border: 1px solid #1a2d4a;
       border-radius: 8px;
       padding: 12px;
       margin-top: 12px;
       word-break: break-all;
       font-size: 0.7rem;
-      color: #aaa;
+      color: #94a3b8;
       max-height: 80px;
       overflow-y: auto;
       font-family: monospace;
@@ -452,7 +453,7 @@
       position: fixed;
       bottom: 24px;
       right: 24px;
-      background: #ff6600;
+      background: #2563eb;
       color: #fff;
       padding: 12px 20px;
       border-radius: 8px;
@@ -496,7 +497,7 @@
       <!-- All bots list -->
       <div id="bots-section" style="display:none; margin-bottom:20px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <h3 id="bots-heading" style="margin:0;color:#ff6600;font-size:1rem;font-weight:700;letter-spacing:.5px">CONNECTED BOTS</h3>
+          <h3 id="bots-heading" style="margin:0;color:#60a5fa;font-size:1rem;font-weight:700;letter-spacing:.5px">CONNECTED BOTS</h3>
           <button class="btn btn-primary btn-sm" onclick="openAddBot()" id="add-bot-btn">➕ Add Bot</button>
         </div>
         <div id="bots-list"></div>
@@ -515,7 +516,7 @@
             </div>
             <div class="qr-placeholder" id="qr-placeholder">
               <span>📱</span>
-              <div style="text-align:center">Click <strong style="color:#ff6600">Start Pairing</strong><br>to generate QR</div>
+              <div style="text-align:center">Click <strong style="color:#2563eb">Start Pairing</strong><br>to generate QR</div>
             </div>
             <div class="qr-label">
               Open WhatsApp → <strong>Linked Devices</strong><br>→ Link a Device → Scan

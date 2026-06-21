@@ -6,32 +6,32 @@
   <title>📲 Pair — Firebox</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', sans-serif; background: #0d0d0d; color: #e0e0e0; min-height: 100vh; }
+    body { font-family: 'Segoe UI', sans-serif; background: #050d1a; color: #e2e8f0; min-height: 100vh; }
 
     header {
-      background: linear-gradient(135deg, #1a1a1a, #2a1500);
-      border-bottom: 2px solid #ff6600;
+      background: linear-gradient(135deg, #0a1628, #0d2248);
+      border-bottom: 2px solid #2563eb;
       padding: 0 28px;
       display: flex;
       align-items: center;
       gap: 24px;
     }
     .brand { display: flex; align-items: center; gap: 12px; padding: 16px 0; text-decoration: none; }
-    .brand h1 { font-size: 1.5rem; color: #ff6600; }
-    .brand span { font-size: 0.82rem; color: #666; }
+    .brand h1 { font-size: 1.5rem; color: #60a5fa; }
+    .brand span { font-size: 0.82rem; color: #64748b; }
 
     nav { margin-left: auto; display: flex; gap: 4px; }
     nav a {
       padding: 8px 22px;
       text-decoration: none;
-      color: #888;
+      color: #94a3b8;
       font-size: 0.9rem;
       font-weight: 600;
       border-bottom: 3px solid transparent;
       transition: all 0.2s;
     }
-    nav a:hover { color: #ccc; }
-    nav a.active { color: #ff6600; border-bottom-color: #ff6600; }
+    nav a:hover { color: #cbd5e1; }
+    nav a.active { color: #60a5fa; border-bottom-color: #2563eb; }
 
     .container { max-width: 900px; margin: 0 auto; padding: 36px 24px; }
 
@@ -71,18 +71,18 @@
 
     /* Pairing card */
     .pair-card {
-      background: #141414;
-      border: 1px solid #262626;
+      background: #0a1628;
+      border: 1px solid #1a2d4a;
       border-radius: 16px;
       overflow: hidden;
     }
     .pair-card-hdr {
       padding: 15px 26px;
-      background: #0f0f0f;
-      border-bottom: 1px solid #1e1e1e;
+      background: #080f1c;
+      border-bottom: 1px solid #0f1e33;
       font-size: 0.75rem;
       font-weight: 700;
-      color: #555;
+      color: #475569;
       text-transform: uppercase;
       letter-spacing: 1.2px;
     }
@@ -95,7 +95,7 @@
 
     /* QR side */
     .qr-side {
-      border-right: 1px solid #1e1e1e;
+      border-right: 1px solid #0f1e33;
       padding: 40px 28px;
       display: flex;
       flex-direction: column;
@@ -111,21 +111,21 @@
     .qr-wrap img { width: 190px; height: 190px; border-radius: 6px; display: block; }
     .qr-empty {
       width: 190px; height: 190px;
-      background: #111;
+      background: #080f1c;
       border-radius: 14px;
-      border: 2px dashed #2a2a2a;
+      border: 2px dashed #1a2d4a;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 10px;
-      color: #333;
+      color: #334155;
     }
     .qr-empty .icon { font-size: 2.4rem; }
     .qr-empty p { font-size: 0.8rem; text-align: center; line-height: 1.5; }
-    .qr-empty strong { color: #ff6600; }
-    .qr-hint { font-size: 0.78rem; color: #444; text-align: center; line-height: 1.6; }
-    .qr-hint strong { color: #666; }
+    .qr-empty strong { color: #2563eb; }
+    .qr-hint { font-size: 0.78rem; color: #475569; text-align: center; line-height: 1.6; }
+    .qr-hint strong { color: #64748b; }
 
     /* Code side */
     .code-side {
@@ -135,26 +135,26 @@
       gap: 20px;
       justify-content: center;
     }
-    .code-side h3 { font-size: 1rem; color: #ddd; font-weight: 700; }
-    .code-side p  { font-size: 0.83rem; color: #555; line-height: 1.6; }
+    .code-side h3 { font-size: 1rem; color: #e2e8f0; font-weight: 700; }
+    .code-side p  { font-size: 0.83rem; color: #475569; line-height: 1.6; }
 
-    .input-lbl { font-size: 0.7rem; font-weight: 700; color: #ff9944; letter-spacing: 1px; margin-bottom: 8px; }
+    .input-lbl { font-size: 0.7rem; font-weight: 700; color: #60a5fa; letter-spacing: 1px; margin-bottom: 8px; }
     .phone-row { display: flex; gap: 8px; }
     .phone-row input {
       flex: 1;
       padding: 11px 14px;
-      background: #0d0d0d;
-      border: 1px solid #2a2a2a;
+      background: #050d1a;
+      border: 1px solid #1a2d4a;
       border-radius: 9px;
       color: #fff;
       font-size: 0.9rem;
       transition: border-color 0.2s;
     }
-    .phone-row input:focus { outline: none; border-color: #ff6600; }
+    .phone-row input:focus { outline: none; border-color: #2563eb; }
 
     .code-display {
-      background: #160d00;
-      border: 1px solid #ff6600;
+      background: #061228;
+      border: 1px solid #2563eb;
       border-radius: 12px;
       padding: 16px 20px;
       text-align: center;
@@ -162,13 +162,13 @@
     .code-digits {
       font-size: 2.2rem;
       font-weight: 900;
-      color: #ff6600;
+      color: #60a5fa;
       letter-spacing: 8px;
       font-family: monospace;
     }
     .code-hint-txt {
       font-size: 0.73rem;
-      color: #555;
+      color: #475569;
       margin-top: 8px;
       line-height: 1.5;
     }
@@ -176,25 +176,25 @@
     /* Footer status */
     .pair-footer {
       padding: 13px 26px;
-      background: #0a0a0a;
-      border-top: 1px solid #1a1a1a;
+      background: #060c18;
+      border-top: 1px solid #0f1e33;
       display: flex;
       align-items: center;
       gap: 10px;
       font-size: 0.82rem;
     }
     .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-    .dot-idle { background: #333; }
+    .dot-idle { background: #1e3a5f; }
     .dot-busy { background: #f39c12; animation: blink 1s infinite; }
     .dot-on   { background: #27ae60; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
     /* Active sessions */
     .sessions-box { margin-top: 30px; }
-    .sessions-box h3 { font-size: 0.72rem; color: #444; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
+    .sessions-box h3 { font-size: 0.72rem; color: #334155; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
     .sess-row {
-      background: #141414;
-      border: 1px solid #222;
+      background: #0a1628;
+      border: 1px solid #1a2d4a;
       border-radius: 11px;
       padding: 14px 20px;
       display: flex;
@@ -205,8 +205,8 @@
       flex-wrap: wrap;
     }
     .sess-left { display: flex; align-items: center; gap: 12px; }
-    .sess-name { font-size: 0.9rem; font-weight: 700; color: #ddd; }
-    .sess-num  { font-size: 0.78rem; color: #555; margin-top: 2px; }
+    .sess-name { font-size: 0.9rem; font-weight: 700; color: #e2e8f0; }
+    .sess-num  { font-size: 0.78rem; color: #475569; margin-top: 2px; }
     .badge {
       display: inline-block;
       padding: 3px 11px;
@@ -228,10 +228,10 @@
     }
     .btn:hover { opacity: 0.82; }
     .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .btn-orange { background: #ff6600; color: #fff; }
+    .btn-orange { background: #2563eb; color: #fff; }
     .btn-green  { background: #27ae60; color: #fff; }
     .btn-red    { background: #c0392b; color: #fff; }
-    .btn-gray   { background: #2a2a2a; color: #ccc; }
+    .btn-gray   { background: #1a2d4a; color: #cbd5e1; }
     .btn-sm     { padding: 6px 14px; font-size: 0.8rem; }
     .btn-full   { width: 100%; padding: 13px; font-size: 0.95rem; border-radius: 10px; }
 
@@ -243,15 +243,15 @@
     }
     .overlay.open { display: flex; }
     .modal {
-      background: #1a1a1a; border: 1px solid #333;
+      background: #0a1628; border: 1px solid #1a2d4a;
       border-radius: 14px; padding: 28px;
       width: 480px; max-width: 94vw;
     }
     .modal h3 { color: #fff; margin-bottom: 16px; font-size: 1.1rem; }
     .export-box {
-      background: #0d0d0d; border: 1px solid #2a2a2a; border-radius: 8px;
+      background: #050d1a; border: 1px solid #1a2d4a; border-radius: 8px;
       padding: 12px; word-break: break-all; font-size: 0.7rem;
-      color: #999; max-height: 90px; overflow-y: auto; font-family: monospace;
+      color: #94a3b8; max-height: 90px; overflow-y: auto; font-family: monospace;
       margin-top: 10px;
     }
     .modal-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
@@ -259,7 +259,7 @@
     /* Toast */
     .toast {
       position: fixed; bottom: 24px; right: 24px;
-      background: #ff6600; color: #fff;
+      background: #2563eb; color: #fff;
       padding: 12px 20px; border-radius: 9px;
       font-size: 0.88rem; opacity: 0;
       transition: opacity 0.3s; z-index: 200; max-width: 340px;
@@ -365,13 +365,13 @@
 <div class="overlay" id="export-overlay">
   <div class="modal">
     <h3>📤 Session ID</h3>
-    <div style="background:#160d00;border:1px solid #ff6600;border-radius:9px;padding:14px;margin-bottom:4px">
-      <p style="font-size:0.78rem;color:#ff9944;font-weight:700;margin-bottom:6px">🚀 Deploy on a new Replit:</p>
-      <ol style="font-size:0.76rem;color:#bbb;padding-left:18px;line-height:2">
+    <div style="background:#061228;border:1px solid #2563eb;border-radius:9px;padding:14px;margin-bottom:4px">
+      <p style="font-size:0.78rem;color:#60a5fa;font-weight:700;margin-bottom:6px">🚀 Deploy on a new Replit:</p>
+      <ol style="font-size:0.76rem;color:#a0aec0;padding-left:18px;line-height:2">
         <li>Copy the Session ID below</li>
         <li>Open your new Replit running Firebox</li>
-        <li>Go to <strong style="color:#ff6600">⚙️ Config Vars</strong></li>
-        <li>Paste in <code style="background:#111;padding:1px 6px;border-radius:4px;color:#ff9944">SESSION_ID</code> → <strong>Save & Apply</strong> ✅</li>
+        <li>Go to <strong style="color:#2563eb">⚙️ Config Vars</strong></li>
+        <li>Paste in <code style="background:#080f1c;padding:1px 6px;border-radius:4px;color:#60a5fa">SESSION_ID</code> → <strong>Save & Apply</strong> ✅</li>
       </ol>
     </div>
     <p style="font-size:0.75rem;color:#555;margin-top:10px">Session ID:</p>

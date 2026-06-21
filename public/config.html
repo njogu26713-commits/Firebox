@@ -6,51 +6,51 @@
   <title>⚙️ Config Vars — Firebox</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', sans-serif; background: #0d0d0d; color: #e0e0e0; min-height: 100vh; }
+    body { font-family: 'Segoe UI', sans-serif; background: #050d1a; color: #e2e8f0; min-height: 100vh; }
 
     header {
-      background: linear-gradient(135deg, #1a1a1a, #2a1500);
-      border-bottom: 2px solid #ff6600;
+      background: linear-gradient(135deg, #0a1628, #0d2248);
+      border-bottom: 2px solid #2563eb;
       padding: 0 28px;
       display: flex;
       align-items: center;
       gap: 24px;
     }
     .brand { display: flex; align-items: center; gap: 12px; padding: 16px 0; text-decoration: none; }
-    .brand h1 { font-size: 1.5rem; color: #ff6600; }
-    .brand span { font-size: 0.82rem; color: #666; }
+    .brand h1 { font-size: 1.5rem; color: #60a5fa; }
+    .brand span { font-size: 0.82rem; color: #64748b; }
 
     nav { margin-left: auto; display: flex; gap: 4px; }
     nav a {
       padding: 8px 22px;
       text-decoration: none;
-      color: #888;
+      color: #94a3b8;
       font-size: 0.9rem;
       font-weight: 600;
       border-bottom: 3px solid transparent;
       transition: all 0.2s;
     }
-    nav a:hover { color: #ccc; }
-    nav a.active { color: #ff6600; border-bottom-color: #ff6600; }
+    nav a:hover { color: #cbd5e1; }
+    nav a.active { color: #60a5fa; border-bottom-color: #2563eb; }
 
     .container { max-width: 760px; margin: 0 auto; padding: 36px 24px; }
 
     .page-title { font-size: 1.4rem; color: #fff; margin-bottom: 6px; }
-    .page-sub   { font-size: 0.87rem; color: #555; margin-bottom: 28px; }
+    .page-sub   { font-size: 0.87rem; color: #475569; margin-bottom: 28px; }
 
     /* Hero */
     .hero {
-      background: linear-gradient(135deg, #1a0d00, #12121e);
-      border: 1px solid #ff6600;
+      background: linear-gradient(135deg, #061228, #0a1628);
+      border: 1px solid #2563eb;
       border-radius: 14px;
       padding: 22px 26px;
       margin-bottom: 28px;
     }
-    .hero h3 { font-size: 1rem; color: #ff6600; margin-bottom: 8px; }
-    .hero ol  { font-size: 0.84rem; color: #aaa; padding-left: 20px; line-height: 2.1; }
+    .hero h3 { font-size: 1rem; color: #60a5fa; margin-bottom: 8px; }
+    .hero ol  { font-size: 0.84rem; color: #94a3b8; padding-left: 20px; line-height: 2.1; }
     .hero ol code {
-      background: #1a1a1a;
-      color: #ff9944;
+      background: #0a1628;
+      color: #60a5fa;
       padding: 1px 7px;
       border-radius: 4px;
       font-size: 0.82rem;
@@ -58,19 +58,19 @@
 
     /* Config sections */
     .section {
-      background: #141414;
-      border: 1px solid #222;
+      background: #0a1628;
+      border: 1px solid #1a2d4a;
       border-radius: 14px;
       overflow: hidden;
       margin-bottom: 18px;
     }
     .section-hdr {
       padding: 13px 22px;
-      background: #0f0f0f;
-      border-bottom: 1px solid #1e1e1e;
+      background: #080f1c;
+      border-bottom: 1px solid #0f1e33;
       font-size: 0.72rem;
       font-weight: 700;
-      color: #555;
+      color: #475569;
       text-transform: uppercase;
       letter-spacing: 1.2px;
     }
@@ -79,20 +79,20 @@
       grid-template-columns: 190px 1fr;
       align-items: start;
       padding: 18px 22px;
-      border-bottom: 1px solid #1a1a1a;
+      border-bottom: 1px solid #0f1e33;
       gap: 18px;
     }
     .row:last-child { border-bottom: none; }
     @media (max-width: 580px) { .row { grid-template-columns: 1fr; } }
-    .row-key  { font-size: 0.85rem; font-weight: 700; color: #ff9944; font-family: monospace; margin-bottom: 5px; }
-    .row-desc { font-size: 0.74rem; color: #555; line-height: 1.5; }
+    .row-key  { font-size: 0.85rem; font-weight: 700; color: #60a5fa; font-family: monospace; margin-bottom: 5px; }
+    .row-desc { font-size: 0.74rem; color: #475569; line-height: 1.5; }
     .row-input { display: flex; flex-direction: column; gap: 7px; }
     .row-input input,
     .row-input textarea {
       width: 100%;
       padding: 10px 13px;
-      background: #0d0d0d;
-      border: 1px solid #2a2a2a;
+      background: #050d1a;
+      border: 1px solid #1a2d4a;
       border-radius: 9px;
       color: #fff;
       font-size: 0.86rem;
@@ -100,7 +100,7 @@
       transition: border-color 0.2s;
     }
     .row-input input:focus,
-    .row-input textarea:focus { outline: none; border-color: #ff6600; }
+    .row-input textarea:focus { outline: none; border-color: #2563eb; }
     .row-input textarea {
       height: 95px;
       resize: vertical;
@@ -110,7 +110,7 @@
     }
     .row-status { font-size: 0.72rem; }
     .row-status.ok  { color: #27ae60; }
-    .row-status.dim { color: #444; font-family: monospace; }
+    .row-status.dim { color: #334155; font-family: monospace; }
 
     /* Save bar */
     .save-bar {
@@ -121,8 +121,8 @@
       padding: 22px 0 0;
       flex-wrap: wrap;
     }
-    .save-msg { font-size: 0.84rem; color: #555; }
-    .save-msg code { background: #1a1a1a; padding: 1px 6px; border-radius: 4px; font-size: 0.78rem; color: #888; }
+    .save-msg { font-size: 0.84rem; color: #475569; }
+    .save-msg code { background: #0a1628; padding: 1px 6px; border-radius: 4px; font-size: 0.78rem; color: #94a3b8; }
 
     /* Buttons */
     .btn {
@@ -132,12 +132,12 @@
     }
     .btn:hover { opacity: 0.82; }
     .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .btn-orange { background: #ff6600; color: #fff; }
+    .btn-orange { background: #2563eb; color: #fff; }
 
     /* Toast */
     .toast {
       position: fixed; bottom: 24px; right: 24px;
-      background: #ff6600; color: #fff;
+      background: #2563eb; color: #fff;
       padding: 12px 20px; border-radius: 9px;
       font-size: 0.88rem; opacity: 0;
       transition: opacity 0.3s; z-index: 200; max-width: 360px;
@@ -218,7 +218,7 @@
     <div class="row">
       <div>
         <div class="row-key">PREFIX</div>
-        <div class="row-desc">Command prefix character. Default is <code style="background:#1a1a1a;color:#ff9944;padding:1px 6px;border-radius:4px">.</code></div>
+        <div class="row-desc">Command prefix character. Default is <code style="background:#0a1628;color:#60a5fa;padding:1px 6px;border-radius:4px">.</code></div>
       </div>
       <div class="row-input">
         <input type="text" id="cfg-PREFIX" placeholder="." maxlength="3" style="max-width:80px" />
