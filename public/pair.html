@@ -719,14 +719,19 @@
       if (hist.length) {
         box.style.display = 'block';
         document.getElementById('history-count').textContent = hist.length + ' entries';
-        list.innerHTML = hist.slice(0,8).map(h => {
-          const plus = h.amount > 0;
+        list.innerHTML = hist.slice(0,10).map(h => {
+          const isAdd = h.type === 'add' || h.type === 'set';
+          const sign  = isAdd ? '+' : '-';
+          const dt    = h.ts ? new Date(h.ts).toLocaleString() : '';
           return `<div class="history-item">
-            <div>
-              <div class="history-note">${h.note||'Transaction'}</div>
-              <div class="history-date">${h.date ? new Date(h.date).toLocaleString() : ''}</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:1rem">${isAdd ? '➕' : '🔻'}</span>
+              <div>
+                <div class="history-note">${h.note || (isAdd ? 'Top-up' : 'Command')}</div>
+                <div class="history-date">${dt}</div>
+              </div>
             </div>
-            <div class="history-amount ${plus?'plus':'minus'}">${plus?'+':''}${h.amount}</div>
+            <div class="history-amount ${isAdd ? 'plus' : 'minus'}">${sign}${h.amount}</div>
           </div>`;
         }).join('');
       } else { box.style.display = 'none'; }
@@ -921,7 +926,7 @@
   fetchCoins();
   fetchSessions();
   setInterval(fetchSessions, 6000);
-  setInterval(fetchCoins, 30000);
+  setInterval(fetchCoins, 5000);
 </script>
 </body>
 </html>
