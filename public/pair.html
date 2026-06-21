@@ -267,6 +267,61 @@
     .toast.show    { opacity: 1; }
     .toast.success { background: #27ae60; }
     .toast.error   { background: #c0392b; }
+
+    /* ── Mobile responsive ──────────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      header { padding: 0 14px; flex-wrap: wrap; gap: 0; }
+      .brand { padding: 12px 0; }
+      .brand h1 { font-size: 1.2rem; }
+      nav { margin-left: auto; gap: 0; }
+      nav a { padding: 6px 12px; font-size: 0.78rem; }
+
+      .container { padding: 18px 14px; }
+      .page-title { font-size: 1.15rem; }
+
+      /* Buy coins banner */
+      .buy-banner { flex-direction: column !important; align-items: flex-start !important; padding: 14px 16px !important; }
+      .buy-banner > div:last-child { width: 100%; text-align: left; }
+
+      /* Connected banner */
+      .connected-banner { flex-direction: column; align-items: flex-start; padding: 16px; }
+      .stats { gap: 16px; flex-wrap: wrap; }
+      .stat-val { font-size: 1rem; }
+      .banner-actions { width: 100%; }
+      .banner-actions .btn { flex: 1; text-align: center; }
+
+      /* Pair card */
+      .qr-side { border-right: none; border-bottom: 1px solid #0f1e33; padding: 24px 16px; }
+      .code-side { padding: 24px 16px; }
+      .qr-wrap img { width: 160px; height: 160px; }
+      .qr-empty { width: 160px; height: 160px; }
+      .code-digits { font-size: 1.6rem; letter-spacing: 5px; }
+
+      /* Session rows */
+      .sess-row { flex-direction: column; align-items: flex-start; padding: 12px 14px; }
+      .sess-actions { width: 100%; display: flex; gap: 8px; }
+      .sess-actions .btn { flex: 1; text-align: center; }
+
+      /* Coin widget */
+      #coin-widget { flex-direction: column; align-items: flex-start; padding: 14px 16px; }
+      #coin-widget > div:last-child { width: 100%; display: flex; gap: 8px; flex-wrap: wrap; }
+      #coin-widget > div:last-child input { flex: 1; min-width: 80px; }
+      #coin-widget > div:last-child .btn { flex: 1; }
+
+      /* Buy coins banner inline styles override */
+      .buy-banner-inner { flex-direction: column !important; }
+
+      /* Toast */
+      .toast { left: 14px; right: 14px; bottom: 14px; max-width: none; }
+
+      /* Pair footer */
+      .pair-footer { padding: 10px 14px; font-size: 0.76rem; }
+    }
+
+    @media (max-width: 400px) {
+      .brand span { display: none; }
+      .code-digits { font-size: 1.3rem; letter-spacing: 3px; }
+    }
   </style>
 </head>
 <body>
@@ -288,7 +343,7 @@
   <p class="page-sub">Scan the QR code or use a pairing code to connect your WhatsApp and go live instantly.</p>
 
   <!-- Buy Coins Banner -->
-  <div style="background:linear-gradient(135deg,#0a1e38,#0d2248);border:1px solid #2563eb;border-radius:14px;padding:16px 22px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+  <div class="buy-banner" style="background:linear-gradient(135deg,#0a1e38,#0d2248);border:1px solid #2563eb;border-radius:14px;padding:16px 22px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
     <div style="display:flex;align-items:center;gap:12px">
       <div style="font-size:1.6rem">💳</div>
       <div>

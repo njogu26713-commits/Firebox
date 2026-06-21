@@ -467,9 +467,49 @@
     .toast.success { background: #27ae60; }
     .toast.error   { background: #c0392b; }
 
-    @media (max-width: 600px) {
-      .config-var { grid-template-columns: 1fr; }
-      .connected-stats { gap: 16px; }
+    /* ── Mobile responsive ──────────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      header { padding: 0 14px; }
+      header h1 { font-size: 1.2rem; }
+      .nav-tabs { gap: 0; overflow-x: auto; }
+      .nav-tab { padding: 6px 12px; font-size: 0.78rem; white-space: nowrap; }
+
+      .container { padding: 16px 14px; }
+
+      /* Connected banner */
+      .connected-banner { flex-direction: column; align-items: flex-start; padding: 14px 16px; }
+      .connected-stats { gap: 14px; flex-wrap: wrap; }
+      .connected-actions { width: 100%; }
+      .connected-actions .btn { flex: 1; }
+
+      /* Pair card */
+      .pair-qr-side { border-right: none; border-bottom: 1px solid #0f1e33; padding: 20px 14px; }
+      .pair-code-side { padding: 20px 14px; }
+      .qr-frame img, .qr-placeholder { width: 150px !important; height: 150px !important; }
+
+      /* Config vars */
+      .config-var { grid-template-columns: 1fr; padding: 12px 14px; }
+      .config-save-bar { flex-direction: column; align-items: stretch; }
+      .config-save-bar .btn { width: 100%; }
+
+      /* Metrics / stat cards */
+      .metrics-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+      .metric-card { padding: 14px !important; }
+
+      /* Activity / log rows */
+      .activity-row, .log-row { flex-wrap: wrap; font-size: 0.78rem; }
+
+      /* Modals */
+      .modal-box { padding: 18px 14px !important; margin: 14px !important; width: auto !important; }
+
+      /* Toast */
+      .toast { left: 14px; right: 14px; bottom: 14px; max-width: none; }
+    }
+
+    @media (max-width: 400px) {
+      header span { display: none; }
+      .nav-tab { padding: 6px 9px; font-size: 0.72rem; }
+      .metrics-grid { grid-template-columns: 1fr !important; }
     }
   </style>
 </head>
