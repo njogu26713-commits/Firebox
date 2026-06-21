@@ -282,6 +282,23 @@ async function handleMessage(sock, msg, prefix, sessionState) {
     coinCost = AI_CMDS.has(command) ? 5 : DL_CMDS.has(command) ? 3 : OWNER_CMDS.has(command) ? 0 : 1;
   }
 
+  // ── Deduct coins before command runs ──────────────────────────────────────
+  if (coinCost > 0) {
+    const remaining = db.spendCoins(coinCost, `.${command}`);
+    console.log(`[COINS] .${command} cost ${coinCost}. Remaining: ${remaining}`);
+    if (remaining === 0) {
+      console.log(`[COINS] Balance hit 0 — bot suspended until coins are topped up`);
+      const ownerNumber = process.env.OWNER_NUMBER;
+      if (ownerNumber) {
+        try {
+          await sock.sendMessage(ownerNumber + '@s.whatsapp.net', {
+            text: `⚠️ *Firebox Alert: Coins Depleted!*\n\nThe bot has run out of coins and is now suspended.\n\n💡 Top up using:\n*.addcoins <amount>*\nor via the dashboard.\n\n_Last command: .${command}_`
+          });
+        } catch (_) {}
+      }
+    }
+  }
+
   sessionState.commandCount++;
   console.log(`[CMD][${isGroup ? 'GROUP' : 'DM'}] ${sender?.split('@')[0]} → .${command}${text ? ' ' + text.slice(0, 40) : ''}`);
   addActivity(sessionState, 'command', `${sender.split('@')[0]} used .${command}${text ? ' ' + text.slice(0, 30) : ''}`);
@@ -716,23 +733,6 @@ async function handleMessage(sock, msg, prefix, sessionState) {
     }
 
     default: break;
-  }
-
-  // ── Deduct coins after successful command ──────────────────────────────────
-  if (coinCost > 0) {
-    const remaining = db.spendCoins(coinCost, `.${command}`);
-    if (remaining === 0) {
-      console.log(`[COINS] Balance hit 0 — bot suspended until coins are topped up`);
-      const ownerNumber = process.env.OWNER_NUMBER;
-      if (ownerNumber) {
-        try {
-          const ownerJid = ownerNumber + '@s.whatsapp.net';
-          await sock.sendMessage(ownerJid, {
-            text: `⚠️ *Firebox Alert: Coins Depleted!*\n\nThe bot has run out of coins and is now suspended.\n\n💡 Top up using:\n*.addcoins <amount>*\nor via the dashboard.\n\n_Last command: .${command}_`
-          });
-        } catch (_) {}
-      }
-    }
   }
 }
 
