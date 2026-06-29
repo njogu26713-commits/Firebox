@@ -359,5 +359,24 @@
       "20053906968777@lid": 1782044658881,
       "203719610208491@lid": 1782044732671
     }
+  },
+  "120363406498170673@g.us": {
+    "antilink": 0,
+    "welcome": 0,
+    "muted": 0,
+    "anticall": 0,
+    "antidelete": 0,
+    "antiedit": 0,
+    "antibot": 0,
+    "antiforeign": 0,
+    "antibadword": 0,
+    "antiban": 0,
+    "welcomeMsg": "",
+    "goodbyeMsg": "",
+    "badwords": [],
+    "jid": "120363406498170673@g.us",
+    "activeSenders": {
+      "179723476951068@lid": 1782737784041
+    }
   }
 }
