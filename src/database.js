@@ -39,7 +39,7 @@ function initialize() {
   if (!fs.existsSync(CONFESSIONS_FILE)) writeJson(CONFESSIONS_FILE, []);
   if (!fs.existsSync(BROADCAST_FILE))  writeJson(BROADCAST_FILE, []);
   if (!fs.existsSync(STATUS_STATS_FILE)) writeJson(STATUS_STATS_FILE, {});
-  if (!fs.existsSync(COINS_FILE))       writeJson(COINS_FILE, { balance: 1000, totalSpent: 0, history: [] });
+  if (!fs.existsSync(COINS_FILE))       writeJson(COINS_FILE, { balance: 20, totalSpent: 0, history: [] });
   console.log('[DB] JSON database initialized');
 }
 
@@ -47,8 +47,8 @@ function initialize() {
 const COIN_LOG_LIMIT = 50;
 
 function getCoins() {
-  const data = readJson(COINS_FILE, { balance: 1000, totalSpent: 0, history: [] });
-  if (typeof data.balance !== 'number') data.balance = 1000;
+  const data = readJson(COINS_FILE, { balance: 20, totalSpent: 0, history: [] });
+  if (typeof data.balance !== 'number') data.balance = 20;
   if (typeof data.totalSpent !== 'number') data.totalSpent = 0;
   if (!Array.isArray(data.history)) data.history = [];
   return data;

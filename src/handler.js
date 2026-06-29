@@ -91,6 +91,12 @@ async function handleMessage(sock, msg, prefix, sessionState) {
   const ignoreList = db.getBotSetting('ignoreList') || [];
   if (!isOwner && ignoreList.includes(sender)) return;
 
+  // ── Global coin gate — bot goes completely silent when coins = 0 ────────────
+  if (!isOwner && !key.fromMe) {
+    const { balance } = db.getCoins();
+    if (balance <= 0) return;
+  }
+
   if (isGroup) {
     group.trackActivity(from, sender);
     await group.checkAntiLink(sock, msg, from, sender, isOwner);
@@ -255,22 +261,6 @@ async function handleMessage(sock, msg, prefix, sessionState) {
 
   // ── Coin gate — owner/admin coin commands always bypass ────────────────────
   const COIN_BYPASS_CMDS = new Set(['coins', 'setcoins', 'coinhistory']);
-  if (!COIN_BYPASS_CMDS.has(command)) {
-    const { balance } = db.getCoins();
-    if (balance <= 0) {
-      if (!isOwner) {
-        await sock.sendMessage(from, {
-          text: `🪙 *Bot Out of Coins!*\n\n` +
-                `The bot has run out of coins and is temporarily suspended.\n\n` +
-                `💳 *To buy coins, send payment to:*\n` +
-                `📱 *0118234849*\n\n` +
-                `After payment, the admin will top up your coins and the bot will resume.\n\n` +
-                `💡 *Coin costs:* AI = 5 · Downloads = 3 · Regular = 1`
-        }, { quoted: msg });
-        return;
-      }
-    }
-  }
 
   // ── Coin cost classification ───────────────────────────────────────────────
   const AI_CMDS = new Set(['ai','ask','gemini','gpt','code','programming','blackbox','story','summarize','recipe','teach','analyze','translate','translate2','simi','dalle','imagine','generate','gen','txt2img','deepseek','ds','doppleai','doppel','roleplay']);
