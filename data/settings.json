@@ -1,6 +1,6 @@
 {
   "aiChatbotPersona": "I am Brayan😎 20 years owner of firebox. I love travelling and watching movies",
-  "aiChatbot": true,
+  "aiChatbot": false,
   "aiChatbotMode": "dm",
   "autoViewStatus": true,
   "autoReactStatus": true,
