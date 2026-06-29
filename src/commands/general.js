@@ -382,16 +382,12 @@ async function menu(ctx) {
     `\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
     `${f.italic('Type')} ${f.mono(p + 'help <cmd>')} ${f.italic('for details on any command')}`;
 
-  // Send menu image
+  // Send menu image with full command list as caption
   try {
     const botName = db.getBotSetting('botName') || 'FIREBOX';
     const userNum  = sender ? sender.split('@')[0] : '';
     const imgBuf   = await generateMenuImage(botName, p, userNum);
-    const caption  =
-      `🔥 *${botName.toUpperCase()} BOT MENU*\n` +
-      `📌 Prefix: ${p}   •   Mode: ${botMode.toUpperCase()}\n` +
-      `⏱ Uptime: ${getUptime()}\n\n` +
-      `_Type ${p}help <command> for details on any command_`;
+    const caption  = header + body + footer;
     await sock.sendMessage(from, { image: imgBuf, caption }, { quoted: msg });
   } catch (err) {
     // Fallback to text if image fails
