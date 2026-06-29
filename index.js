@@ -15,8 +15,20 @@ const YTDLP_PATH = '/home/runner/workspace/.pythonlibs/bin/yt-dlp';
 if (!fs.existsSync(YTDLP_PATH)) {
   try {
     console.log('[SETUP] Installing yt-dlp...');
-    execSync('pip install -q yt-dlp', { stdio: 'inherit' });
-    console.log('[SETUP] yt-dlp installed ✅');
+    const pipCandidates = ['pip3', 'pip', 'python3 -m pip', 'python -m pip'];
+    let installed = false;
+    for (const pip of pipCandidates) {
+      try {
+        execSync(`${pip} install -q yt-dlp`, { stdio: 'inherit' });
+        installed = true;
+        break;
+      } catch (_) {}
+    }
+    if (installed) {
+      console.log('[SETUP] yt-dlp installed ✅');
+    } else {
+      console.warn('[SETUP] yt-dlp could not be installed (pip not found) — .play/.video commands may not work');
+    }
   } catch (e) {
     console.error('[SETUP] yt-dlp install failed:', e.message);
   }
