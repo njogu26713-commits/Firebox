@@ -2,6 +2,7 @@ const os = require('os');
 const { performance } = require('perf_hooks');
 const db = require('../database');
 const f = require('../fonts');
+const { generateMenuImage } = require('../menuImage');
 
 function getUptime() {
   const s = Math.floor(process.uptime());
@@ -381,11 +382,24 @@ async function menu(ctx) {
     `\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
     `${f.italic('Type')} ${f.mono(p + 'help <cmd>')} ${f.italic('for details on any command')}`;
 
-  await sock.sendMessage(from, {
-    text: header + body + footer
-  }, { quoted: msg });
+  // Send menu image
+  try {
+    const botName = db.getBotSetting('botName') || 'FIREBOX';
+    const userNum  = sender ? sender.split('@')[0] : '';
+    const imgBuf   = await generateMenuImage(botName, p, userNum);
+    const caption  =
+      `🔥 *${botName.toUpperCase()} BOT MENU*\n` +
+      `📌 Prefix: ${p}   •   Mode: ${botMode.toUpperCase()}\n` +
+      `⏱ Uptime: ${getUptime()}\n\n` +
+      `_Type ${p}help <command> for details on any command_`;
+    await sock.sendMessage(from, { image: imgBuf, caption }, { quoted: msg });
+  } catch (err) {
+    // Fallback to text if image fails
+    console.error('[MENU] Image generation failed:', err.message);
+    await sock.sendMessage(from, { text: header + body + footer }, { quoted: msg });
+  }
 
-  // Quick shortcut buttons for popular commands
+  // Quick shortcut buttons
   await sendButtons(sock, from, msg,
     `⚡ ${f.bold('Quick Shortcuts')} — reply with a number to run instantly`,
     [

@@ -14,6 +14,7 @@
     "@distube/ytdl-core": "^4.16.12",
     "@google/genai": "^1.25.0",
     "@hapi/boom": "^10.0.1",
+    "@napi-rs/canvas": "^1.0.1",
     "@whiskeysockets/baileys": "^7.0.0-rc13",
     "adm-zip": "^0.5.17",
     "axios": "^1.8.3",
