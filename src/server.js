@@ -290,7 +290,8 @@ app.get('/api/sessions/:id/activity', (req, res) => {
   res.json({ sessionId: s.id, sessionName: s.name, number: s.number, status: s.status, activity: s.recentActivity || [] });
 });
 
-app.get('/', (req, res) => res.redirect('/pair'));
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../public/pair.html')));
 app.get('/pair',     (req, res) => res.sendFile(path.join(__dirname, '../public/pair.html')));
 app.get('/config',   (req, res) => res.sendFile(path.join(__dirname, '../public/config.html')));
 app.get('/admin',    (req, res) => res.sendFile(path.join(__dirname, '../public/admin.html')));
@@ -298,7 +299,7 @@ app.get('/activity',  (req, res) => res.sendFile(path.join(__dirname, '../public
 app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, '../public/dashboard.html')));
 
 app.use((req, res) => {
-  res.redirect('/pair');
+  res.sendFile(path.join(__dirname, '../public/pair.html'));
 });
 
 function startServer() {
