@@ -1133,24 +1133,78 @@ async function toviewonce(ctx) {
 }
 
 async function vv2(ctx) {
-  const { sock, from, msg } = ctx;
-  if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
-  const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-  const isViewOnce = quoted?.imageMessage?.viewOnce || quoted?.videoMessage?.viewOnce || quoted?.audioMessage?.viewOnce;
-  if (!isViewOnce && !quoted)
-    return send(sock, from, msg, '👁️ *View Once Opener (VV2)*\n\nReply to a view-once message with `.vv2`\nThe bot will resend it as a regular message.');
+  const { sock, from, msg, sessionState } = ctx;
+  const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+
+  const ctxInfo =
+    msg.message?.extendedTextMessage?.contextInfo ||
+    msg.message?.imageMessage?.contextInfo ||
+    msg.message?.videoMessage?.contextInfo;
+
+  const quotedMsg = ctxInfo?.quotedMessage;
+  const stanzaId  = ctxInfo?.stanzaId;
+
+  if (!quotedMsg || !stanzaId) {
+    return send(sock, from, msg,
+      '👁️ *View Once Opener (VV2)*\n\nReply to a view-once message with `.vv2`\nThe bot will resend it as a normal message.\n\n_Works on photos, videos and audio._');
+  }
+
+  // ── 1. Try the view-once cache first (fastest, most reliable) ────────────
+  const cached = sessionState.viewOnceCache.get(stanzaId);
+  if (cached?.buffer) {
+    const { buffer, type, mimetype, ptt, sender } = cached;
+    const senderTag = sender ? `@${sender.split('@')[0]}` : 'someone';
+    const caption = `👁️ *View-once revealed (VV2)*\n📩 Sent by: ${senderTag}`;
+    try {
+      if (type === 'imageMessage')
+        await sock.sendMessage(from, { image: buffer, caption, mimetype: mimetype || 'image/jpeg' }, { quoted: msg });
+      else if (type === 'videoMessage')
+        await sock.sendMessage(from, { video: buffer, caption, mimetype: mimetype || 'video/mp4' }, { quoted: msg });
+      else
+        await sock.sendMessage(from, { audio: buffer, mimetype: mimetype || 'audio/mp4', ptt: ptt || false }, { quoted: msg });
+      return;
+    } catch (_) {}
+  }
+
+  // ── 2. Fall back: download directly from the quoted message ──────────────
+  const mediaTypes = ['imageMessage', 'videoMessage', 'audioMessage'];
+  const mediaType  = mediaTypes.find(t => quotedMsg[t]);
+
+  if (!mediaType) {
+    return send(sock, from, msg, '❌ That message doesn\'t contain view-once media.');
+  }
+
   try {
-    const qCtx = msg.message.extendedTextMessage.contextInfo;
-    const fakeMsg = { key: { remoteJid: from, id: qCtx.stanzaId, fromMe: false, participant: qCtx.participant }, message: quoted };
-    const stream = await sock.downloadMediaMessage(fakeMsg);
-    const chunks = [];
-    for await (const c of stream) chunks.push(c);
-    const buf = Buffer.concat(chunks);
-    if (quoted.imageMessage) await sock.sendMessage(from, { image: buf, caption: '👁️ *View Once (opened)*', mimetype: quoted.imageMessage.mimetype || 'image/jpeg' }, { quoted: msg });
-    else if (quoted.videoMessage) await sock.sendMessage(from, { video: buf, caption: '👁️ *View Once (opened)*', mimetype: 'video/mp4' }, { quoted: msg });
-    else if (quoted.audioMessage) await sock.sendMessage(from, { audio: buf, mimetype: 'audio/mpeg', ptt: false }, { quoted: msg });
-    else await send(sock, from, msg, '❌ Cannot open this type of view once media.');
-  } catch (err) { await send(sock, from, msg, `❌ Failed: ${err.message}`); }
+    const fakeMsg = {
+      key: {
+        remoteJid: from,
+        id: stanzaId,
+        fromMe: false,
+        participant: ctxInfo?.participant || undefined
+      },
+      message: quotedMsg
+    };
+
+    const buffer = await downloadMediaMessage(
+      fakeMsg,
+      'buffer',
+      {},
+      { reuploadRequest: sock.updateMediaMessage }
+    );
+
+    const mediaData = quotedMsg[mediaType];
+    const caption   = '👁️ *View-once revealed (VV2)*';
+
+    if (mediaType === 'imageMessage')
+      await sock.sendMessage(from, { image: buffer, caption, mimetype: mediaData?.mimetype || 'image/jpeg' }, { quoted: msg });
+    else if (mediaType === 'videoMessage')
+      await sock.sendMessage(from, { video: buffer, caption, mimetype: 'video/mp4' }, { quoted: msg });
+    else
+      await sock.sendMessage(from, { audio: buffer, mimetype: mediaData?.mimetype || 'audio/mp4', ptt: mediaData?.ptt || false }, { quoted: msg });
+
+  } catch (err) {
+    await send(sock, from, msg, `❌ Could not open view-once: ${err.message}\n\n_Tip: The media may have expired. Ask them to resend it._`);
+  }
 }
 
 async function dlvo(ctx) { return vv2(ctx); }
