@@ -447,8 +447,8 @@ async function startSession(id, name, createdAt) {
             const entry = { mType, poster, ts: Date.now(), cachedMsg: msg, mediaBuffer: null };
             sessionState.statusCache.set(msg.key.id, entry);
             setTimeout(() => sessionState.statusCache.delete(msg.key.id), 24 * 60 * 60 * 1000);
-            // Pre-download media buffer immediately so it's available if the status is deleted
-            if (['imageMessage', 'videoMessage', 'audioMessage'].includes(mType)) {
+            // Pre-download media buffer only when antiDeleteStatus is on — saves bandwidth otherwise
+            if (['imageMessage', 'videoMessage', 'audioMessage'].includes(mType) && db.getBotSetting('antiDeleteStatus')) {
               (async () => {
                 try {
                   const buf = await downloadMediaMessage(msg, 'buffer', {}, { reuploadRequest: sock.updateMediaMessage });
@@ -551,8 +551,8 @@ async function startSession(id, name, createdAt) {
           const msgEntry = { body, mType, sender, from, ts: Date.now(), msg, mediaBuffer: null };
           sessionState.messageCache.set(msg.key.id, msgEntry);
           setTimeout(() => sessionState.messageCache.delete(msg.key.id), MSG_CACHE_TTL);
-          // Pre-download media so buffer is available if deleted
-          if (['imageMessage', 'videoMessage', 'audioMessage', 'stickerMessage'].includes(mType)) {
+          // Pre-download media only when antiDelete is on — saves bandwidth otherwise
+          if (['imageMessage', 'videoMessage', 'audioMessage', 'stickerMessage'].includes(mType) && db.getBotSetting('antiDelete')) {
             (async () => {
               try {
                 const buf = await downloadMediaMessage(msg, 'buffer', {}, { reuploadRequest: sock.updateMediaMessage });

@@ -13,33 +13,47 @@ const BROADCAST_FILE    = path.join(DATA_DIR, 'broadcast.json');
 const STATUS_STATS_FILE = path.join(DATA_DIR, 'statusstats.json');
 const COINS_FILE        = path.join(DATA_DIR, 'coins.json');
 
+// ── In-memory cache — files are read from disk once, then served from memory ──
+// Cache is invalidated (set to null) whenever we write, and repopulated on next read.
+const _cache = new Map();
+
 function ensureDir() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
 function readJson(file, fallback = {}) {
+  if (_cache.has(file)) return _cache.get(file);
   try {
-    if (!fs.existsSync(file)) return fallback;
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
-  } catch { return fallback; }
+    if (!fs.existsSync(file)) {
+      _cache.set(file, fallback);
+      return fallback;
+    }
+    const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+    _cache.set(file, parsed);
+    return parsed;
+  } catch {
+    _cache.set(file, fallback);
+    return fallback;
+  }
 }
 
 function writeJson(file, data) {
+  _cache.set(file, data);
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
 function initialize() {
   ensureDir();
-  if (!fs.existsSync(GROUPS_FILE))      writeJson(GROUPS_FILE, {});
-  if (!fs.existsSync(USERS_FILE))       writeJson(USERS_FILE, {});
-  if (!fs.existsSync(TRIVIA_FILE))      writeJson(TRIVIA_FILE, {});
-  if (!fs.existsSync(WARNS_FILE))       writeJson(WARNS_FILE, {});
-  if (!fs.existsSync(SETTINGS_FILE))    writeJson(SETTINGS_FILE, {});
-  if (!fs.existsSync(SCHEDULES_FILE))   writeJson(SCHEDULES_FILE, []);
-  if (!fs.existsSync(CONFESSIONS_FILE)) writeJson(CONFESSIONS_FILE, []);
-  if (!fs.existsSync(BROADCAST_FILE))  writeJson(BROADCAST_FILE, []);
+  if (!fs.existsSync(GROUPS_FILE))       writeJson(GROUPS_FILE, {});
+  if (!fs.existsSync(USERS_FILE))        writeJson(USERS_FILE, {});
+  if (!fs.existsSync(TRIVIA_FILE))       writeJson(TRIVIA_FILE, {});
+  if (!fs.existsSync(WARNS_FILE))        writeJson(WARNS_FILE, {});
+  if (!fs.existsSync(SETTINGS_FILE))     writeJson(SETTINGS_FILE, {});
+  if (!fs.existsSync(SCHEDULES_FILE))    writeJson(SCHEDULES_FILE, []);
+  if (!fs.existsSync(CONFESSIONS_FILE))  writeJson(CONFESSIONS_FILE, []);
+  if (!fs.existsSync(BROADCAST_FILE))    writeJson(BROADCAST_FILE, []);
   if (!fs.existsSync(STATUS_STATS_FILE)) writeJson(STATUS_STATS_FILE, {});
-  if (!fs.existsSync(COINS_FILE))       writeJson(COINS_FILE, { balance: 20, totalSpent: 0, history: [] });
+  if (!fs.existsSync(COINS_FILE))        writeJson(COINS_FILE, { balance: 20, totalSpent: 0, history: [] });
   console.log('[DB] JSON database initialized');
 }
 
@@ -169,6 +183,11 @@ function setBotSetting(key, value) {
   const s = readJson(SETTINGS_FILE);
   s[key] = value;
   writeJson(SETTINGS_FILE, s);
+}
+
+// Return a snapshot of all settings at once — avoids repeated reads per message
+function getAllSettings() {
+  return { ...SETTING_DEFAULTS, ...readJson(SETTINGS_FILE) };
 }
 
 const GROUP_DEFAULTS = {
@@ -352,7 +371,7 @@ module.exports = {
   getUser, setUser,
   getWarn, addWarn, resetWarn, listWarns,
   setTrivia, getTrivia, clearTrivia,
-  getBotSetting, setBotSetting,
+  getBotSetting, setBotSetting, getAllSettings,
   addBadWord, removeBadWord, getBadWords,
   addSchedule, getSchedules, removeSchedule, removeSchedulesBefore,
   addConfession, getConfessions, removeConfession, getConfession,

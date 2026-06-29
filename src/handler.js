@@ -46,12 +46,50 @@ async function handlePendingPrompt(sock, msg, from, sender, body, sessionState) 
 }
 
 
+// ── Periodic cleanup of unbounded Maps (runs every 30 min) ───────────────────
+setInterval(() => {
+  const { sessions } = require('./sessionManager');
+  const now = Date.now();
+  const AWAY_MAX_AGE   = 30 * 60 * 1000;  // 30 min — safe to evict after cooldown expired
+  const DEAD_MAX_AGE   = 10 * 60 * 1000;  // 10 min
+  const AI_MAX_ENTRIES = 500;              // cap total AI chat history entries
+
+  for (const s of sessions.values()) {
+    // Clean awayReplied
+    if (s.awayReplied) {
+      for (const [jid, ts] of s.awayReplied) {
+        if (now - ts > AWAY_MAX_AGE) s.awayReplied.delete(jid);
+      }
+    }
+    // Clean deadReplied
+    if (s.deadReplied) {
+      for (const [jid, ts] of s.deadReplied) {
+        if (now - ts > DEAD_MAX_AGE) s.deadReplied.delete(jid);
+      }
+    }
+    // Cap aiChatHistory
+    if (s.aiChatHistory && s.aiChatHistory.size > AI_MAX_ENTRIES) {
+      const oldest = [...s.aiChatHistory.keys()].slice(0, s.aiChatHistory.size - AI_MAX_ENTRIES);
+      for (const k of oldest) s.aiChatHistory.delete(k);
+    }
+    // Clean pendingPrompts
+    if (s.pendingPrompts) {
+      for (const [k, v] of s.pendingPrompts) {
+        if (now > v.expiresAt) s.pendingPrompts.delete(k);
+      }
+    }
+  }
+}, 30 * 60 * 1000);
+
 async function handleMessage(sock, msg, prefix, sessionState) {
   const { key, message } = msg;
   const from = key.remoteJid;
   if (!from) return;
   const botNum = sock.user?.id?.split(':')[0] || '?';
   if (!key.fromMe) console.log(`[MSG][bot:${botNum}] from=${from?.split('@')[0]} type=${Object.keys(message||{})[0]}`);
+
+  // Read all settings once per message — avoids 10+ synchronous file reads
+  const settings = db.getAllSettings();
 
   const isGroup  = from.endsWith('@g.us');
   const sender   = isGroup
@@ -88,7 +126,7 @@ async function handleMessage(sock, msg, prefix, sessionState) {
 
 
   // Ignore list gate — silently skip ignored senders
-  const ignoreList = db.getBotSetting('ignoreList') || [];
+  const ignoreList = settings.ignoreList || [];
   if (!isOwner && ignoreList.includes(sender)) return;
 
   // ── Global coin gate — bot goes completely silent when coins = 0 ────────────
@@ -109,12 +147,12 @@ async function handleMessage(sock, msg, prefix, sessionState) {
   }
 
   // Dead mode — global setting, blocks ALL non-owner messages with an "offline" notice
-  if (!key.fromMe && !isOwner && db.getBotSetting('deadMode')) {
+  if (!key.fromMe && !isOwner && settings.deadMode) {
     const DEAD_COOLDOWN = 3 * 60 * 1000;
     const lastReplied = sessionState.deadReplied?.get(from) || 0;
     if (Date.now() - lastReplied > DEAD_COOLDOWN) {
       if (!sessionState.deadReplied) sessionState.deadReplied = new Map();
-      const deadMsg = db.getBotSetting('deadMsg') ||
+      const deadMsg = settings.deadMsg ||
         `💀 *Bot is currently dead / offline.*\n\n_Please try again later or contact the owner._`;
       await sock.sendMessage(from, { text: deadMsg }, { quoted: msg });
       sessionState.deadReplied.set(from, Date.now());
@@ -152,16 +190,16 @@ async function handleMessage(sock, msg, prefix, sessionState) {
 
     if (!key.fromMe && body?.trim()) {
 
-      if (db.getBotSetting('aiChatbot')) {
-        const aiMode = db.getBotSetting('aiChatbotMode') || 'dm';
-        const aiTargets = db.getAiChatTargets();
+      if (settings.aiChatbot) {
+        const aiMode = settings.aiChatbotMode || 'dm';
+        const aiTargets = settings.aiChatTargets || [];
         const aiActive =
           aiMode === 'all' ||
           (aiMode === 'dm' && !isGroup) ||
           (aiMode === 'group' && isGroup) ||
           (aiMode === 'specific' && aiTargets.includes(from));
         if (aiActive) {
-          const persona = db.getBotSetting('aiChatbotPersona');
+          const persona = settings.aiChatbotPersona;
           if (persona) {
             try {
               await sock.sendPresenceUpdate('composing', from).catch(() => {});
@@ -172,7 +210,7 @@ async function handleMessage(sock, msg, prefix, sessionState) {
               const history = sessionState.aiChatHistory.get(historyKey);
               const isFirstMessage = history.length === 0;
 
-              const opener = db.getBotSetting('aiChatOpener');
+              const opener = settings.aiChatOpener;
               if (isFirstMessage && opener) await sock.sendMessage(from, { text: opener }, { quoted: msg });
 
               const systemContent =
@@ -239,11 +277,11 @@ async function handleMessage(sock, msg, prefix, sessionState) {
         }
       }
 
-      if (db.getBotSetting('autoReply')) {
-        const mode = db.getBotSetting('autoReplyMode') || 'all';
+      if (settings.autoReply) {
+        const mode = settings.autoReplyMode || 'all';
         const shouldReply = mode === 'all' || (mode === 'dm' && !isGroup) || (mode === 'group' && isGroup);
         if (shouldReply) {
-          const replyMsg = db.getBotSetting('autoReplyMsg') || '👋 Hello! I am currently unavailable.';
+          const replyMsg = settings.autoReplyMsg || '👋 Hello! I am currently unavailable.';
           await sock.sendMessage(from, { text: replyMsg }, { quoted: msg });
         }
       }
@@ -254,7 +292,7 @@ async function handleMessage(sock, msg, prefix, sessionState) {
   }
 
   // ── Private mode gate ─────────────────────────────────────────────────────
-  if (!isOwner && db.getBotSetting('botMode') === 'private') {
+  if (!isOwner && settings.botMode === 'private') {
     await sock.sendMessage(from, { text: '🔒 *Bot is in private mode.*\nOnly the owner can use commands.' }, { quoted: msg });
     return;
   }
