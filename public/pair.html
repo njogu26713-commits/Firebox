@@ -478,22 +478,6 @@
   </div>
 
 
-  <!-- ── CONNECTED BANNER ────────────────────────────────────────────────── -->
-  <div id="connected-banner" class="connected-banner">
-    <div class="connected-left">
-      <div class="live-dot"></div>
-      <div class="connected-info">
-        <h3 id="banner-name">Connected</h3>
-        <p id="banner-number">WhatsApp Live</p>
-      </div>
-    </div>
-    <div class="stats" id="banner-stats"></div>
-    <div class="banner-actions">
-      <button class="btn btn-green btn-sm" onclick="exportPrimary()">📤 Export Session</button>
-      <button class="btn btn-red btn-sm" onclick="removePrimary()">Disconnect</button>
-    </div>
-  </div>
-
   <!-- ── PAIR CARD ───────────────────────────────────────────────────────── -->
   <div class="pair-card" id="pair-card">
     <div class="card-hdr" style="padding:14px 24px;background:rgba(0,0,0,.2);border-bottom:1px solid var(--border);font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px">
@@ -536,16 +520,6 @@
     </div>
   </div>
 
-  <!-- ── ADD ANOTHER BOT ────────────────────────────────────────────────── -->
-  <div class="add-bot-wrap" id="add-bot-wrap" style="display:none">
-    <button class="btn-add-bot" onclick="addAnotherBot()">➕ Add Another Bot</button>
-  </div>
-
-  <!-- ── OTHER SESSIONS ─────────────────────────────────────────────────── -->
-  <div id="sessions-box" style="display:none">
-    <div class="section-title">Other Active Sessions</div>
-    <div id="sessions-list"></div>
-  </div>
 
 </div>
 
@@ -754,76 +728,24 @@
   }
 
   function render() {
-    const connected = sessions.filter(s => s.status === 'connected');
-    const primary   = connected[0] || null;
-    // "others" = every session that isn't the primary connected one
-    const others    = sessions.filter(s => !(primary && s.id === primary.id));
-    const banner    = document.getElementById('connected-banner');
-    const card      = document.getElementById('pair-card');
-    const addWrap   = document.getElementById('add-bot-wrap');
-
-    // ── Primary banner ──────────────────────────────────────────────────
-    if (primary) {
-      banner.classList.add('show');
-      document.getElementById('banner-name').textContent   = primary.name || 'Bot';
-      document.getElementById('banner-number').textContent = primary.number ? '+' + primary.number : 'WhatsApp Live';
-      document.getElementById('banner-stats').innerHTML = `
-        <div class="stat"><div class="stat-val">${primary.messageCount||0}</div><div class="stat-lbl">Messages</div></div>
-        <div class="stat"><div class="stat-val">${primary.commandCount||0}</div><div class="stat-lbl">Commands</div></div>
-        <div class="stat"><div class="stat-val">${fmtUp(primary.uptime)}</div><div class="stat-lbl">Uptime</div></div>
-      `;
-      banner.dataset.id = primary.id; banner.dataset.name = primary.name || 'Bot';
-    } else {
-      banner.classList.remove('show');
-    }
-
-    // ── Pair card visibility ────────────────────────────────────────────
-    // Show pair card when: no sessions yet, OR actively pairing a new session
-    const isPairing = pairingId && sessions.find(s => s.id === pairingId && s.status !== 'connected');
-    if (!primary || isPairing) {
-      card.style.display = 'block';
-      addWrap.style.display = 'none';
-    } else {
-      card.style.display = 'none';
-      addWrap.style.display = 'block';
-    }
-
     // ── Track active pairing session ────────────────────────────────────
     if (pairingId) {
       const s = sessions.find(s => s.id === pairingId);
       if (s) {
         updateCard(s);
-        // Pairing complete — reset pairingId so the card hides
-        if (s.status === 'connected') pairingId = null;
+        // Pairing complete — redirect to dashboard
+        if (s.status === 'connected') {
+          pairingId = null;
+          toast('✅ Bot connected! Redirecting to dashboard…', 'success');
+          setTimeout(() => { window.location.href = '/dashboard'; }, 1500);
+        }
       }
     } else {
       const connecting = sessions.find(s => s.status === 'connecting');
       if (connecting) { pairingId = connecting.id; updateCard(connecting); }
     }
 
-    // ── Other sessions list ─────────────────────────────────────────────
-    const box  = document.getElementById('sessions-box');
-    const list = document.getElementById('sessions-list');
-    if (others.length) {
-      box.style.display = 'block';
-      list.innerHTML = others.map(s => {
-        const cls = s.status === 'connected' ? 'badge-on' : s.status === 'connecting' ? 'badge-ing' : 'badge-off';
-        const label = s.status === 'connecting' && s.id === pairingId ? 'Pairing…' : s.status;
-        return `<div class="sess-row">
-          <div class="sess-left">
-            <span class="badge ${cls}">${label}</span>
-            <div>
-              <div class="sess-name">${s.name||'Session'}</div>
-              <div class="sess-num">${s.number ? '+'+s.number : s.id}</div>
-            </div>
-          </div>
-          <div class="sess-actions">
-            <button class="btn btn-green btn-sm" onclick="exportSess('${s.id}')">📤 Export</button>
-            <button class="btn btn-red btn-sm" onclick="removeSess('${s.id}','${s.name||'Session'}')">Remove</button>
-          </div>
-        </div>`;
-      }).join('');
-    } else { box.style.display = 'none'; }
+    // Sessions are managed on the Dashboard page
   }
 
   function addAnotherBot() {
