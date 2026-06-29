@@ -399,16 +399,6 @@ async function menu(ctx) {
     await sock.sendMessage(from, { text: header + body + footer }, { quoted: msg });
   }
 
-  // Quick shortcut buttons
-  await sendButtons(sock, from, msg,
-    `⚡ ${f.bold('Quick Shortcuts')} — reply with a number to run instantly`,
-    [
-      { id: `${p}ping`,  label: '🏓 Ping' },
-      { id: `${p}ai`,    label: '🤖 Ask AI' },
-      { id: `${p}play`,  label: '🎵 Play Song' },
-    ],
-    sender, p, sessionState
-  );
 }
 
 async function sendButtons(sock, from, msg, text, buttons, sender, prefix, sessionState) {
