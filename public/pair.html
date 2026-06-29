@@ -191,6 +191,17 @@
     .modal-row { display: flex; gap: 10px; justify-content: flex-end; }
 
     /* ── ADMIN PANEL ────────────────────────────────────────── */
+    /* ── ADD ANOTHER BOT ────────────────────────────────────── */
+    .add-bot-wrap { text-align: center; margin: 8px 0 24px; }
+    .btn-add-bot {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 13px 28px; border-radius: 12px; font-size: 0.9rem; font-weight: 700;
+      background: rgba(59,130,246,.12); color: var(--blue);
+      border: 1px dashed rgba(59,130,246,.35); cursor: pointer;
+      transition: all .2s;
+    }
+    .btn-add-bot:hover { background: rgba(59,130,246,.2); border-color: var(--blue); transform: translateY(-1px); }
+
     .admin-section { margin-bottom: 24px; }
     .admin-toggle {
       display: flex; align-items: center; gap: 10px;
@@ -525,6 +536,11 @@
     </div>
   </div>
 
+  <!-- ── ADD ANOTHER BOT ────────────────────────────────────────────────── -->
+  <div class="add-bot-wrap" id="add-bot-wrap" style="display:none">
+    <button class="btn-add-bot" onclick="addAnotherBot()">➕ Add Another Bot</button>
+  </div>
+
   <!-- ── OTHER SESSIONS ─────────────────────────────────────────────────── -->
   <div id="sessions-box" style="display:none">
     <div class="section-title">Other Active Sessions</div>
@@ -739,45 +755,67 @@
 
   function render() {
     const connected = sessions.filter(s => s.status === 'connected');
-    const others    = sessions.filter((s, i) => !(s.status === 'connected' && i === 0));
-    const banner = document.getElementById('connected-banner');
-    const card   = document.getElementById('pair-card');
+    const primary   = connected[0] || null;
+    // "others" = every session that isn't the primary connected one
+    const others    = sessions.filter(s => !(primary && s.id === primary.id));
+    const banner    = document.getElementById('connected-banner');
+    const card      = document.getElementById('pair-card');
+    const addWrap   = document.getElementById('add-bot-wrap');
 
-    if (connected.length > 0) {
-      const p = connected[0];
+    // ── Primary banner ──────────────────────────────────────────────────
+    if (primary) {
       banner.classList.add('show');
-      document.getElementById('banner-name').textContent   = p.name || 'Bot';
-      document.getElementById('banner-number').textContent = p.number ? '+' + p.number : 'WhatsApp Live';
+      document.getElementById('banner-name').textContent   = primary.name || 'Bot';
+      document.getElementById('banner-number').textContent = primary.number ? '+' + primary.number : 'WhatsApp Live';
       document.getElementById('banner-stats').innerHTML = `
-        <div class="stat"><div class="stat-val">${p.messageCount||0}</div><div class="stat-lbl">Messages</div></div>
-        <div class="stat"><div class="stat-val">${p.commandCount||0}</div><div class="stat-lbl">Commands</div></div>
-        <div class="stat"><div class="stat-val">${fmtUp(p.uptime)}</div><div class="stat-lbl">Uptime</div></div>
+        <div class="stat"><div class="stat-val">${primary.messageCount||0}</div><div class="stat-lbl">Messages</div></div>
+        <div class="stat"><div class="stat-val">${primary.commandCount||0}</div><div class="stat-lbl">Commands</div></div>
+        <div class="stat"><div class="stat-val">${fmtUp(primary.uptime)}</div><div class="stat-lbl">Uptime</div></div>
       `;
-      banner.dataset.id = p.id; banner.dataset.name = p.name || 'Bot';
-      if (!pairingId || p.id === pairingId) card.style.display = 'none';
+      banner.dataset.id = primary.id; banner.dataset.name = primary.name || 'Bot';
     } else {
       banner.classList.remove('show');
-      card.style.display = 'block';
     }
 
+    // ── Pair card visibility ────────────────────────────────────────────
+    // Show pair card when: no sessions yet, OR actively pairing a new session
+    const isPairing = pairingId && sessions.find(s => s.id === pairingId && s.status !== 'connected');
+    if (!primary || isPairing) {
+      card.style.display = 'block';
+      addWrap.style.display = 'none';
+    } else {
+      card.style.display = 'none';
+      addWrap.style.display = 'block';
+    }
+
+    // ── Track active pairing session ────────────────────────────────────
     if (pairingId) {
       const s = sessions.find(s => s.id === pairingId);
-      if (s) updateCard(s);
+      if (s) {
+        updateCard(s);
+        // Pairing complete — reset pairingId so the card hides
+        if (s.status === 'connected') pairingId = null;
+      }
     } else {
       const connecting = sessions.find(s => s.status === 'connecting');
       if (connecting) { pairingId = connecting.id; updateCard(connecting); }
     }
 
-    const box = document.getElementById('sessions-box');
+    // ── Other sessions list ─────────────────────────────────────────────
+    const box  = document.getElementById('sessions-box');
     const list = document.getElementById('sessions-list');
     if (others.length) {
       box.style.display = 'block';
       list.innerHTML = others.map(s => {
         const cls = s.status === 'connected' ? 'badge-on' : s.status === 'connecting' ? 'badge-ing' : 'badge-off';
+        const label = s.status === 'connecting' && s.id === pairingId ? 'Pairing…' : s.status;
         return `<div class="sess-row">
           <div class="sess-left">
-            <span class="badge ${cls}">${s.status}</span>
-            <div><div class="sess-name">${s.name||'Session'}</div><div class="sess-num">${s.number?'+'+s.number:s.id}</div></div>
+            <span class="badge ${cls}">${label}</span>
+            <div>
+              <div class="sess-name">${s.name||'Session'}</div>
+              <div class="sess-num">${s.number ? '+'+s.number : s.id}</div>
+            </div>
           </div>
           <div class="sess-actions">
             <button class="btn btn-green btn-sm" onclick="exportSess('${s.id}')">📤 Export</button>
@@ -786,6 +824,20 @@
         </div>`;
       }).join('');
     } else { box.style.display = 'none'; }
+  }
+
+  function addAnotherBot() {
+    pairingId = null;
+    // Reset pair card to idle state
+    document.getElementById('qr-wrap').style.display = 'none';
+    document.getElementById('qr-empty').style.display = 'block';
+    document.getElementById('code-display').style.display = 'none';
+    document.getElementById('pair-phone').value = '';
+    setStatus('dot-idle', 'var(--muted)', 'Idle — click Start Pairing to begin');
+    document.getElementById('start-btn').disabled = false;
+    document.getElementById('start-btn').textContent = '⚡ Start Pairing';
+    document.getElementById('pair-card').style.display = 'block';
+    document.getElementById('add-bot-wrap').style.display = 'none';
   }
 
   function updateCard(s) {
