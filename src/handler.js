@@ -254,7 +254,7 @@ async function handleMessage(sock, msg, prefix, sessionState) {
   }
 
   // ── Coin gate — owner/admin coin commands always bypass ────────────────────
-  const COIN_BYPASS_CMDS = new Set(['coins', 'addcoins', 'setcoins', 'coinhistory']);
+  const COIN_BYPASS_CMDS = new Set(['coins', 'setcoins', 'coinhistory']);
   if (!COIN_BYPASS_CMDS.has(command)) {
     const { balance } = db.getCoins();
     if (balance <= 0) {
@@ -275,7 +275,7 @@ async function handleMessage(sock, msg, prefix, sessionState) {
   // ── Coin cost classification ───────────────────────────────────────────────
   const AI_CMDS = new Set(['ai','ask','gemini','gpt','code','programming','blackbox','story','summarize','recipe','teach','analyze','translate','translate2','simi','dalle','imagine','generate','gen','txt2img','deepseek','ds','doppleai','doppel','roleplay']);
   const DL_CMDS = new Set(['play','ytmp3','song','song2','video','ytmp4','tiktok','tt','tiktokaudio','ttaudio','instagram','ig','facebook','fb','twitter','x','pin','pinterest','image','img','apk','mediafire','mf','gdrive','gd','gitclone','git','itunes','telesticker','tgsticker','videodoc','vdoc','download','dl','wallpaper','wp','remini','enhance']);
-  const OWNER_CMDS = new Set(['delete','del','block','unblock','restart','react','setprefix','forward','join','leave','setbio','aichat','aibot','autoreply','ar','dead','away','mode','dmgroup','dmall','autoviewstatus','avs','autoreactstatus','ars','statusstats','clearstatusstats','autostatusreply','asr','antideletestatus','ads','broadcaststatus','tostatus','inbox','sharecf','clearcf','schedule','schedulelist','schedules','cancelschedule','broadcast','bc','addbc','removebc','listbc','clearbc','disk','hostip','online','lastseen','ppprivacy','readreceipts','gcaddprivacy','toviewonce','vo','vv2','openvo','dlvo','unblockall','listblocked','groupid','gid','deljunk','update','setprofilepic','spp','aza','setaza','resetaza','autosavestatus','modestatus','setstickercmd','delstickercmd','addsudo','delsudo','listsudo','addignorelist','delignorelist','listignorelist','addcountrycode','delcountrycode','listcountrycode','addbadword','gbw','deletebadword','delbw','listbadword','lbw','alwaysonline','ao','antibug','antiviewonce','avo','autobio','autoblock','autoreact','autoread','autorecord','autorecordtyping','autotype','chatbot','statusdelay','setbotname','setownername','setownernumber','settimezone','setstickerauthor','setstickerpackname','setwatermark','setstatusemoji','setcontextlink','setfont','setmenu','setmenuimage','setwarn','anticalldm','setanticallmsg','delanticallmsg','showanticallmsg','testanticallmsg','delwelcome','showwelcome','testwelcome','delgoodbye','showgoodbye','testgoodbye','getsettings','resetsetting','statussettings','antidelete','antiedit','coins','addcoins','setcoins','coinhistory']);
+  const OWNER_CMDS = new Set(['delete','del','block','unblock','restart','react','setprefix','forward','join','leave','setbio','aichat','aibot','autoreply','ar','dead','away','mode','dmgroup','dmall','autoviewstatus','avs','autoreactstatus','ars','statusstats','clearstatusstats','autostatusreply','asr','antideletestatus','ads','broadcaststatus','tostatus','inbox','sharecf','clearcf','schedule','schedulelist','schedules','cancelschedule','broadcast','bc','addbc','removebc','listbc','clearbc','disk','hostip','online','lastseen','ppprivacy','readreceipts','gcaddprivacy','toviewonce','vo','vv2','openvo','dlvo','unblockall','listblocked','groupid','gid','deljunk','update','setprofilepic','spp','aza','setaza','resetaza','autosavestatus','modestatus','setstickercmd','delstickercmd','addsudo','delsudo','listsudo','addignorelist','delignorelist','listignorelist','addcountrycode','delcountrycode','listcountrycode','addbadword','gbw','deletebadword','delbw','listbadword','lbw','alwaysonline','ao','antibug','antiviewonce','avo','autobio','autoblock','autoreact','autoread','autorecord','autorecordtyping','autotype','chatbot','statusdelay','setbotname','setownername','setownernumber','settimezone','setstickerauthor','setstickerpackname','setwatermark','setstatusemoji','setcontextlink','setfont','setmenu','setmenuimage','setwarn','anticalldm','setanticallmsg','delanticallmsg','showanticallmsg','testanticallmsg','delwelcome','showwelcome','testwelcome','delgoodbye','showgoodbye','testgoodbye','getsettings','resetsetting','statussettings','antidelete','antiedit','coins','setcoins','coinhistory']);
 
   let coinCost = 0;
   if (!isOwner && !COIN_BYPASS_CMDS.has(command)) {
@@ -292,7 +292,7 @@ async function handleMessage(sock, msg, prefix, sessionState) {
       if (ownerNumber) {
         try {
           await sock.sendMessage(ownerNumber + '@s.whatsapp.net', {
-            text: `⚠️ *Firebox Alert: Coins Depleted!*\n\nThe bot has run out of coins and is now suspended.\n\n💡 Top up using:\n*.addcoins <amount>*\nor via the dashboard.\n\n_Last command: .${command}_`
+            text: `⚠️ *Firebox Alert: Coins Depleted!*\n\nThe bot has run out of coins and is now suspended.\n\n💡 Top up via the dashboard.\n\n_Last command: .${command}_`
           });
         } catch (_) {}
       }
@@ -689,18 +689,7 @@ async function handleMessage(sock, msg, prefix, sessionState) {
               `${icon} *Balance:* ${coinData.balance} coins\n` +
               `📊 *Total Spent:* ${coinData.totalSpent} coins\n\n` +
               `💡 *Costs:* AI = 5 | Downloads = 3 | Regular = 1\n` +
-              `_Use .addcoins <amount> to top up (owner only)_`
-      }, { quoted: msg });
-      return;
-    }
-
-    case 'addcoins': {
-      if (!isOwner) return sock.sendMessage(from, { text: '❌ Owner only!' }, { quoted: msg });
-      const amt = parseInt(args[0]);
-      if (!amt || amt <= 0) return sock.sendMessage(from, { text: '❌ Usage: .addcoins <amount>\nExample: .addcoins 500' }, { quoted: msg });
-      const newBal = db.addCoins(amt, `Added by ${sender.split('@')[0]}`);
-      await sock.sendMessage(from, {
-        text: `✅ *Coins Added!*\n\n🪙 Added: *${amt} coins*\n💰 New Balance: *${newBal} coins*\n\n_Bot is now active!_`
+              `_Top up via the dashboard_`
       }, { quoted: msg });
       return;
     }
