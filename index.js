@@ -7,6 +7,22 @@ process.on('unhandledRejection', (reason) => {
 });
 
 require('dotenv').config();
+
+// ── Ensure yt-dlp is installed (needed for .play / .video commands) ───────────
+const { execSync } = require('child_process');
+const fs = require('fs');
+const YTDLP_PATH = '/home/runner/workspace/.pythonlibs/bin/yt-dlp';
+if (!fs.existsSync(YTDLP_PATH)) {
+  try {
+    console.log('[SETUP] Installing yt-dlp...');
+    execSync('pip install -q yt-dlp', { stdio: 'inherit' });
+    console.log('[SETUP] yt-dlp installed ✅');
+  } catch (e) {
+    console.error('[SETUP] yt-dlp install failed:', e.message);
+  }
+} else {
+  console.log('[SETUP] yt-dlp ready ✅');
+}
 const db = require('./src/database');
 const { startServer } = require('./src/server');
 const { loadAndStartAll } = require('./src/sessionManager');
