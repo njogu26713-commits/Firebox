@@ -137,13 +137,16 @@ async function handleMessage(sock, msg, prefix, sessionState) {
 
   if (isGroup) {
     group.trackActivity(from, sender);
-    await group.checkAntiLink(sock, msg, from, sender, isOwner);
-    await group.checkBadWord(sock, msg, from, sender, isOwner);
-    await group.checkAntiForward(sock, msg, from, sender, isOwner);
-    await group.checkAntiSticker(sock, msg, from, sender, isOwner);
-    await group.checkAntiGroupMention(sock, msg, from, sender, isOwner);
-    await group.checkAntiMessage(sock, msg, from, sender, isOwner);
-    await group.checkAntiLinkGc(sock, msg, from, sender, isOwner);
+    // Run all group protection checks in parallel — was sequential before (7 awaits in a row)
+    await Promise.all([
+      group.checkAntiLink(sock, msg, from, sender, isOwner),
+      group.checkBadWord(sock, msg, from, sender, isOwner),
+      group.checkAntiForward(sock, msg, from, sender, isOwner),
+      group.checkAntiSticker(sock, msg, from, sender, isOwner),
+      group.checkAntiGroupMention(sock, msg, from, sender, isOwner),
+      group.checkAntiMessage(sock, msg, from, sender, isOwner),
+      group.checkAntiLinkGc(sock, msg, from, sender, isOwner),
+    ]);
   }
 
   // Dead mode — global setting, blocks ALL non-owner messages with an "offline" notice

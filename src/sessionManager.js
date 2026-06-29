@@ -82,7 +82,19 @@ async function startSession(id, name, createdAt) {
   if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
 
   const { state: authState, saveCreds } = await useMultiFileAuthState(sessionDir);
-  const { version } = await fetchLatestBaileysVersion();
+
+  // Cache the WA version — fetchLatestBaileysVersion() hits a remote server every call.
+  // Re-fetch only once every 6 hours so reconnects don't add network latency.
+  if (!startSession._cachedVersion || Date.now() - startSession._versionTs > 6 * 60 * 60 * 1000) {
+    try {
+      const result = await fetchLatestBaileysVersion();
+      startSession._cachedVersion = result.version;
+      startSession._versionTs = Date.now();
+    } catch (_) {
+      if (!startSession._cachedVersion) startSession._cachedVersion = [2, 3000, 1015901307];
+    }
+  }
+  const version = startSession._cachedVersion;
 
   const nullLogger = pino({ level: 'silent' }, { write: () => {} });
 
@@ -93,10 +105,10 @@ async function startSession(id, name, createdAt) {
       creds: authState.creds,
       keys: makeCacheableSignalKeyStore(authState.keys, nullLogger)
     },
-    generateHighQualityLinkPreview: true,
+    generateHighQualityLinkPreview: false,
     syncFullHistory: false,
     markOnlineOnConnect: false,
-    keepAliveIntervalMs: 10000,
+    keepAliveIntervalMs: 25000,
     connectTimeoutMs: 60000,
     retryRequestDelayMs: 250,
     maxMsgRetryCount: 5
