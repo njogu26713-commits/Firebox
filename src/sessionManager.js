@@ -141,6 +141,12 @@ async function startSession(id, name, createdAt) {
       sessionState.qr = null;
       sessionState.sock = null;
 
+      // If the session was intentionally removed, do not reconnect
+      if (sessionState._removed) {
+        console.log(`[${id}] Session was removed — skipping reconnect.`);
+        return;
+      }
+
       const code = new Boom(lastDisconnect?.error)?.output?.statusCode;
 
       if (code === DisconnectReason.loggedOut || code === DisconnectReason.forbidden) {
@@ -752,6 +758,7 @@ async function addSession(name) {
 
 function removeSession(id) {
   const s = sessions.get(id);
+  if (s) s._removed = true;
   if (s?.sock) { try { s.sock.end(new Error('removed')); } catch {} }
   sessions.delete(id);
   saveSessionList();
