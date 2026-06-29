@@ -227,11 +227,10 @@ async function handleMessage(sock, msg, prefix, sessionState) {
                 `- Never say you are an AI or a bot\n` +
                 `- React naturally to what they said\n` +
                 (isFirstMessage
-                  ? `- This is their FIRST message to you. After replying, add a warm engaging question or hook at the end to get them talking — make it feel natural, not salesy\n`
+                  ? `- This is their FIRST message to you. Add a warm engaging question or hook at the end — make it feel natural, not salesy\n`
                   : `- End your reply with a short follow-up question or hook to keep the conversation going — something natural that fits the flow\n`) +
                 `- The hook should feel like a genuine continuation of the chat, not forced\n` +
-                `- After your reply, on a new line write PROMPTS: followed by exactly 3 short things the OTHER PERSON might say or ask next. Keep each under 60 characters. Format:\nPROMPTS:\n1. ...\n2. ...\n3. ...\n` +
-                `- Give just the reply text and prompts, nothing else. Do not prefix with "You:"`;
+                `- Give just the reply text, nothing else. Do not prefix with "You:"`;
 
               const messages = [
                 { role: 'system', content: systemContent },
@@ -239,22 +238,8 @@ async function handleMessage(sock, msg, prefix, sessionState) {
                 { role: 'user', content: body }
               ];
 
-              const rawAiReply = (await openRouterChat(messages))?.trim().replace(/^You:\s*/i, '');
-              if (rawAiReply) {
-                const promptMarker = rawAiReply.search(/PROMPTS:/i);
-                let aiReply = rawAiReply;
-                let chatPrompts = [];
-
-                if (promptMarker !== -1) {
-                  aiReply = rawAiReply.slice(0, promptMarker).trim();
-                  const promptBlock = rawAiReply.slice(promptMarker + 'PROMPTS:'.length).trim();
-                  chatPrompts = promptBlock
-                    .split('\n')
-                    .map(l => l.replace(/^\d+[\.\)]\s*/, '').trim())
-                    .filter(l => l.length > 2)
-                    .slice(0, 3);
-                }
-
+              const aiReply = (await openRouterChat(messages))?.trim().replace(/^You:\s*/i, '');
+              if (aiReply) {
                 history.push({ role: 'user', text: body });
                 history.push({ role: 'bot', text: aiReply });
                 if (history.length > 20) history.splice(0, history.length - 20);
@@ -262,14 +247,6 @@ async function handleMessage(sock, msg, prefix, sessionState) {
 
                 setTimeout(async () => {
                   await sock.sendMessage(from, { text: aiReply }, { quoted: msg });
-                  if (chatPrompts.length > 0) {
-                    const lines = chatPrompts.map((p, i) => `  *${i + 1}.* ${p}`).join('\n');
-                    await sock.sendMessage(from, { text: `💬 *Quick replies — send 1, 2 or 3:*\n\n${lines}` }, { quoted: msg });
-                    sessionState.pendingPrompts.set(sender, {
-                      prompts: chatPrompts, cmdPrefix: '', type: 'chat',
-                      expiresAt: Date.now() + 5 * 60 * 1000
-                    });
-                  }
                 }, Math.min(1500, aiReply.length * 30));
                 return;
               }
