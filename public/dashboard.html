@@ -436,18 +436,24 @@
 <body>
 
 <header>
-  <a class="brand" href="/pair">
+  <a class="brand" href="/dashboard">
     <div class="brand-icon">🔥</div>
     <div class="brand-text"><h1>Firebox</h1><span>WhatsApp Bot</span></div>
   </a>
+  <nav>
+    <a href="/dashboard" class="active">📊 Dashboard</a>
+    <a href="/pair">📲 Pair</a>
+    <a href="/admin">🛡️ Admin</a>
+    <a href="/activity">📋 Activity</a>
+  </nav>
 </header>
 
 <div class="container">
 
   <!-- TAB BAR -->
   <div class="tab-bar">
+    <button class="tab-btn t-admin"    onclick="switchTab('admin')"    id="tb-admin">📱 Sessions</button>
     <button class="tab-btn t-config"   onclick="switchTab('config')"   id="tb-config">⚙️ Config</button>
-    <button class="tab-btn t-admin"    onclick="switchTab('admin')"    id="tb-admin">🛡️ Admin</button>
     <button class="tab-btn t-activity" onclick="switchTab('activity')" id="tb-activity">📋 Activity</button>
   </div>
 
@@ -652,8 +658,8 @@ function switchTab(name) {
 }
 
 (function initTab() {
-  const p = new URLSearchParams(location.search).get('tab') || 'config';
-  switchTab(['config','admin','activity'].includes(p) ? p : 'config');
+  const p = new URLSearchParams(location.search).get('tab') || 'admin';
+  switchTab(['config','admin','activity'].includes(p) ? p : 'admin');
 })();
 
 /* ── TOAST ─────────────────────────────────────────────────────────────── */

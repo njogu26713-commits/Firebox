@@ -307,7 +307,7 @@ app.get('/api/sessions/:id/activity', (req, res) => {
 });
 
 app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../public/pair.html')));
+app.get('/', (req, res) => res.redirect('/dashboard'));
 app.get('/pair',     (req, res) => res.sendFile(path.join(__dirname, '../public/pair.html')));
 app.get('/config',   (req, res) => res.sendFile(path.join(__dirname, '../public/config.html')));
 app.get('/admin',    (req, res) => res.sendFile(path.join(__dirname, '../public/admin.html')));
