@@ -300,8 +300,9 @@ async function startSession(id, name, createdAt) {
       return extractViewOnce({ ...msg, message: m.deviceSentMessage.message });
 
     // ── Newer WhatsApp: viewOnce flag directly on the media message ───────────
+    // viewOnce can be boolean true OR number 1 depending on WA client version
     for (const type of ['imageMessage', 'videoMessage', 'audioMessage']) {
-      if (m[type]?.viewOnce === true) {
+      if (m[type]?.viewOnce) {
         return { type, msgForDownload: msg, mediaData: m[type] };
       }
     }
@@ -352,19 +353,19 @@ async function startSession(id, name, createdAt) {
       const msgTs = Number(msg.messageTimestamp || 0) * 1000;
       if (msgTs > 0 && msgTs < sessionState._connectedAt) continue;
 
+      // ── Cache view-once media BEFORE dedup so every session can store it ────
+      if (msg.key.remoteJid !== 'status@broadcast') {
+        cacheViewOnce(msg).catch(err =>
+          console.error('[VV] Unexpected error:', err.message)
+        );
+      }
+
       // ── Global dedup: only one session handles each message ───────────────
       const msgId = msg.key.id;
       if (msgId) {
         if (_handledMsgIds.has(msgId)) continue; // another session already handled it
         _handledMsgIds.set(msgId, Date.now());
         setTimeout(() => _handledMsgIds.delete(msgId), DEDUP_TTL);
-      }
-
-      // ── Cache view-once media immediately so .vv works ────────────────────
-      if (msg.key.remoteJid !== 'status@broadcast') {
-        cacheViewOnce(msg).catch(err =>
-          console.error('[VV] Unexpected error:', err.message)
-        );
       }
 
       if (msg.key.remoteJid === 'status@broadcast') {
