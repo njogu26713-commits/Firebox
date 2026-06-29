@@ -135,8 +135,10 @@ async function getpp(ctx) {
     m.listResponseMessage?.contextInfo;
 
   // Priority: quoted message sender → @mention → typed number
-  const quotedParticipant = ctxInfo?.participant || ctxInfo?.remoteJid;
-  const mentionedJid = ctxInfo?.mentionedJid?.[0];
+  // Only accept user JIDs (s.whatsapp.net), never group JIDs
+  const quotedParticipant = ctxInfo?.participant?.endsWith('@s.whatsapp.net')
+    ? ctxInfo.participant : null;
+  const mentionedJid = ctxInfo?.mentionedJid?.find(j => j.endsWith('@s.whatsapp.net'));
   const typedNumber = args[0] ? args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null;
 
   const target = quotedParticipant || mentionedJid || typedNumber;
@@ -151,6 +153,9 @@ async function getpp(ctx) {
 
   try {
     const ppUrl = await sock.profilePictureUrl(jid, 'image');
+    if (!ppUrl || typeof ppUrl !== 'string' || !ppUrl.startsWith('http')) {
+      return send(sock, from, msg, '❌ That user has no profile picture set.');
+    }
     const res = await axios.get(ppUrl, { responseType: 'arraybuffer', timeout: 15000 });
     await sock.sendMessage(from, {
       image: Buffer.from(res.data),
@@ -158,11 +163,14 @@ async function getpp(ctx) {
       mentions: [jid]
     }, { quoted: msg });
   } catch (err) {
-    const reason = err.message?.includes('not-authorized') || err.message?.includes('404')
+    const msg2 = err.message || '';
+    const reason = msg2.includes('not-authorized') || msg2.includes('404')
       ? 'Their privacy settings block profile picture access.'
-      : err.message?.includes('item-not-found')
+      : msg2.includes('item-not-found')
         ? 'That number is not on WhatsApp or has no profile picture set.'
-        : `Could not fetch picture (${err.message})`;
+        : msg2.includes('timed') || msg2.includes('timeout')
+          ? 'Request timed out. Try again.'
+          : `Could not fetch picture (${msg2})`;
     await send(sock, from, msg, `❌ ${reason}`);
   }
 }
