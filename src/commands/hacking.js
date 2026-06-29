@@ -767,4 +767,365 @@ async function hack(ctx) {
   }
 }
 
-module.exports = { checkpass, hash, b64encode, b64decode, hexencode, hexdecode, iplookup, dnslookup, whois, portinfo, cipher, scamalyze, numlookup, sslcheck, headers, subdomains, macinfo, rot47, urlinfo, hack, fakecall };
+// ── JWT DECODER ───────────────────────────────────────────────────────────────
+async function jwtdecode(ctx) {
+  const { sock, from, msg, text } = ctx;
+  if (!text) return send(sock, from, msg,
+    '🔑 *JWT Decoder*\n\n' +
+    '*Usage:* .jwt <token>\n\n' +
+    '_Decodes JWT header & payload without verifying the signature._\n' +
+    '_Useful for inspecting tokens during security testing._');
+
+  const parts = text.trim().split('.');
+  if (parts.length !== 3) return send(sock, from, msg, '❌ Invalid JWT format. Must have 3 parts separated by dots.');
+
+  try {
+    const decode = b64 => {
+      const padded = b64.replace(/-/g, '+').replace(/_/g, '/').padEnd(b64.length + (4 - b64.length % 4) % 4, '=');
+      return JSON.parse(Buffer.from(padded, 'base64').toString('utf8'));
+    };
+
+    const header  = decode(parts[0]);
+    const payload = decode(parts[1]);
+    const now     = Math.floor(Date.now() / 1000);
+
+    const expStatus = payload.exp
+      ? (payload.exp < now
+          ? `❌ *EXPIRED* (${new Date(payload.exp * 1000).toUTCString()})`
+          : `✅ Valid until ${new Date(payload.exp * 1000).toUTCString()}`)
+      : '⚠️ No expiry set';
+
+    const iatStr = payload.iat ? `\n📅 Issued: ${new Date(payload.iat * 1000).toUTCString()}` : '';
+    const subStr = payload.sub ? `\n👤 Subject: ${payload.sub}` : '';
+    const issStr = payload.iss ? `\n🏢 Issuer: ${payload.iss}` : '';
+    const audStr = payload.aud ? `\n🎯 Audience: ${Array.isArray(payload.aud) ? payload.aud.join(', ') : payload.aud}` : '';
+
+    const payloadStr = JSON.stringify(payload, null, 2);
+    const trimmed = payloadStr.length > 800 ? payloadStr.slice(0, 800) + '\n...(truncated)' : payloadStr;
+
+    await send(sock, from, msg,
+      `🔑 *JWT Decoded*\n\n` +
+      `⚙️ *Header:*\n• Algorithm: *${header.alg || 'N/A'}*\n• Type: ${header.typ || 'N/A'}\n\n` +
+      `⏰ *Expiry:* ${expStatus}${iatStr}${subStr}${issStr}${audStr}\n\n` +
+      `📦 *Payload:*\n\`\`\`\n${trimmed}\n\`\`\`\n\n` +
+      `🔓 Signature: \`${parts[2].slice(0, 20)}...\` _(not verified — decode only)_`);
+  } catch (err) {
+    await send(sock, from, msg, `❌ Failed to decode JWT: ${err.message}`);
+  }
+}
+
+// ── REVERSE DNS LOOKUP ────────────────────────────────────────────────────────
+async function reversedns(ctx) {
+  const { sock, from, msg, text } = ctx;
+  if (!text) return send(sock, from, msg,
+    '🔁 *Reverse DNS Lookup*\n\n' +
+    '*Usage:* .rdns <IP address>\n\n' +
+    '*Examples:*\n• .rdns 8.8.8.8\n• .rdns 1.1.1.1\n\n' +
+    '_Finds the hostname(s) registered to an IP address._');
+
+  const ip = text.trim();
+  try {
+    const [hostnames, ipInfo] = await Promise.allSettled([
+      dns.reverse(ip),
+      axios.get(`http://ip-api.com/json/${ip}?fields=status,country,city,isp,org,as,proxy,hosting`, { timeout: 8000 })
+    ]);
+
+    const hosts = hostnames.status === 'fulfilled' ? hostnames.value : [];
+    const geo   = ipInfo.status   === 'fulfilled' && ipInfo.value.data.status === 'success'
+      ? ipInfo.value.data : null;
+
+    const hostsStr = hosts.length
+      ? hosts.map((h, i) => `${i + 1}. \`${h}\``).join('\n')
+      : '❌ No PTR records found (rDNS not configured)';
+
+    await send(sock, from, msg,
+      `🔁 *Reverse DNS: ${ip}*\n\n` +
+      `📋 *PTR Records:*\n${hostsStr}\n\n` +
+      (geo
+        ? `🌍 Location: ${geo.city || ''}, ${geo.country || ''}\n` +
+          `🏢 ISP: ${geo.isp || 'N/A'}\n` +
+          `🏛️ Org: ${geo.org || 'N/A'}\n` +
+          `🕵️ Proxy/VPN: ${geo.proxy ? 'Yes ⚠️' : 'No'}\n` +
+          `🖥️ Hosting/DC: ${geo.hosting ? 'Yes' : 'No'}`
+        : '_Geo info unavailable_'));
+  } catch (err) {
+    await send(sock, from, msg, `❌ Reverse DNS failed: ${err.message}`);
+  }
+}
+
+// ── ROBOTS.TXT RECON ──────────────────────────────────────────────────────────
+async function robotstxt(ctx) {
+  const { sock, from, msg, args } = ctx;
+  let domain = args[0]?.replace(/^https?:\/\//, '').split('/')[0];
+  if (!domain) return send(sock, from, msg,
+    '🤖 *Robots.txt Recon*\n\n' +
+    '*Usage:* .robots <domain>\n\n' +
+    '*Examples:*\n• .robots google.com\n• .robots facebook.com\n\n' +
+    '_Reveals paths the site owner wants hidden from crawlers — often exposes admin panels, backups, or sensitive directories._');
+
+  try {
+    await sock.sendPresenceUpdate('composing', from).catch(() => {});
+    const url = `https://${domain}/robots.txt`;
+    const { data, status } = await axios.get(url, {
+      timeout: 10000,
+      validateStatus: () => true,
+      headers: { 'User-Agent': 'Mozilla/5.0 (SecurityAudit)' }
+    });
+
+    if (status === 404) return send(sock, from, msg, `🤖 *${domain}*\n\n❌ No robots.txt found (404)\n\n_The site doesn't restrict crawlers, or the file doesn't exist._`);
+
+    const text2 = typeof data === 'string' ? data : JSON.stringify(data);
+    const lines  = text2.split('\n').map(l => l.trim()).filter(Boolean);
+
+    // Extract interesting paths
+    const disallowed = lines.filter(l => /^Disallow:/i.test(l)).map(l => l.replace(/^Disallow:\s*/i, '').trim()).filter(p => p && p !== '/');
+    const allowed    = lines.filter(l => /^Allow:/i.test(l)).map(l => l.replace(/^Allow:\s*/i, '').trim()).filter(p => p && p !== '/');
+    const sitemaps   = lines.filter(l => /^Sitemap:/i.test(l)).map(l => l.replace(/^Sitemap:\s*/i, '').trim());
+    const agents     = lines.filter(l => /^User-agent:/i.test(l)).map(l => l.replace(/^User-agent:\s*/i, '').trim());
+
+    const interesting = disallowed.filter(p =>
+      /admin|login|backup|secret|private|config|api|internal|dev|staging|dashboard|panel|manage|upload|wp-/i.test(p)
+    );
+
+    const raw = text2.length > 1000 ? text2.slice(0, 1000) + '\n...(truncated)' : text2;
+
+    await send(sock, from, msg,
+      `🤖 *Robots.txt Recon: ${domain}*\n\n` +
+      (interesting.length ? `🚨 *Interesting Paths Found:*\n${interesting.map(p => `⚠️ \`${p}\``).join('\n')}\n\n` : '') +
+      `🚫 *Disallowed (${disallowed.length}):* ${disallowed.length ? disallowed.slice(0, 10).map(p => `\`${p}\``).join(', ') + (disallowed.length > 10 ? ` +${disallowed.length - 10} more` : '') : 'None'}\n` +
+      `✅ *Allowed (${allowed.length}):* ${allowed.length ? allowed.slice(0, 5).map(p => `\`${p}\``).join(', ') : 'None'}\n` +
+      `🗺️ *Sitemaps:* ${sitemaps.length ? sitemaps.join(', ') : 'None'}\n` +
+      `🤖 *User-Agents targeted:* ${[...new Set(agents)].join(', ') || 'None'}\n\n` +
+      `📄 *Raw Content:*\n\`\`\`\n${raw}\n\`\`\``);
+  } catch (err) {
+    await send(sock, from, msg, `❌ Failed to fetch robots.txt: ${err.message}`);
+  }
+}
+
+// ── DATA BREACH CHECKER ───────────────────────────────────────────────────────
+async function breach(ctx) {
+  const { sock, from, msg, text } = ctx;
+  if (!text) return send(sock, from, msg,
+    '🔓 *Data Breach Checker*\n\n' +
+    '*Usage:* .breach <email or username>\n\n' +
+    '*Examples:*\n• .breach user@gmail.com\n• .breach johndoe\n\n' +
+    '_Checks if your credentials appeared in known data leaks._');
+
+  const query = text.trim();
+  try {
+    await sock.sendPresenceUpdate('composing', from).catch(() => {});
+
+    const { data, status } = await axios.get(
+      `https://api.xposedornot.com/v1/check-email/${encodeURIComponent(query)}`,
+      { timeout: 12000, validateStatus: () => true }
+    );
+
+    if (status === 404 || data?.Error === 'Not found') {
+      return send(sock, from, msg,
+        `🔓 *Breach Check: ${query}*\n\n` +
+        `✅ *Good news!* No breaches found in our database.\n\n` +
+        `_Note: This doesn't guarantee 100% safety — new breaches may not yet be indexed._`);
+    }
+
+    const breaches = data?.BreachMetrics?.xposed_data || data?.exposures || [];
+    const count    = data?.BreachMetrics?.xposed_num_breaches || data?.xposed_num_breaches || breaches.length;
+    const records  = data?.BreachMetrics?.xposed_num_records  || data?.xposed_num_records  || '?';
+    const domains  = data?.BreachMetrics?.xposed_domains || [];
+
+    const breachList = Array.isArray(breaches)
+      ? breaches.slice(0, 10).join(', ')
+      : 'See details above';
+
+    await send(sock, from, msg,
+      `🔓 *Breach Check: ${query}*\n\n` +
+      `🚨 *EXPOSED in ${count} breach${count !== 1 ? 'es' : ''}!*\n` +
+      `📊 Records leaked: ~${typeof records === 'number' ? records.toLocaleString() : records}\n\n` +
+      (breachList ? `📂 *Breaches:*\n${breachList}\n\n` : '') +
+      (domains.length ? `🌐 *Domains:* ${domains.slice(0, 5).join(', ')}\n\n` : '') +
+      `💡 *What to do:*\n• Change your password immediately\n• Enable 2FA on all accounts\n• Check if same password used elsewhere\n\n` +
+      `_Source: xposedornot.com — for educational/security purposes only_`);
+  } catch (err) {
+    await send(sock, from, msg, `❌ Breach check failed: ${err.message}`);
+  }
+}
+
+// ── LIVE SITE STATUS CHECK ────────────────────────────────────────────────────
+async function sitestatus(ctx) {
+  const { sock, from, msg, args } = ctx;
+  let url = args[0];
+  if (!url) return send(sock, from, msg,
+    '📡 *Site Status Check*\n\n' +
+    '*Usage:* .status <url or domain>\n\n' +
+    '*Examples:*\n• .status google.com\n• .status https://api.example.com/health\n\n' +
+    '_Checks if a site/server is up, measures response time, and inspects server info._');
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+  try {
+    await sock.sendPresenceUpdate('composing', from).catch(() => {});
+    const start = Date.now();
+    const res = await axios.get(url, {
+      timeout: 12000,
+      maxRedirects: 5,
+      validateStatus: () => true,
+      headers: { 'User-Agent': 'Mozilla/5.0 (SiteStatusChecker)' }
+    });
+    const ms = Date.now() - start;
+
+    const code    = res.status;
+    const server  = res.headers['server'] || res.headers['x-powered-by'] || 'Hidden';
+    const ctype   = res.headers['content-type']?.split(';')[0] || 'N/A';
+    const hsts    = res.headers['strict-transport-security'] ? '✅' : '❌';
+    const csp     = res.headers['content-security-policy']   ? '✅' : '❌';
+    const xfo     = res.headers['x-frame-options']           ? '✅' : '❌';
+
+    const statusEmoji =
+      code >= 200 && code < 300 ? '🟢' :
+      code >= 300 && code < 400 ? '🔵' :
+      code >= 400 && code < 500 ? '🟡' :
+      code >= 500                ? '🔴' : '⚪';
+
+    const speedEmoji = ms < 300 ? '⚡ Lightning' : ms < 800 ? '✅ Fast' : ms < 2000 ? '🟡 Moderate' : '🔴 Slow';
+
+    await send(sock, from, msg,
+      `📡 *Site Status: ${url}*\n\n` +
+      `${statusEmoji} *HTTP ${code}* — ${res.statusText || httpStatusText(code)}\n` +
+      `⏱️ Response: *${ms}ms* — ${speedEmoji}\n` +
+      `🖥️ Server: ${server}\n` +
+      `📄 Content-Type: ${ctype}\n\n` +
+      `🛡️ *Security Headers:*\n` +
+      `${hsts} HSTS  ${csp} CSP  ${xfo} X-Frame-Options\n\n` +
+      `_${code < 400 ? '✅ Site is UP and reachable' : code < 500 ? '⚠️ Site returned a client error' : '❌ Site is DOWN or has server errors'}_`);
+  } catch (err) {
+    const reason = err.code === 'ECONNREFUSED' ? 'Connection refused — server may be down'
+      : err.code === 'ENOTFOUND' ? 'DNS not found — domain does not exist or is unreachable'
+      : err.code === 'ETIMEDOUT' || err.message.includes('timeout') ? 'Request timed out — server too slow or offline'
+      : err.message;
+    await send(sock, from, msg, `📡 *Site Status: ${url}*\n\n🔴 *OFFLINE / Unreachable*\n\n❌ ${reason}`);
+  }
+}
+
+function httpStatusText(code) {
+  const map = { 200:'OK',201:'Created',204:'No Content',301:'Moved Permanently',302:'Found',304:'Not Modified',400:'Bad Request',401:'Unauthorized',403:'Forbidden',404:'Not Found',405:'Method Not Allowed',429:'Too Many Requests',500:'Internal Server Error',502:'Bad Gateway',503:'Service Unavailable',504:'Gateway Timeout' };
+  return map[code] || 'Unknown';
+}
+
+// ── CVE VULNERABILITY LOOKUP ──────────────────────────────────────────────────
+async function cvelookup(ctx) {
+  const { sock, from, msg, text } = ctx;
+  if (!text) return send(sock, from, msg,
+    '🛡️ *CVE Vulnerability Lookup*\n\n' +
+    '*Usage:* .cve <CVE-ID or keyword>\n\n' +
+    '*Examples:*\n• .cve CVE-2021-44228\n• .cve log4shell\n• .cve apache struts\n\n' +
+    '_Looks up known vulnerabilities from the NIST National Vulnerability Database._');
+
+  await sock.sendPresenceUpdate('composing', from).catch(() => {});
+  const query = text.trim();
+
+  try {
+    let apiUrl;
+    if (/^CVE-\d{4}-\d+$/i.test(query)) {
+      apiUrl = `https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${query.toUpperCase()}`;
+    } else {
+      apiUrl = `https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=${encodeURIComponent(query)}&resultsPerPage=3`;
+    }
+
+    const { data } = await axios.get(apiUrl, { timeout: 15000, headers: { 'User-Agent': 'Firebox-CVE-Lookup' } });
+    const vulns = data?.vulnerabilities;
+    if (!vulns || !vulns.length) return send(sock, from, msg, `🛡️ No CVEs found for: *${query}*`);
+
+    const results = vulns.slice(0, 3).map(v => {
+      const cve      = v.cve;
+      const id       = cve.id;
+      const desc     = cve.descriptions?.find(d => d.lang === 'en')?.value || 'No description';
+      const metrics  = cve.metrics?.cvssMetricV31?.[0] || cve.metrics?.cvssMetricV30?.[0] || cve.metrics?.cvssMetricV2?.[0];
+      const score    = metrics?.cvssData?.baseScore;
+      const severity = metrics?.cvssData?.baseSeverity || metrics?.baseSeverity;
+      const vector   = metrics?.cvssData?.vectorString;
+      const pubDate  = cve.published ? new Date(cve.published).toDateString() : 'N/A';
+      const refs     = cve.references?.slice(0, 2).map(r => r.url) || [];
+
+      const sevEmoji = severity === 'CRITICAL' ? '💀' : severity === 'HIGH' ? '🔴' : severity === 'MEDIUM' ? '🟡' : severity === 'LOW' ? '🟢' : '⚪';
+      const descShort = desc.length > 250 ? desc.slice(0, 250) + '...' : desc;
+
+      return `${sevEmoji} *${id}*\n` +
+        `📊 Score: *${score ?? 'N/A'}* (${severity || 'N/A'})\n` +
+        `📅 Published: ${pubDate}\n` +
+        `📋 ${descShort}` +
+        (vector ? `\n🔗 Vector: \`${vector}\`` : '') +
+        (refs.length ? `\n🔗 ${refs[0]}` : '');
+    });
+
+    await send(sock, from, msg,
+      `🛡️ *CVE Lookup: ${query}*\n\n` +
+      results.join('\n\n─────────────────\n\n') +
+      `\n\n_Source: NIST NVD — nvd.nist.gov_`);
+  } catch (err) {
+    await send(sock, from, msg, `❌ CVE lookup failed: ${err.message}`);
+  }
+}
+
+// ── USERNAME SCANNER ──────────────────────────────────────────────────────────
+async function userscan(ctx) {
+  const { sock, from, msg, text } = ctx;
+  if (!text || text.includes(' ')) return send(sock, from, msg,
+    '🔍 *Username Scanner*\n\n' +
+    '*Usage:* .userscan <username>\n\n' +
+    '*Examples:*\n• .userscan johndoe\n• .userscan hacker_x\n\n' +
+    '_Checks if the username exists on major platforms — useful for OSINT._');
+
+  const username = text.trim().replace(/[^a-zA-Z0-9._-]/g, '');
+  if (!username) return send(sock, from, msg, '❌ Invalid username format.');
+
+  await sock.sendPresenceUpdate('composing', from).catch(() => {});
+
+  const platforms = [
+    { name: 'GitHub',    url: `https://github.com/${username}`,              method: 'status' },
+    { name: 'Twitter/X', url: `https://twitter.com/${username}`,             method: 'status' },
+    { name: 'Instagram', url: `https://www.instagram.com/${username}/`,      method: 'status' },
+    { name: 'TikTok',    url: `https://www.tiktok.com/@${username}`,         method: 'status' },
+    { name: 'Reddit',    url: `https://www.reddit.com/user/${username}`,     method: 'status' },
+    { name: 'Pinterest', url: `https://www.pinterest.com/${username}/`,      method: 'status' },
+    { name: 'Snapchat',  url: `https://www.snapchat.com/add/${username}`,    method: 'status' },
+    { name: 'LinkedIn',  url: `https://www.linkedin.com/in/${username}/`,    method: 'status' },
+    { name: 'YouTube',   url: `https://www.youtube.com/@${username}`,        method: 'status' },
+    { name: 'Twitch',    url: `https://www.twitch.tv/${username}`,           method: 'status' },
+    { name: 'Telegram',  url: `https://t.me/${username}`,                    method: 'status' },
+    { name: 'Medium',    url: `https://medium.com/@${username}`,             method: 'status' },
+  ];
+
+  const checks = await Promise.allSettled(
+    platforms.map(p =>
+      axios.get(p.url, {
+        timeout: 8000,
+        maxRedirects: 3,
+        validateStatus: () => true,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120'
+        }
+      }).then(r => ({ ...p, status: r.status }))
+      .catch(() => ({ ...p, status: null }))
+    )
+  );
+
+  const found    = [];
+  const notFound = [];
+
+  checks.forEach(r => {
+    const p = r.status === 'fulfilled' ? r.value : r.reason;
+    const s = p?.status;
+    if (s === 200 || s === 301 || s === 302) found.push(p.name);
+    else notFound.push(p.name);
+  });
+
+  const foundStr    = found.map(n => `✅ ${n}`).join('\n') || '_None found_';
+  const notFoundStr = notFound.map(n => `❌ ${n}`).join('\n') || '_All found_';
+
+  await send(sock, from, msg,
+    `🔍 *Username Scanner: @${username}*\n\n` +
+    `📊 Found on *${found.length}/${platforms.length}* platforms\n\n` +
+    `*✅ Exists on:*\n${foundStr}\n\n` +
+    `*❌ Not found on:*\n${notFoundStr}\n\n` +
+    `_Note: Some platforms block bots — results may not be 100% accurate._`);
+}
+
+module.exports = { checkpass, hash, b64encode, b64decode, hexencode, hexdecode, iplookup, dnslookup, whois, portinfo, cipher, scamalyze, numlookup, sslcheck, headers, subdomains, macinfo, rot47, urlinfo, hack, fakecall, jwtdecode, reversedns, robotstxt, breach, sitestatus, cvelookup, userscan };

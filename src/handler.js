@@ -687,6 +687,13 @@ async function handleMessage(sock, msg, prefix, sessionState) {
     case 'urlinfo': case 'urlcheck':       return hacking.urlinfo(ctx);
     case 'hack':                           return hacking.hack(ctx);
     case 'fakecall': case 'fc':           return hacking.fakecall(ctx);
+    case 'jwt': case 'jwtdecode':         return hacking.jwtdecode(ctx);
+    case 'rdns': case 'reversedns':       return hacking.reversedns(ctx);
+    case 'robots': case 'robotstxt':      return hacking.robotstxt(ctx);
+    case 'breach': case 'hibp':           return hacking.breach(ctx);
+    case 'status': case 'sitestatus':     return hacking.sitestatus(ctx);
+    case 'cve': case 'cvelookup':         return hacking.cvelookup(ctx);
+    case 'userscan': case 'sherlock':     return hacking.userscan(ctx);
 
     // ── COIN COMMANDS ─────────────────────────────────────────────────────────
     case 'coins': {

@@ -116,7 +116,7 @@
     "badwords": [],
     "jid": "120363427104095057@g.us",
     "activeSenders": {
-      "266997396971700@lid": 1782768474033,
+      "266997396971700@lid": 1782768726752,
       "74509830910000@lid": 1782759136779,
       "198368114511947@lid": 1781704585533,
       "null": 1781986340095,
@@ -436,6 +436,25 @@
     "jid": "120363429579612184@g.us",
     "activeSenders": {
       "121895584309315@lid": 1782757411580
+    }
+  },
+  "120363426512861698@g.us": {
+    "antilink": 0,
+    "welcome": 0,
+    "muted": 0,
+    "anticall": 0,
+    "antidelete": 0,
+    "antiedit": 0,
+    "antibot": 0,
+    "antiforeign": 0,
+    "antibadword": 0,
+    "antiban": 0,
+    "welcomeMsg": "",
+    "goodbyeMsg": "",
+    "badwords": [],
+    "jid": "120363426512861698@g.us",
+    "activeSenders": {
+      "266997396971700@lid": 1782768707914
     }
   }
 }
