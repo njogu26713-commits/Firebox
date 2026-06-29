@@ -134,12 +134,16 @@ async function getpp(ctx) {
     m.buttonsResponseMessage?.contextInfo ||
     m.listResponseMessage?.contextInfo;
 
-  // Priority: quoted message sender → @mention → typed number
-  // Only accept user JIDs (s.whatsapp.net), never group JIDs
-  const quotedParticipant = ctxInfo?.participant?.endsWith('@s.whatsapp.net')
-    ? ctxInfo.participant : null;
-  const mentionedJid = ctxInfo?.mentionedJid?.find(j => j.endsWith('@s.whatsapp.net'));
-  const typedNumber = args[0] ? args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null;
+  // Priority: quoted participant (groups) → quoted remoteJid (DMs) → @mention → typed number
+  // Only ever accept @s.whatsapp.net JIDs — never group JIDs (@g.us)
+  const isUser = j => typeof j === 'string' && j.endsWith('@s.whatsapp.net');
+
+  const quotedParticipant = isUser(ctxInfo?.participant) ? ctxInfo.participant
+    : isUser(ctxInfo?.remoteJid)                         ? ctxInfo.remoteJid
+    : null;
+
+  const mentionedJid = ctxInfo?.mentionedJid?.find(isUser);
+  const typedNumber  = args[0] ? args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null;
 
   const target = quotedParticipant || mentionedJid || typedNumber;
 
