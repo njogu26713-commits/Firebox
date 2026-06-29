@@ -436,16 +436,10 @@
 <body>
 
 <header>
-  <a class="brand" href="/dashboard">
+  <a class="brand" href="/pair">
     <div class="brand-icon">🔥</div>
     <div class="brand-text"><h1>Firebox</h1><span>WhatsApp Bot</span></div>
   </a>
-  <nav>
-    <a href="/dashboard" class="active">📊 Dashboard</a>
-    <a href="/pair">📲 Pair</a>
-    <a href="/admin">🛡️ Admin</a>
-    <a href="/activity">📋 Activity</a>
-  </nav>
 </header>
 
 <div class="container">
@@ -645,6 +639,19 @@
 
 </div>
 
+<!-- ── EXPORT MODAL ─────────────────────────────────────────────────────── -->
+<div id="d-export-overlay" onclick="if(event.target===this)closeExport()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:100;backdrop-filter:blur(4px);align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:22px;padding:32px;width:440px;max-width:94vw;box-shadow:0 24px 80px rgba(0,0,0,.6)">
+    <div style="font-size:1.1rem;font-weight:800;color:#fff;margin-bottom:6px">📤 Export Session ID</div>
+    <div style="font-size:0.72rem;color:var(--muted);margin-bottom:10px">Copy this Session ID to restore your bot elsewhere:</div>
+    <div id="d-export-val" style="background:var(--bg);border:1px solid var(--border2);border-radius:12px;padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:#94a3b8;word-break:break-all;max-height:180px;overflow-y:auto;margin-bottom:20px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeExport()">Close</button>
+      <button class="btn btn-blue" onclick="copyExport()">📋 Copy</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -824,28 +831,41 @@ function buildSessCard(s) {
       </div>
       <div class="sess-right">
         <div class="sess-mini-stats">
-          <div class="mini-stat"><div class="mini-stat-val">${(s.messageCount||0).toLocaleString()}</div><div class="mini-stat-lbl">Msgs</div></div>
-          <div class="mini-stat"><div class="mini-stat-val">${(s.commandCount||0).toLocaleString()}</div><div class="mini-stat-lbl">Cmds</div></div>
+          <div class="mini-stat"><div class="mini-stat-val">${(s.messageCount||0).toLocaleString()}</div><div class="mini-stat-lbl">Messages</div></div>
+          <div class="mini-stat"><div class="mini-stat-val">${(s.commandCount||0).toLocaleString()}</div><div class="mini-stat-lbl">Commands</div></div>
+          <div class="mini-stat"><div class="mini-stat-val">${fmtUptime(s.uptime)}</div><div class="mini-stat-lbl">Uptime</div></div>
         </div>
         ${statusBadge(s.status)}
-      </div>
-    </div>
-    <div class="coin-panel">
-      <div class="coin-panel-title">🪙 Give Coins to ${escHtml(s.name||s.id)}</div>
-      <div class="quick-amounts" id="qa-${s.id}">
-        <button class="qa-btn" onclick="selectQuick('${s.id}',100)">+100</button>
-        <button class="qa-btn" onclick="selectQuick('${s.id}',500)">+500</button>
-        <button class="qa-btn" onclick="selectQuick('${s.id}',1000)">+1,000</button>
-        <button class="qa-btn" onclick="selectQuick('${s.id}',5000)">+5,000</button>
-        <button class="qa-btn" onclick="selectQuick('${s.id}',10000)">+10,000</button>
-      </div>
-      <div class="give-row">
-        <input type="number" class="give-input" id="ga-${s.id}" placeholder="Amount" min="1" max="1000000" />
-        <input type="text" class="give-note-input" id="gn-${s.id}" value="Admin top-up for ${escHtml(s.name||s.id)}" />
-        <button class="btn btn-gold btn-sm" onclick="giveCoins('${s.id}')">🪙 Give</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportSess('${s.id}')">📤 Export Session</button>
+        <button class="btn btn-sm" style="background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.25)" onclick="removeSess('${s.id}','${escHtml(s.name||s.id)}')">Disconnect</button>
       </div>
     </div>
   </div>`;
+}
+
+async function removeSess(id, name) {
+  if (!confirm(`Disconnect "${name}"?`)) return;
+  try {
+    await fetch('/api/sessions/' + id, { method: 'DELETE' });
+    toast('Session disconnected', 'success');
+    loadAdminSessions();
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+async function exportSess(id) {
+  try {
+    const res = await fetch('/api/sessions/' + id + '/export');
+    const d = await res.json();
+    if (d.sessionId) {
+      document.getElementById('d-export-val').textContent = d.sessionId;
+      document.getElementById('d-export-overlay').style.display = 'flex';
+    } else { toast(d.error || 'Export failed', 'error'); }
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+function closeExport() { document.getElementById('d-export-overlay').style.display = 'none'; }
+function copyExport() {
+  navigator.clipboard.writeText(document.getElementById('d-export-val').textContent)
+    .then(() => toast('Session ID copied!', 'success'));
 }
 
 function selectQuick(id, amt) {
