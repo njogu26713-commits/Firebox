@@ -116,8 +116,8 @@ async function handleMessage(sock, msg, prefix, sessionState) {
     return;
   }
 
-  // Away mode — per-session, intercepts ALL messages (commands and non-commands) from non-owners
-  if (!key.fromMe && !isOwner && body?.trim() && sessionState.awayMode) {
+  // Away mode — auto-replies to plain messages from non-owners; commands always pass through
+  if (!key.fromMe && !isOwner && body?.trim() && sessionState.awayMode && !isCmd) {
     const AWAY_COOLDOWN = 5 * 60 * 1000; // 5 minutes per sender
     const lastReplied = sessionState.awayReplied.get(from) || 0;
     if (Date.now() - lastReplied > AWAY_COOLDOWN) {
