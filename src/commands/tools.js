@@ -121,19 +121,49 @@ async function calculate(ctx) {
 
 async function getpp(ctx) {
   const { sock, from, msg, args } = ctx;
-  const mentioned = msg.message?.extendedTextMessage?.contextInfo?.participant;
-  const raw = mentioned || (args[0] ? args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null);
-  if (!raw) return send(sock, from, msg, '🖼️ Usage: .getpp @user or reply to a message');
+
+  // Extract context info from any message type
+  const m = msg.message || {};
+  const ctxInfo =
+    m.extendedTextMessage?.contextInfo ||
+    m.imageMessage?.contextInfo ||
+    m.videoMessage?.contextInfo ||
+    m.audioMessage?.contextInfo ||
+    m.documentMessage?.contextInfo ||
+    m.stickerMessage?.contextInfo ||
+    m.buttonsResponseMessage?.contextInfo ||
+    m.listResponseMessage?.contextInfo;
+
+  // Priority: quoted message sender → @mention → typed number
+  const quotedParticipant = ctxInfo?.participant || ctxInfo?.remoteJid;
+  const mentionedJid = ctxInfo?.mentionedJid?.[0];
+  const typedNumber = args[0] ? args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null;
+
+  const target = quotedParticipant || mentionedJid || typedNumber;
+
+  if (!target) {
+    return send(sock, from, msg,
+      '🖼️ *Usage:* `.getpp @user` or reply to their message with `.getpp`');
+  }
+
+  // Normalise JID — strip any device suffix (:0, :1, etc.)
+  const jid = target.replace(/:\d+@/, '@');
+
   try {
-    const ppUrl = await sock.profilePictureUrl(raw, 'image');
+    const ppUrl = await sock.profilePictureUrl(jid, 'image');
     const res = await axios.get(ppUrl, { responseType: 'arraybuffer', timeout: 15000 });
     await sock.sendMessage(from, {
       image: Buffer.from(res.data),
-      caption: `🖼️ Profile picture of @${raw.split('@')[0]}`,
-      mentions: [raw]
+      caption: `🖼️ Profile picture of @${jid.split('@')[0]}`,
+      mentions: [jid]
     }, { quoted: msg });
   } catch (err) {
-    await send(sock, from, msg, `❌ Could not get profile picture. The user may have privacy settings enabled.`);
+    const reason = err.message?.includes('not-authorized') || err.message?.includes('404')
+      ? 'Their privacy settings block profile picture access.'
+      : err.message?.includes('item-not-found')
+        ? 'That number is not on WhatsApp or has no profile picture set.'
+        : `Could not fetch picture (${err.message})`;
+    await send(sock, from, msg, `❌ ${reason}`);
   }
 }
 
