@@ -71,6 +71,8 @@ async function startSession(id, name, createdAt) {
   if (!sessionState) {
     sessionState = createSessionState(id, name);
     sessionState.createdAt = createdAt || Date.now();
+    sessionState.awayMode = db.getBotSetting('awayMode') || false;
+    sessionState.awayMsg = db.getBotSetting('awayMsg') || sessionState.awayMsg;
     sessions.set(id, sessionState);
   } else {
     sessionState.status = 'connecting';

@@ -6,7 +6,7 @@
   "autoReactStatus": true,
   "autoReactEmoji": "random",
   "awayMsg": "😴 I am currently asleep. Your message has been received, and I will get back to you tomorrow at 6:00 AM. Thank you!",
-  "awayMode": true,
+  "awayMode": false,
   "autoStatusReply": false,
   "autoStatusReplyImg": "🖼️ Image received! 👀 Scanning awesomeness... ✅ Photo detected ✅ Meme potential detected 😂 Thanks for sharing! Feel free to send more interesting pictures, memes, or screenshots anytime.",
   "botMode": "public",
@@ -15,7 +15,7 @@
     "254@s.whatsapp.net",
     "254754138224@s.whatsapp.net"
   ],
-  "autoReply": true,
+  "autoReply": false,
   "autoReplyMode": "group",
   "antiDeleteStatus": true,
   "antiViewOnce": true,

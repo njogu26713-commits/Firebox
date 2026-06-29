@@ -852,13 +852,18 @@ async function away(ctx) {
   if (sub === 'off') {
     sessionState.awayMode = false;
     sessionState.awayReplied.clear();
+    db.setBotSetting('awayMode', false);
     return send(sock, from, msg, `✅ Away mode *disabled* for *${sessionState.name}*. You're back online!`);
   }
 
   // sub === 'on'
   const customMsg = args.slice(1).join(' ').trim();
-  if (customMsg) sessionState.awayMsg = customMsg;
+  if (customMsg) {
+    sessionState.awayMsg = customMsg;
+    db.setBotSetting('awayMsg', customMsg);
+  }
   sessionState.awayMode = true;
+  db.setBotSetting('awayMode', true);
   sessionState.awayReplied.clear();
 
   return send(sock, from, msg,
