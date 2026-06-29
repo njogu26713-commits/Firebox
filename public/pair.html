@@ -466,25 +466,6 @@
     <div id="coin-history-list"></div>
   </div>
 
-  <!-- ── ADMIN PANEL ─────────────────────────────────────────────────────── -->
-  <div class="admin-section">
-    <div class="admin-toggle" onclick="toggleAdmin()">
-      <span>🔐</span>
-      <span class="admin-toggle-label">Admin — Add Coins Manually</span>
-      <span class="admin-toggle-icon" id="admin-arrow">▼</span>
-    </div>
-    <div class="admin-panel" id="admin-panel">
-      <div class="admin-panel-title">Credit coins after receiving payment</div>
-      <div class="admin-row">
-        <input type="number" class="admin-input" id="admin-coin-input" placeholder="e.g. 500" min="1" />
-        <button class="btn btn-gold" onclick="adminAddCoins()">✅ Add Coins</button>
-        <button class="btn btn-ghost btn-sm" onclick="fetchCoins()">🔄 Refresh</button>
-      </div>
-      <div class="admin-note">
-        Enter the amount agreed with the user and click <strong>Add Coins</strong> to credit their balance.
-      </div>
-    </div>
-  </div>
 
   <!-- ── CONNECTED BANNER ────────────────────────────────────────────────── -->
   <div id="connected-banner" class="connected-banner">
