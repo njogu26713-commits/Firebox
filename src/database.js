@@ -85,6 +85,38 @@ function setCoins(amount) {
   return data.balance;
 }
 
+function getDailyRefill() {
+  const data = getCoins();
+  return {
+    enabled: data.dailyRefillEnabled !== false,
+    amount: typeof data.dailyRefillAmount === 'number' ? data.dailyRefillAmount : 100,
+    lastRefillDate: data.lastRefillDate || null
+  };
+}
+
+function setDailyRefill(enabled, amount) {
+  const data = getCoins();
+  data.dailyRefillEnabled = enabled;
+  data.dailyRefillAmount = Math.max(1, Math.min(10000000, parseInt(amount) || 100));
+  writeJson(COINS_FILE, data);
+  return getDailyRefill();
+}
+
+function checkAndApplyDailyRefill() {
+  const data = getCoins();
+  if (data.dailyRefillEnabled === false) return null;
+  const amount = typeof data.dailyRefillAmount === 'number' ? data.dailyRefillAmount : 100;
+  const today = new Date().toISOString().slice(0, 10);
+  if (data.lastRefillDate === today) return null;
+  data.balance += amount;
+  data.lastRefillDate = today;
+  data.history.unshift({ type: 'refill', amount, note: `Daily auto-refill (${today})`, ts: Date.now() });
+  if (data.history.length > COIN_LOG_LIMIT) data.history = data.history.slice(0, COIN_LOG_LIMIT);
+  writeJson(COINS_FILE, data);
+  console.log(`[COINS] Daily auto-refill: +${amount} coins. Balance: ${data.balance}`);
+  return data.balance;
+}
+
 function addConfession(confession) {
   const list = readJson(CONFESSIONS_FILE, []);
   list.push(confession);
@@ -327,5 +359,6 @@ module.exports = {
   getBroadcastList, addToBroadcast, removeFromBroadcast, clearBroadcast,
   recordStatusReact, getStatusAnalytics, clearStatusAnalytics,
   getAiChatTargets, addAiChatTarget, removeAiChatTarget, clearAiChatTargets,
-  getCoins, addCoins, spendCoins, setCoins
+  getCoins, addCoins, spendCoins, setCoins,
+  getDailyRefill, setDailyRefill, checkAndApplyDailyRefill
 };

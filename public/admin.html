@@ -176,6 +176,21 @@
     .give-note-input:focus { outline: none; border-color: var(--blue); }
     .give-note-input::placeholder { color: var(--muted2); }
 
+    /* TOGGLE SWITCH */
+    .toggle-wrap { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
+    .toggle-wrap input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      width: 42px; height: 24px; background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 12px; transition: background .2s, border-color .2s; position: relative;
+    }
+    .toggle-wrap input:checked ~ .toggle-track { background: rgba(34,197,94,.25); border-color: var(--green); }
+    .toggle-thumb {
+      position: absolute; top: 3px; left: 3px;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--muted); transition: transform .2s, background .2s;
+    }
+    .toggle-wrap input:checked ~ .toggle-track .toggle-thumb { transform: translateX(18px); background: var(--green); }
+
     /* GLOBAL COIN POOL */
     .pool-card {
       background: linear-gradient(135deg, var(--bg2), #0d1e38);
@@ -376,6 +391,41 @@
         <div class="pool-set-wrap">
           <input type="number" class="pool-input" id="pool-set-input" placeholder="Amount" min="0" max="9999999" />
           <button class="btn btn-blue btn-sm" onclick="setPoolCoins()">🔄 Set Balance</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DAILY AUTO-REFILL ─────────────────────────────────────────────── -->
+  <div class="sec-hdr">
+    <span>🔁 Daily Auto-Refill</span>
+    <div class="sec-hdr-line"></div>
+  </div>
+
+  <div class="pool-card" style="margin-bottom:28px">
+    <div class="pool-inner">
+      <div class="pool-orb" style="background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 0 32px rgba(34,197,94,.4)">🔁</div>
+      <div class="pool-info" style="flex:1;min-width:200px">
+        <div class="pool-info-label">Auto-Refill Settings</div>
+        <div style="color:#e2e8f0;font-size:0.95rem;margin:4px 0">
+          Automatically add coins every day so the bot never goes silent.
+        </div>
+        <div style="color:#4a6080;font-size:0.8rem;margin-top:4px">
+          Last refill: <span id="refill-last-date" style="color:#94a3b8">—</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;min-width:260px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <label style="font-size:0.85rem;color:#94a3b8;white-space:nowrap">Enable auto-refill</label>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="refill-enabled" onchange="saveRefillSettings()" />
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="number" id="refill-amount" class="pool-input" placeholder="Coins/day" min="1" max="10000000"
+            style="width:140px" onchange="saveRefillSettings()" />
+          <span style="color:#4a6080;font-size:0.82rem;white-space:nowrap">coins / day</span>
         </div>
       </div>
     </div>
@@ -651,9 +701,48 @@
     }
   }
 
+  // ── daily auto-refill ──────────────────────────────────────────────────────
+  let _refillSaveTimer = null;
+
+  async function loadRefillSettings() {
+    try {
+      const res = await fetch('/api/coins/refill');
+      const d = await res.json();
+      document.getElementById('refill-enabled').checked = d.enabled !== false;
+      if (!document.getElementById('refill-amount').value) {
+        document.getElementById('refill-amount').value = d.amount ?? 100;
+      }
+      const lastEl = document.getElementById('refill-last-date');
+      lastEl.textContent = d.lastRefillDate ? d.lastRefillDate : 'Never (will run today)';
+    } catch(e) {}
+  }
+
+  async function saveRefillSettings() {
+    clearTimeout(_refillSaveTimer);
+    _refillSaveTimer = setTimeout(async () => {
+      const enabled = document.getElementById('refill-enabled').checked;
+      const amount  = parseInt(document.getElementById('refill-amount').value) || 100;
+      try {
+        const res = await fetch('/api/coins/refill', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled, amount })
+        });
+        const d = await res.json();
+        if (res.ok && d.success) {
+          toast(`✅ Auto-refill ${enabled ? 'enabled' : 'disabled'} · ${amount.toLocaleString()} coins/day`, 'success');
+        } else {
+          toast(d.error || 'Failed to save', 'error');
+        }
+      } catch(e) {
+        toast('Error: ' + e.message, 'error');
+      }
+    }, 400);
+  }
+
   // ── init & auto-refresh ────────────────────────────────────────────────────
   async function init() {
-    await Promise.all([loadCoins(), loadSessions()]);
+    await Promise.all([loadCoins(), loadSessions(), loadRefillSettings()]);
   }
 
   init();

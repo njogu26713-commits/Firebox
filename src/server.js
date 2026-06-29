@@ -243,6 +243,22 @@ app.get('/api/coins', (req, res) => {
   res.json(data);
 });
 
+// ── GET /api/coins/refill ─────────────────────────────────────────────────────
+app.get('/api/coins/refill', (req, res) => {
+  res.json(db.getDailyRefill());
+});
+
+// ── POST /api/coins/refill ────────────────────────────────────────────────────
+app.post('/api/coins/refill', (req, res) => {
+  try {
+    const { enabled, amount } = req.body;
+    const result = db.setDailyRefill(enabled !== false, amount);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── POST /api/coins/add — add coins ───────────────────────────────────────────
 app.post('/api/coins/add', (req, res) => {
   try {

@@ -108,6 +108,9 @@ async function startSession(id, name, createdAt) {
 
   // ── scheduler ──
   const schedulerInterval = setInterval(async () => {
+    // Daily coin auto-refill — runs once per day regardless of session state
+    db.checkAndApplyDailyRefill();
+
     if (sessionState.status !== 'connected') return;
     const now = Date.now();
     const due = db.getSchedules().filter(s => s.jid && s.sendAt <= now);
