@@ -155,8 +155,10 @@ async function handleMessage(sock, msg, prefix, sessionState) {
     const lastReplied = sessionState.deadReplied?.get(from) || 0;
     if (Date.now() - lastReplied > DEAD_COOLDOWN) {
       if (!sessionState.deadReplied) sessionState.deadReplied = new Map();
+      const channelLink = db.getBotSetting('channelLink');
+      const channelSuffix = channelLink ? `\n\n📢 *Follow our channel while you wait:*\n${channelLink}` : '';
       const deadMsg = settings.deadMsg ||
-        `💀 *Bot is currently dead / offline.*\n\n_Please try again later or contact the owner._`;
+        `💀 *Bot is currently dead / offline.*\n\n_Please try again later or contact the owner._${channelSuffix}`;
       await sock.sendMessage(from, { text: deadMsg }, { quoted: msg });
       sessionState.deadReplied.set(from, Date.now());
     }
@@ -168,7 +170,9 @@ async function handleMessage(sock, msg, prefix, sessionState) {
     const AWAY_COOLDOWN = 5 * 60 * 1000; // 5 minutes per sender
     const lastReplied = sessionState.awayReplied.get(from) || 0;
     if (Date.now() - lastReplied > AWAY_COOLDOWN) {
-      const awayMsg = sessionState.awayMsg || '👋 Hey! I\'m currently offline/unavailable. I\'ll get back to you as soon as I\'m back. 🙏';
+      const awayChannelLink = db.getBotSetting('channelLink');
+      const awayChannelSuffix = awayChannelLink ? `\n\n📢 *Follow our channel:* ${awayChannelLink}` : '';
+      const awayMsg = sessionState.awayMsg || `👋 Hey! I'm currently offline/unavailable. I'll get back to you as soon as I'm back. 🙏${awayChannelSuffix}`;
       console.log(`[AWAY][${sessionState.id}] Sending to ${from?.split('@')[0]}: ${awayMsg.slice(0, 30)}`);
       await sock.sendMessage(from, { text: awayMsg }, { quoted: msg });
       sessionState.awayReplied.set(from, Date.now());
@@ -283,7 +287,7 @@ async function handleMessage(sock, msg, prefix, sessionState) {
   // ── Coin cost classification ───────────────────────────────────────────────
   const AI_CMDS = new Set(['ai','ask','gemini','gpt','code','programming','blackbox','story','summarize','recipe','teach','analyze','translate','translate2','simi','dalle','imagine','generate','gen','txt2img','deepseek','ds','doppleai','doppel','roleplay']);
   const DL_CMDS = new Set(['play','ytmp3','song','song2','video','ytmp4','tiktok','tt','tiktokaudio','ttaudio','instagram','ig','facebook','fb','twitter','x','pin','pinterest','image','img','apk','mediafire','mf','gdrive','gd','gitclone','git','itunes','telesticker','tgsticker','videodoc','vdoc','download','dl','wallpaper','wp','remini','enhance']);
-  const OWNER_CMDS = new Set(['delete','del','block','unblock','restart','react','setprefix','forward','join','leave','setbio','aichat','aibot','autoreply','ar','dead','away','mode','dmgroup','dmall','autoviewstatus','avs','autoreactstatus','ars','statusstats','clearstatusstats','autostatusreply','asr','antideletestatus','ads','broadcaststatus','tostatus','inbox','sharecf','clearcf','schedule','schedulelist','schedules','cancelschedule','broadcast','bc','addbc','removebc','listbc','clearbc','disk','hostip','online','lastseen','ppprivacy','readreceipts','gcaddprivacy','toviewonce','vo','vv2','openvo','dlvo','unblockall','listblocked','groupid','gid','deljunk','update','setprofilepic','spp','aza','setaza','resetaza','autosavestatus','modestatus','setstickercmd','delstickercmd','addsudo','delsudo','listsudo','addignorelist','delignorelist','listignorelist','addcountrycode','delcountrycode','listcountrycode','addbadword','gbw','deletebadword','delbw','listbadword','lbw','alwaysonline','ao','antibug','antiviewonce','avo','autobio','autoblock','autoreact','autoread','autorecord','autorecordtyping','autotype','chatbot','statusdelay','setbotname','setownername','setownernumber','settimezone','setstickerauthor','setstickerpackname','setwatermark','setstatusemoji','setcontextlink','setfont','setmenu','setmenuimage','setwarn','anticalldm','setanticallmsg','delanticallmsg','showanticallmsg','testanticallmsg','delwelcome','showwelcome','testwelcome','delgoodbye','showgoodbye','testgoodbye','getsettings','resetsetting','statussettings','antidelete','antiedit','coins','setcoins','coinhistory']);
+  const OWNER_CMDS = new Set(['delete','del','block','unblock','restart','react','setprefix','forward','join','leave','setbio','aichat','aibot','autoreply','ar','dead','away','mode','dmgroup','dmall','autoviewstatus','avs','autoreactstatus','ars','statusstats','clearstatusstats','autostatusreply','asr','antideletestatus','ads','broadcaststatus','tostatus','inbox','sharecf','clearcf','schedule','schedulelist','schedules','cancelschedule','broadcast','bc','addbc','removebc','listbc','clearbc','disk','hostip','online','lastseen','ppprivacy','readreceipts','gcaddprivacy','toviewonce','vo','vv2','openvo','dlvo','unblockall','listblocked','groupid','gid','deljunk','update','setprofilepic','spp','aza','setaza','resetaza','autosavestatus','modestatus','setstickercmd','delstickercmd','addsudo','delsudo','listsudo','addignorelist','delignorelist','listignorelist','addcountrycode','delcountrycode','listcountrycode','addbadword','gbw','deletebadword','delbw','listbadword','lbw','alwaysonline','ao','antibug','antiviewonce','avo','autobio','autoblock','autoreact','autoread','autorecord','autorecordtyping','autotype','chatbot','statusdelay','setbotname','setownername','setownernumber','settimezone','setstickerauthor','setstickerpackname','setwatermark','setstatusemoji','setcontextlink','setfont','setmenu','setmenuimage','setwarn','anticalldm','setanticallmsg','delanticallmsg','showanticallmsg','testanticallmsg','delwelcome','showwelcome','testwelcome','delgoodbye','showgoodbye','testgoodbye','getsettings','resetsetting','statussettings','antidelete','antiedit','coins','setcoins','coinhistory','setchannel','showchannel']);
 
   let coinCost = 0;
   if (!isOwner && !COIN_BYPASS_CMDS.has(command)) {
@@ -336,6 +340,7 @@ async function handleMessage(sock, msg, prefix, sessionState) {
     case 'botstatus': case 'bs2':  return general.botstatus(ctx);
     case 'pair':                   return general.pair(ctx);
     case 'repo':                   return general.repo(ctx);
+    case 'channel': case 'follow': return general.channel(ctx);
 
     // ── AI ─────────────────────────────────────────────────────────────────────
     case 'ai': case 'ask': case 'gemini': case 'gpt': return ai.chat(ctx);
@@ -595,6 +600,8 @@ async function handleMessage(sock, msg, prefix, sessionState) {
     case 'statussettings':                 return owner.statussettings(ctx);
     case 'antidelete':                     return owner.antidelete(ctx);
     case 'antiedit':                       return owner.antiedit(ctx);
+    case 'setchannel':                     return owner.setchannel(ctx);
+    case 'showchannel':                    return owner.showchannel(ctx);
 
     // ── GROUP MANAGEMENT ──────────────────────────────────────────────────────
     case 'kick':                           return group.kick(ctx);

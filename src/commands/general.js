@@ -88,6 +88,7 @@ async function menu(ctx) {
         row(`${p}pair`,      'Get a pairing code for this bot',    `${p}pair`),
         row(`${p}repo`,      'Bot source code / repo link',        `${p}repo`),
         row(`${p}help`,      'Detailed help for any command',      `${p}help`),
+        row(`${p}channel`,   'Follow the owner\'s channel',        `${p}channel`),
       ]
     },
     {
@@ -486,6 +487,8 @@ const HELP = {
   tinyurl:      { usage: 'tinyurl <url>', desc: 'Shorten a long URL.' },
   tts:          { usage: 'tts [lang] <text>', desc: 'Convert text to a voice note. e.g. .tts Hello! or .tts sw Habari yako' },
   vv:           { usage: 'vv', desc: 'Reply to a view-once message to reveal it.' },
+  channel:      { usage: 'channel', desc: 'Get the link to follow the owner\'s WhatsApp channel.' },
+  follow:       { usage: 'follow', desc: 'Get the link to follow the owner\'s WhatsApp channel.' },
 
   // Owner
   antidelete:       { usage: 'antidelete on/off', desc: 'Catch and forward deleted messages to your DM.' },
@@ -498,6 +501,8 @@ const HELP = {
   clearcf:          { usage: 'clearcf <id>', desc: 'Delete a confession by its ID.' },
   inbox:            { usage: 'inbox', desc: 'View all anonymous confessions sent to the bot.' },
   join:             { usage: 'join <invite link>', desc: 'Make the bot join a group via invite link.' },
+  setchannel:       { usage: 'setchannel <link>', desc: 'Set the WhatsApp channel link users will be directed to follow.' },
+  showchannel:      { usage: 'showchannel', desc: 'Show the currently saved channel link.' },
   leave:            { usage: 'leave', desc: 'Make the bot leave the current group.' },
   restart:          { usage: 'restart', desc: 'Restart the bot (owner only).' },
   setbio:           { usage: 'setbio <text>', desc: 'Update the bot\'s WhatsApp bio/about.' },
@@ -698,4 +703,17 @@ async function repo(ctx) {
   }, { quoted: msg });
 }
 
-module.exports = { ping, ping2, menu, help, info, owner, runtime, botstatus, pair, repo };
+async function channel(ctx) {
+  const { sock, from, msg } = ctx;
+  const link = db.getBotSetting('channelLink');
+  if (!link) {
+    return sock.sendMessage(from, {
+      text: `📢 *Follow Our Channel*\n\n_No channel link has been set yet. Ask the owner to configure it._`
+    }, { quoted: msg });
+  }
+  await sock.sendMessage(from, {
+    text: `📢 *Follow Our Channel!*\n\n👇 Tap the link below to follow:\n${link}\n\n_Stay updated with the latest news and updates from the owner._`
+  }, { quoted: msg });
+}
+
+module.exports = { ping, ping2, menu, help, info, owner, runtime, botstatus, pair, repo, channel };

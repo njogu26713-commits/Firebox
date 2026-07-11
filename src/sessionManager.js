@@ -261,10 +261,12 @@ async function startSession(id, name, createdAt) {
       }
       try {
         const customMsg = db.getBotSetting('antiCallMsg');
+        const callChannelLink = db.getBotSetting('channelLink');
+        const callChannelSuffix = callChannelLink ? `\n\n📢 *Follow our channel:* ${callChannelLink}` : '';
         const text = customMsg ||
           `⚠️ *Call Blocked!*\n\n` +
           `📵 This bot does not accept calls.\n` +
-          `💬 Please send a text message instead.\n\n` +
+          `💬 Please send a text message instead.${callChannelSuffix}\n\n` +
           `_Powered by 🔥 Firebox_`;
         await sock.sendMessage(callerJid, { text });
       } catch (err) {

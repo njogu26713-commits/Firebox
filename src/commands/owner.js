@@ -1844,5 +1844,31 @@ module.exports = {
   anticalldm,
   setanticallmsg, delanticallmsg, showanticallmsg, testanticallmsg,
   delwelcome, showwelcome, testwelcome, delgoodbye, showgoodbye, testgoodbye,
-  getsettings, resetsetting, statussettings
+  getsettings, resetsetting, statussettings,
+  setchannel, showchannel
 };
+
+// ─── CHANNEL LINK MANAGEMENT ─────────────────────────────────────────────────
+async function setchannel(ctx) {
+  const { sock, from, msg, text } = ctx;
+  if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
+  if (!text) {
+    const current = db.getBotSetting('channelLink');
+    return send(sock, from, msg,
+      `📢 *Channel Link Command*\n\n` +
+      `Usage: *.setchannel <link>*\n` +
+      `Example: .setchannel https://whatsapp.com/channel/xxxxxx\n\n` +
+      (current ? `Current link: ${current}` : `_No channel link set yet._`)
+    );
+  }
+  db.setBotSetting('channelLink', text.trim());
+  await send(sock, from, msg, `✅ *Channel link saved!*\n\nUsers can now type *.channel* or *.follow* to get the link.`);
+}
+
+async function showchannel(ctx) {
+  const { sock, from, msg } = ctx;
+  if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
+  const link = db.getBotSetting('channelLink');
+  if (!link) return send(sock, from, msg, '❌ No channel link set. Use *.setchannel <link>* to set one.');
+  await send(sock, from, msg, `📢 *Current Channel Link:*\n\n${link}`);
+}
