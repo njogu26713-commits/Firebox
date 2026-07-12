@@ -371,8 +371,7 @@
         updateCard(s);
         if (s.status === 'connected') {
           pairingId = null;
-          toast('✅ Bot connected! Redirecting to dashboard…', 'success');
-          setTimeout(() => { window.location.href = '/dashboard'; }, 1500);
+          toast('✅ Bot connected!', 'success');
         }
       }
     } else {
