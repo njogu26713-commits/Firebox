@@ -1,4 +1,5 @@
 const db = require('../database');
+const { sendFireboxCard } = require('../card');
 
 async function getAdmins(sock, jid) {
   const metadata = await sock.groupMetadata(jid);
@@ -10,9 +11,12 @@ function getMentioned(msg) {
 }
 
 async function send(sock, from, msg, text, extra = {}) {
-  const lines = text.split('\n');
-  if (/\*[^*\n]+\*/.test(lines[0])) lines[0] = '> ' + lines[0];
-  await sock.sendMessage(from, { text: lines.join('\n'), ...extra }, { quoted: msg });
+  // If the response needs mentions (e.g. kick/add confirmations), pass them through
+  return sendFireboxCard(sock, from, msg, {
+    title: '👥 Firebox Group',
+    content: text,
+    mentions: extra.mentions,
+  });
 }
 
 async function requireGroup(ctx) {
@@ -330,7 +334,7 @@ async function listwarn(ctx) {
   if (!entries.length) return send(sock, from, msg, '✅ No warnings in this group!');
   const list = entries.map(([jid, count]) => `• @${jid.split('@')[0]} — ${count} warn(s)`).join('\n');
   const mentions = entries.map(([jid]) => jid);
-  await sock.sendMessage(from, { text: `⚠️ *Warn List*\n\n${list}`, mentions }, { quoted: msg });
+  await sendFireboxCard(sock, from, msg, { title: '⚠️ Warn List', content: list, mentions });
 }
 
 async function resetwarn(ctx) {
@@ -577,12 +581,22 @@ async function handleGroupParticipantUpdate(sock, update) {
       const welcomeMsg = grp.welcomeMsg
         ? grp.welcomeMsg.replace('{name}', `@${name}`).replace('{group}', groupName)
         : `👋 Welcome @${name} to *${groupName}*! 🎉\nWe're happy to have you here!`;
-      await sock.sendMessage(id, { text: welcomeMsg, mentions: [participant] });
+      await sendFireboxCard(sock, id, null, {
+        title: '👋 Welcome!',
+        content: welcomeMsg,
+        mentions: [participant],
+        noQuote: true,
+      });
     } else if (action === 'remove') {
       const goodbyeMsg = grp.goodbyeMsg
         ? grp.goodbyeMsg.replace('{name}', `@${name}`)
         : `👋 Goodbye @${name}! We'll miss you. 😢`;
-      await sock.sendMessage(id, { text: goodbyeMsg, mentions: [participant] });
+      await sendFireboxCard(sock, id, null, {
+        title: '👋 Goodbye',
+        content: goodbyeMsg,
+        mentions: [participant],
+        noQuote: true,
+      });
     }
   }
 }
@@ -958,7 +972,7 @@ async function closetime(ctx) {
   setTimeout(async () => {
     try {
       await sock.groupSettingUpdate(from, 'announcement');
-      await sock.sendMessage(from, { text: '🔕 *Group has been automatically closed.*\nOnly admins can now send messages.' });
+      await sendFireboxCard(sock, from, null, { title: '🔕 Group Closed', content: 'Group has been automatically closed.\nOnly admins can now send messages.', noQuote: true });
     } catch {}
   }, delay);
 }
@@ -977,7 +991,7 @@ async function opentime(ctx) {
   setTimeout(async () => {
     try {
       await sock.groupSettingUpdate(from, 'not_announcement');
-      await sock.sendMessage(from, { text: '🔔 *Group is now open!*\nAll members can send messages.' });
+      await sendFireboxCard(sock, from, null, { title: '🔔 Group Opened', content: 'Group is now open!\nAll members can send messages.', noQuote: true });
     } catch {}
   }, delay);
 }

@@ -4,6 +4,11 @@ const path = require('path');
 const { exec } = require('child_process');
 const { promisify } = require('util');
 const execAsync = promisify(exec);
+const { sendFireboxCard } = require('../card');
+
+async function send(sock, from, msg, text, title) {
+  return sendFireboxCard(sock, from, msg, { title: title || '🎨 Firebox Sticker', content: text });
+}
 
 const TMP = path.join(__dirname, '../../tmp');
 if (!fs.existsSync(TMP)) fs.mkdirSync(TMP, { recursive: true });
@@ -33,12 +38,10 @@ async function makeSticker(ctx) {
   const type = getContentType(target.message);
 
   if (!['imageMessage', 'videoMessage'].includes(type)) {
-    return sock.sendMessage(from, {
-      text: '❌ Send or reply to an *image* or *video* with *.sticker*\n\nExample: Send a photo then type *.sticker*'
-    }, { quoted: msg });
+    return send(sock, from, msg, '❌ Send or reply to an *image* or *video* with *.sticker*\n\nExample: Send a photo then type *.sticker*', '🎨 Make Sticker');
   }
 
-  await sock.sendMessage(from, { text: '🎨 Creating sticker, please wait...' }, { quoted: msg });
+  await send(sock, from, msg, '🎨 Creating sticker, please wait...', '🎨 Make Sticker');
 
   const ext = type === 'imageMessage' ? 'jpg' : 'mp4';
   const tmpIn = path.join(TMP, `stk_in_${Date.now()}.${ext}`);
@@ -60,10 +63,14 @@ async function makeSticker(ctx) {
     }
 
     const stickerBuffer = fs.readFileSync(tmpOut);
-    await sock.sendMessage(from, { sticker: stickerBuffer }, { quoted: msg });
+    await sendFireboxCard(sock, from, msg, {
+      title: '🎨 Sticker Created',
+      content: '✅ Here is your sticker!',
+      media: { type: 'sticker', buffer: stickerBuffer },
+    });
   } catch (err) {
     console.error('[STICKER]', err.message);
-    await sock.sendMessage(from, { text: `❌ Sticker creation failed: ${err.message}` }, { quoted: msg });
+    await send(sock, from, msg, `❌ Sticker creation failed: ${err.message}`, '🎨 Make Sticker');
   } finally {
     if (fs.existsSync(tmpIn)) fs.unlinkSync(tmpIn);
     if (fs.existsSync(tmpOut)) fs.unlinkSync(tmpOut);
@@ -76,9 +83,7 @@ async function stickerToImage(ctx) {
   const type = getContentType(target.message);
 
   if (type !== 'stickerMessage') {
-    return sock.sendMessage(from, {
-      text: '❌ Please reply to a *sticker* with *.toimg*'
-    }, { quoted: msg });
+    return send(sock, from, msg, '❌ Please reply to a *sticker* with *.toimg*', '🖼️ Sticker to Image');
   }
 
   const tmpIn = path.join(TMP, `toimg_in_${Date.now()}.webp`);
@@ -90,10 +95,14 @@ async function stickerToImage(ctx) {
     fs.writeFileSync(tmpIn, buffer);
     await execAsync(`ffmpeg -i "${tmpIn}" "${tmpOut}" -y`);
     const imgBuffer = fs.readFileSync(tmpOut);
-    await sock.sendMessage(from, { image: imgBuffer, caption: '✅ Here is your image!' }, { quoted: msg });
+    await sendFireboxCard(sock, from, msg, {
+      title: '🖼️ Sticker to Image',
+      content: '✅ Conversion complete!',
+      media: { type: 'image', buffer: imgBuffer, mimetype: 'image/png' },
+    });
   } catch (err) {
     console.error('[TOIMG]', err.message);
-    await sock.sendMessage(from, { text: `❌ Conversion failed: ${err.message}` }, { quoted: msg });
+    await send(sock, from, msg, `❌ Conversion failed: ${err.message}`, '🖼️ Sticker to Image');
   } finally {
     if (fs.existsSync(tmpIn)) fs.unlinkSync(tmpIn);
     if (fs.existsSync(tmpOut)) fs.unlinkSync(tmpOut);

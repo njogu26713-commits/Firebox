@@ -3,11 +3,10 @@ const dns = require('dns').promises;
 const axios = require('axios');
 const { openRouterPrompt } = require('../openrouter');
 const { parsePhoneNumber, isValidPhoneNumber, getNumberType, PhoneNumberType } = require('libphonenumber-js');
+const { sendFireboxCard } = require('../card');
 
-async function send(sock, from, msg, text) {
-  const lines = text.split('\n');
-  if (/\*[^*\n]+\*/.test(lines[0])) lines[0] = '> ' + lines[0];
-  await sock.sendMessage(from, { text: lines.join('\n') }, { quoted: msg });
+async function send(sock, from, msg, text, title) {
+  return sendFireboxCard(sock, from, msg, { title: title || '💻 Firebox Hacking', content: text });
 }
 
 // ── PASSWORD STRENGTH CHECKER ─────────────────────────────────────────────────

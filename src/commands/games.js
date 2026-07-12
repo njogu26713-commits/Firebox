@@ -1,5 +1,10 @@
 const db = require('../database');
 const axios = require('axios');
+const { sendFireboxCard } = require('../card');
+
+async function send(sock, from, msg, text, title) {
+  return sendFireboxCard(sock, from, msg, { title: title || '🎮 Firebox Games', content: text });
+}
 
 const TRUTHS = [
   "What's your biggest fear?",
@@ -49,9 +54,7 @@ const DARES = [
 
 async function eightBall(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) {
-    return sock.sendMessage(from, { text: '🎱 Ask me a yes/no question!\n\n*Example:* .8ball Will I be rich?' }, { quoted: msg });
-  }
+  if (!text) return send(sock, from, msg, '🎱 Ask me a yes/no question!\n\n*Example:* .8ball Will I be rich?', '🎱 Magic 8 Ball');
 
   const responses = [
     '✅ It is certain.', '✅ It is decidedly so.', '✅ Without a doubt.',
@@ -65,21 +68,19 @@ async function eightBall(ctx) {
   ];
 
   const answer = responses[Math.floor(Math.random() * responses.length)];
-  await sock.sendMessage(from, {
-    text: `🎱 *Magic 8 Ball*\n\n❓ _${text}_\n\n${answer}`
-  }, { quoted: msg });
+  await send(sock, from, msg, `❓ _${text}_\n\n${answer}`, '🎱 Magic 8 Ball');
 }
 
 async function truth(ctx) {
   const { sock, from, msg } = ctx;
   const q = TRUTHS[Math.floor(Math.random() * TRUTHS.length)];
-  await sock.sendMessage(from, { text: `💬 *TRUTH*\n━━━━━━━━━━━━\n${q}` }, { quoted: msg });
+  await send(sock, from, msg, q, '💬 Truth');
 }
 
 async function dare(ctx) {
   const { sock, from, msg } = ctx;
   const d = DARES[Math.floor(Math.random() * DARES.length)];
-  await sock.sendMessage(from, { text: `🎯 *DARE*\n━━━━━━━━━━━━\n${d}` }, { quoted: msg });
+  await send(sock, from, msg, d, '🎯 Dare');
 }
 
 async function trivia(ctx) {
@@ -87,9 +88,10 @@ async function trivia(ctx) {
 
   const existing = db.getTrivia(from);
   if (existing) {
-    return sock.sendMessage(from, {
-      text: `❓ There's an active trivia!\n\n*Q:* ${existing.question}\n\n_Type your answer!_`
-    }, { quoted: msg });
+    return send(sock, from, msg,
+      `*Q:* ${existing.question}\n\n_Type your answer!_`,
+      '❓ Active Trivia'
+    );
   }
 
   try {
@@ -106,32 +108,28 @@ async function trivia(ctx) {
 
     db.setTrivia(from, question, answer);
 
-    const text = `
-🎯 *TRIVIA TIME!*
-━━━━━━━━━━━━━━━━━━
-📚 *Category:* ${item.category}
-🎯 *Difficulty:* ${item.difficulty.toUpperCase()}
+    const body =
+      `📚 *Category:* ${item.category}\n` +
+      `🎯 *Difficulty:* ${item.difficulty.toUpperCase()}\n\n` +
+      `❓ ${question}\n\n` +
+      `${allAnswers.map((a, i) => `${['🇦', '🇧', '🇨', '🇩'][i]} ${a}`).join('\n')}\n\n` +
+      `_You have 60 seconds to answer!_`;
 
-❓ ${question}
-
-${allAnswers.map((a, i) => `${['🇦', '🇧', '🇨', '🇩'][i]} ${a}`).join('\n')}
-━━━━━━━━━━━━━━━━━━
-_You have 60 seconds to answer!_
-    `.trim();
-
-    await sock.sendMessage(from, { text }, { quoted: msg });
+    await send(sock, from, msg, body, '🎯 Trivia Time!');
 
     setTimeout(async () => {
       const current = db.getTrivia(from);
       if (current) {
         db.clearTrivia(from);
-        await sock.sendMessage(from, {
-          text: `⏰ *Time's up!*\n\n✅ The answer was: *${answer}*`
+        await sendFireboxCard(sock, from, null, {
+          title: '⏰ Time\'s Up!',
+          content: `✅ The answer was: *${answer}*`,
+          noQuote: true,
         });
       }
     }, 60000);
   } catch (err) {
-    await sock.sendMessage(from, { text: '❌ Could not fetch trivia. Try again!' }, { quoted: msg });
+    await send(sock, from, msg, '❌ Could not fetch trivia. Try again!');
   }
 }
 
@@ -141,17 +139,16 @@ async function dice(ctx) {
   const result = Math.floor(Math.random() * sides) + 1;
   const dieFaces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
   const display = sides === 6 ? dieFaces[result - 1] : `*${result}*`;
-  await sock.sendMessage(from, {
-    text: `🎲 Rolling a *${sides}*-sided die...\n\n${display} — You got *${result}*!`
-  }, { quoted: msg });
+  await send(sock, from, msg,
+    `🎲 Rolling a *${sides}*-sided die...\n\n${display} — You got *${result}*!`,
+    '🎲 Dice Roll'
+  );
 }
 
 async function coinFlip(ctx) {
   const { sock, from, msg } = ctx;
   const result = Math.random() < 0.5 ? '🪙 *HEADS!*' : '🪙 *TAILS!*';
-  await sock.sendMessage(from, {
-    text: `🪙 *Coin Flip*\n\nFlipping...\n\n${result}`
-  }, { quoted: msg });
+  await send(sock, from, msg, `Flipping...\n\n${result}`, '🪙 Coin Flip');
 }
 
 async function joke(ctx) {
@@ -166,14 +163,10 @@ async function joke(ctx) {
 
   try {
     const res = await axios.get('https://official-joke-api.appspot.com/random_joke', { timeout: 8000 });
-    await sock.sendMessage(from, {
-      text: `😂 *JOKE*\n\n${res.data.setup}\n\n_${res.data.punchline}_`
-    }, { quoted: msg });
+    await send(sock, from, msg, `${res.data.setup}\n\n_${res.data.punchline}_`, '😂 Joke');
   } catch {
     const j = fallback[Math.floor(Math.random() * fallback.length)];
-    await sock.sendMessage(from, {
-      text: `😂 *JOKE*\n\n${j.setup}\n\n_${j.punchline}_`
-    }, { quoted: msg });
+    await send(sock, from, msg, `${j.setup}\n\n_${j.punchline}_`, '😂 Joke');
   }
 }
 
@@ -191,13 +184,9 @@ async function fact(ctx) {
 
   try {
     const res = await axios.get('https://uselessfacts.jsph.pl/api/v2/facts/random?language=en', { timeout: 8000 });
-    await sock.sendMessage(from, {
-      text: `🧠 *RANDOM FACT*\n\n${res.data.text}`
-    }, { quoted: msg });
+    await send(sock, from, msg, res.data.text, '🧠 Random Fact');
   } catch {
-    await sock.sendMessage(from, {
-      text: `🧠 *RANDOM FACT*\n\n${fallback[Math.floor(Math.random() * fallback.length)]}`
-    }, { quoted: msg });
+    await send(sock, from, msg, fallback[Math.floor(Math.random() * fallback.length)], '🧠 Random Fact');
   }
 }
 
@@ -213,14 +202,10 @@ async function quote(ctx) {
 
   try {
     const res = await axios.get('https://api.quotable.io/random', { timeout: 8000 });
-    await sock.sendMessage(from, {
-      text: `💫 *QUOTE*\n\n_"${res.data.content}"_\n\n— *${res.data.author}*`
-    }, { quoted: msg });
+    await send(sock, from, msg, `_"${res.data.content}"_\n\n— *${res.data.author}*`, '💫 Quote');
   } catch {
     const q = fallback[Math.floor(Math.random() * fallback.length)];
-    await sock.sendMessage(from, {
-      text: `💫 *QUOTE*\n\n_"${q.content}"_\n\n— *${q.author}*`
-    }, { quoted: msg });
+    await send(sock, from, msg, `_"${q.content}"_\n\n— *${q.author}*`, '💫 Quote');
   }
 }
 
@@ -231,11 +216,11 @@ async function memes(ctx) {
     const d = res.data;
     if (!d?.url) throw new Error('No meme URL');
     const imgRes = await axios.get(d.url, { responseType: 'arraybuffer', timeout: 20000 });
-    await sock.sendMessage(from, {
-      image: Buffer.from(imgRes.data),
-      caption: `😂 *${d.title || 'Random Meme'}*\n👍 ${d.ups?.toLocaleString() || '?'} upvotes — r/${d.subreddit || 'memes'}`,
-      mimetype: 'image/jpeg'
-    }, { quoted: msg });
+    await sendFireboxCard(sock, from, msg, {
+      title: '😂 Random Meme',
+      content: `*${d.title || 'Random Meme'}*\n👍 ${d.ups?.toLocaleString() || '?'} upvotes — r/${d.subreddit || 'memes'}`,
+      media: { type: 'image', buffer: Buffer.from(imgRes.data), mimetype: 'image/jpeg' },
+    });
   } catch {
     const fallbackMemes = [
       'https://i.imgur.com/5e5Ih2K.jpeg',
@@ -245,18 +230,23 @@ async function memes(ctx) {
     const url = fallbackMemes[Math.floor(Math.random() * fallbackMemes.length)];
     try {
       const r = await axios.get(url, { responseType: 'arraybuffer', timeout: 15000 });
-      await sock.sendMessage(from, { image: Buffer.from(r.data), caption: '😂 *Random Meme*', mimetype: 'image/jpeg' }, { quoted: msg });
+      await sendFireboxCard(sock, from, msg, {
+        title: '😂 Random Meme',
+        content: 'Fresh meme for you! 🔥',
+        media: { type: 'image', buffer: Buffer.from(r.data), mimetype: 'image/jpeg' },
+      });
     } catch {
-      await sock.sendMessage(from, { text: '😂 *Meme*\n\nWhy do programmers prefer dark mode?\n\n_Because light attracts bugs!_ 🐛' }, { quoted: msg });
+      await send(sock, from, msg, 'Why do programmers prefer dark mode?\n\n_Because light attracts bugs!_ 🐛', '😂 Meme');
     }
   }
 }
 
 async function truthdetector(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return sock.sendMessage(from, {
-    text: '🔍 *Truth Detector*\n\nUsage: `.truthdetector <statement>`\nExample: `.truthdetector I never eat junk food`\n\n_Warning: purely for fun! 😂_'
-  }, { quoted: msg });
+  if (!text) return send(sock, from, msg,
+    'Usage: `.truthdetector <statement>`\nExample: `.truthdetector I never eat junk food`\n\n_Warning: purely for fun! 😂_',
+    '🔍 Truth Detector'
+  );
 
   const results = [
     { emoji: '✅', label: '100% TRUE', percent: 100, desc: 'Absolutely no doubt about it!' },
@@ -273,9 +263,12 @@ async function truthdetector(ctx) {
   const result = results[hash % results.length];
   const bar = '█'.repeat(Math.floor(result.percent / 10)) + '░'.repeat(10 - Math.floor(result.percent / 10));
 
-  await sock.sendMessage(from, {
-    text: `🔍 *Truth Detector*\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n📋 Statement:\n_"${text}"_\n\n${result.emoji} *Result: ${result.label}*\n[${bar}] ${result.percent}%\n\n📝 ${result.desc}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n_⚠️ For fun only — not a real lie detector!_`
-  }, { quoted: msg });
+  const body =
+    `📋 Statement:\n_"${text}"_\n\n` +
+    `${result.emoji} *Result: ${result.label}*\n[${bar}] ${result.percent}%\n\n` +
+    `📝 ${result.desc}\n\n_⚠️ For fun only — not a real lie detector!_`;
+
+  await send(sock, from, msg, body, '🔍 Truth Detector');
 }
 
 async function xxqc(ctx) {
@@ -295,9 +288,7 @@ async function xxqc(ctx) {
     "If animals could talk, which animal would be the rudest?",
   ];
   const q = questions[Math.floor(Math.random() * questions.length)];
-  await sock.sendMessage(from, {
-    text: `💬 *Quick Question*\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n\n🤔 ${q}\n\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n_Reply with your answer!_`
-  }, { quoted: msg });
+  await send(sock, from, msg, `🤔 ${q}\n\n_Reply with your answer!_`, '💬 Quick Question');
 }
 
 module.exports = { eightBall, truth, dare, trivia, dice, coinFlip, joke, fact, quote, memes, truthdetector, xxqc };

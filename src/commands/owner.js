@@ -1,9 +1,8 @@
 const db = require('../database');
+const { sendFireboxCard } = require('../card');
 
-async function send(sock, from, msg, text) {
-  const lines = text.split('\n');
-  if (/\*[^*\n]+\*/.test(lines[0])) lines[0] = '> ' + lines[0];
-  await sock.sendMessage(from, { text: lines.join('\n') }, { quoted: msg });
+async function send(sock, from, msg, text, title) {
+  return sendFireboxCard(sock, from, msg, { title: title || '👑 Firebox Owner', content: text });
 }
 
 function isOwnerCheck(ctx) {
@@ -1748,7 +1747,7 @@ async function testwelcome(ctx) {
   const meta = await sock.groupMetadata(from).catch(() => ({ subject: 'Test Group' }));
   const wm = (grp.welcomeMsg || '👋 Welcome {name} to *{group}*!')
     .replace('{name}', `@${sender.split('@')[0]}`).replace('{group}', meta.subject);
-  await sock.sendMessage(from, { text: `👋 *[TEST] Welcome Message:*\n\n${wm}`, mentions: [sender] }, { quoted: msg });
+  await sendFireboxCard(sock, from, msg, { title: '👋 Test Welcome', content: `*[TEST] Welcome Message:*\n\n${wm}`, mentions: [sender] });
 }
 async function delgoodbye(ctx) {
   const { sock, from, msg } = ctx;
@@ -1765,7 +1764,7 @@ async function testgoodbye(ctx) {
   const { sock, from, msg, sender } = ctx;
   const grp = db.getGroup(from);
   const gm = (grp.goodbyeMsg || '👋 Goodbye {name}! We\'ll miss you.').replace('{name}', `@${sender.split('@')[0]}`);
-  await sock.sendMessage(from, { text: `👋 *[TEST] Goodbye Message:*\n\n${gm}`, mentions: [sender] }, { quoted: msg });
+  await sendFireboxCard(sock, from, msg, { title: '👋 Test Goodbye', content: `*[TEST] Goodbye Message:*\n\n${gm}`, mentions: [sender] });
 }
 
 // ─── GET SETTINGS / RESET ────────────────────────────────────────────────────

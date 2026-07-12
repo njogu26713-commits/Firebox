@@ -1,9 +1,8 @@
 const axios = require('axios');
+const { sendFireboxCard } = require('../card');
 
-async function send(sock, from, msg, text) {
-  const lines = text.split('\n');
-  if (/\*[^*\n]+\*/.test(lines[0])) lines[0] = '> ' + lines[0];
-  await sock.sendMessage(from, { text: lines.join('\n') }, { quoted: msg });
+async function send(sock, from, msg, text, title) {
+  return sendFireboxCard(sock, from, msg, { title: title || '📖 Firebox Religion', content: text });
 }
 
 async function bible(ctx) {

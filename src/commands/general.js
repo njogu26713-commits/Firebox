@@ -3,6 +3,7 @@ const { performance } = require('perf_hooks');
 const db = require('../database');
 const f = require('../fonts');
 const { generateMenuImage } = require('../menuImage');
+const { sendFireboxCard } = require('../card');
 
 function getUptime() {
   const s = Math.floor(process.uptime());
@@ -15,58 +16,56 @@ function getUptime() {
 async function ping(ctx) {
   const { sock, from, msg } = ctx;
   const start = performance.now();
-  await sock.sendMessage(from, { text: `🏓 ${f.italic('Pinging...')}` }, { quoted: msg });
+  const sentMsg = await sock.sendMessage(from, { text: '🏓 Pinging...' }, { quoted: msg });
   const ms = (performance.now() - start).toFixed(2);
-  await sock.sendMessage(from, {
-    text: `🏓 ${f.bold('Pong!')}\n⚡ ${f.smallCaps('Speed')}: ${f.mono(ms + 'ms')}`
-  }, { quoted: msg });
+  await sendFireboxCard(sock, from, msg, {
+    title: '🏓 Ping',
+    content: `${f.bold('Pong!')} ⚡\n\n⚡ *Speed:* ${f.mono(ms + 'ms')}\n⏱️ *Uptime:* ${getUptime()}\n🏷️ *Version:* v2.0.0`,
+  });
 }
 
 async function info(ctx) {
   const { sock, from, msg, sessionState } = ctx;
   const mem = process.memoryUsage();
-  const text = `╔══════════════════════╗
-║  🤖  ${f.bold('BOT  INFO')}  🤖  ║
-╚══════════════════════╝
-
-🔥 ${f.smallCaps('Name')}     » ${f.boldItalic('Firebox')}
-🏷️ ${f.smallCaps('Version')}  » ${f.mono('v2.0.0')}
-⏱️ ${f.smallCaps('Uptime')}   » ${f.italic(getUptime())}
-💾 ${f.smallCaps('RAM')}      » ${f.mono((mem.rss / 1024 / 1024).toFixed(1) + ' MB')}
-🖥️ ${f.smallCaps('Platform')} » ${f.italic(os.platform() + ' (' + os.arch() + ')')}
-📦 ${f.smallCaps('Node.js')}  » ${f.mono(process.version)}
-🧠 ${f.smallCaps('AI')}       » ${f.italic('Google Gemini 2.0 Flash')}
-📊 ${f.smallCaps('Messages')} » ${f.bold(String(sessionState.messageCount))}
-⚡ ${f.smallCaps('Commands')} » ${f.bold(String(sessionState.commandCount))}
-
-▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰
-${f.italic('Built with ❤️ by Firebox')}`;
-  await sock.sendMessage(from, { text }, { quoted: msg });
+  const content =
+    `🔥 *Name:*     ${f.boldItalic('Firebox')}\n` +
+    `🏷️ *Version:*  ${f.mono('v2.0.0')}\n` +
+    `⏱️ *Uptime:*   ${f.italic(getUptime())}\n` +
+    `💾 *RAM:*      ${f.mono((mem.rss / 1024 / 1024).toFixed(1) + ' MB')}\n` +
+    `🖥️ *Platform:* ${f.italic(os.platform() + ' (' + os.arch() + ')')}\n` +
+    `📦 *Node.js:*  ${f.mono(process.version)}\n` +
+    `🧠 *AI:*       ${f.italic('Google Gemini 2.0 Flash')}\n` +
+    `📊 *Messages:* ${f.bold(String(sessionState.messageCount))}\n` +
+    `⚡ *Commands:* ${f.bold(String(sessionState.commandCount))}\n\n` +
+    `_Built with ❤️ by Firebox_`;
+  await sendFireboxCard(sock, from, msg, { title: '🤖 Bot Info', content });
 }
 
 async function owner(ctx) {
   const { sock, from, msg } = ctx;
   const ownerNumber = process.env.OWNER_NUMBER || 'Not configured';
   const ownerName = process.env.OWNER_NAME || 'Owner';
-  const text = `╔══════════════════════╗
-║  👑  ${f.bold('BOT  OWNER')}  👑  ║
-╚══════════════════════╝
-
-👤 ${f.smallCaps('Name')}   » ${f.boldItalic(ownerName)}
-📱 ${f.smallCaps('Number')} » ${f.mono('+' + ownerNumber)}
-🤖 ${f.smallCaps('Bot')}    » ${f.italic('Firebox v2.0.0')}
-🌐 ${f.smallCaps('Status')} » ${f.bold('Online')} ✅
-
-▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰
-${f.italic('Contact owner for support')}`;
-  await sock.sendMessage(from, { text }, { quoted: msg });
+  const content =
+    `👤 *Name:*   ${f.boldItalic(ownerName)}\n` +
+    `📱 *Number:* ${f.mono('+' + ownerNumber)}\n` +
+    `🤖 *Bot:*    ${f.italic('Firebox v2.0.0')}\n` +
+    `🌐 *Status:* ${f.bold('Online')} ✅\n\n` +
+    `_Contact owner for support_`;
+  await sendFireboxCard(sock, from, msg, {
+    title: '👑 Bot Owner',
+    content,
+    buttons: ownerNumber !== 'Not configured'
+      ? [{ text: '💬 Chat Owner', url: `https://wa.me/${ownerNumber}` }]
+      : [],
+  });
 }
 
 async function runtime(ctx) {
   const { sock, from, msg } = ctx;
-  await sock.sendMessage(from, {
-    text: `⏱️ ${f.bold('Bot Runtime')}\n\n🔥 ${f.italic('Firebox')} has been running for:\n${f.mono(getUptime())}`
-  }, { quoted: msg });
+  await sendFireboxCard(sock, from, msg, {
+    title: '⏱️ Bot Runtime',
+    content: `🔥 ${f.italic('Firebox')} has been running for:\n\n${f.mono(getUptime())}`,
+  });
 }
 
 async function menu(ctx) {
@@ -383,26 +382,34 @@ async function menu(ctx) {
     `\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
     `${f.italic('Type')} ${f.mono(p + 'help <cmd>')} ${f.italic('for details on any command')}`;
 
-  // Send menu image with full command list as caption
+  // Send menu image with full command list as card
   try {
     const botName = db.getBotSetting('botName') || 'FIREBOX';
     const userNum  = sender ? sender.split('@')[0] : '';
     const imgBuf   = await generateMenuImage(botName, p, userNum);
     const caption  = header + body + footer;
-    await sock.sendMessage(from, { image: imgBuf, caption }, { quoted: msg });
+    await sendFireboxCard(sock, from, msg, {
+      title: '📋 All Commands',
+      content: caption,
+      media: { type: 'image', buffer: imgBuf, mimetype: 'image/png' },
+      buttons: [{ text: '📖 Get Help', url: `https://wa.me/${process.env.OWNER_NUMBER || ''}` }],
+    });
   } catch (err) {
-    // Fallback to text if image fails
     console.error('[MENU] Image generation failed:', err.message);
-    await sock.sendMessage(from, { text: header + body + footer }, { quoted: msg });
+    await sendFireboxCard(sock, from, msg, {
+      title: '📋 All Commands',
+      content: header + body + footer,
+    });
   }
 
 }
 
 async function sendButtons(sock, from, msg, text, buttons, sender, prefix, sessionState) {
   const lines = buttons.map((b, i) => `  *${i + 1}.* ${b.label}`).join('\n');
-  await sock.sendMessage(from, {
-    text: `${text}\n\n${lines}`
-  }, { quoted: msg });
+  await sendFireboxCard(sock, from, msg, {
+    title: '📋 Select an Option',
+    content: `${text}\n\n${lines}`,
+  });
   sessionState.pendingPrompts.set(sender, {
     type: 'cmd',
     cmdPrefix: prefix,
@@ -592,15 +599,17 @@ async function help(ctx) {
 
   const entry = HELP[query];
   if (!entry) {
-    await sock.sendMessage(from, {
-      text: `❌ No help found for *${p}${query}*\n\nType *${p}menu* to see all commands.`
-    }, { quoted: msg });
+    await sendFireboxCard(sock, from, msg, {
+      title: '❓ Help',
+      content: `❌ No help found for *${p}${query}*\n\nType *${p}menu* to see all commands.`,
+    });
     return;
   }
 
-  await sock.sendMessage(from, {
-    text: `📖 *${p}${entry.usage}*\n\n${entry.desc}`
-  }, { quoted: msg });
+  await sendFireboxCard(sock, from, msg, {
+    title: `📖 ${p}${entry.usage}`,
+    content: entry.desc,
+  });
 }
 
 async function ping2(ctx) {
@@ -608,24 +617,22 @@ async function ping2(ctx) {
   const { performance } = require('perf_hooks');
   const os = require('os');
   const start = performance.now();
-  await sock.sendMessage(from, { text: '🏓 _Measuring..._' }, { quoted: msg });
+  await sock.sendMessage(from, { text: '🏓 Measuring...' }, { quoted: msg });
   const ms = (performance.now() - start).toFixed(2);
   const mem = process.memoryUsage();
   const cpus = os.cpus();
   const load = os.loadavg()[0].toFixed(2);
-  const uptime = getUptime();
-  await sock.sendMessage(from, {
-    text: `🏓 *Ping 2 — Detailed Stats*\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
-      `⚡ *Latency:* ${ms}ms\n` +
-      `💾 *RAM:* ${(mem.rss / 1024 / 1024).toFixed(1)}MB used\n` +
-      `🔄 *Heap:* ${(mem.heapUsed / 1024 / 1024).toFixed(1)}/${(mem.heapTotal / 1024 / 1024).toFixed(1)}MB\n` +
-      `💻 *CPU Load:* ${load} avg\n` +
-      `🖥️ *Cores:* ${cpus.length} × ${cpus[0]?.model?.split(' ').slice(-1)[0] || 'CPU'}\n` +
-      `⏱️ *Uptime:* ${uptime}\n` +
-      `📊 *Messages:* ${sessionState.messageCount}\n` +
-      `⚡ *Commands:* ${sessionState.commandCount}\n` +
-      `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n_Node.js ${process.version}_`
-  }, { quoted: msg });
+  const content =
+    `⚡ *Latency:*   ${ms}ms\n` +
+    `💾 *RAM:*       ${(mem.rss / 1024 / 1024).toFixed(1)}MB used\n` +
+    `🔄 *Heap:*      ${(mem.heapUsed / 1024 / 1024).toFixed(1)}/${(mem.heapTotal / 1024 / 1024).toFixed(1)}MB\n` +
+    `💻 *CPU Load:*  ${load} avg\n` +
+    `🖥️ *Cores:*     ${cpus.length} × ${cpus[0]?.model?.split(' ').slice(-1)[0] || 'CPU'}\n` +
+    `⏱️ *Uptime:*    ${getUptime()}\n` +
+    `📊 *Messages:*  ${sessionState.messageCount}\n` +
+    `⚡ *Commands:*  ${sessionState.commandCount}\n` +
+    `📦 *Node.js:*   ${process.version}`;
+  await sendFireboxCard(sock, from, msg, { title: '🏓 Detailed Stats', content });
 }
 
 async function botstatus(ctx) {
@@ -638,82 +645,90 @@ async function botstatus(ctx) {
   const ownerName = db.getBotSetting('ownerName') || process.env.OWNER_NAME || 'Owner';
 
   const flags = [
-    ['🌐 Mode',           mode === 'private' ? '🔒 PRIVATE' : '🌍 PUBLIC'],
-    ['🤖 Chatbot',        db.getBotSetting('aiChatbot') ? '✅ ON' : '❌ OFF'],
-    ['👁️ Auto View Status', db.getBotSetting('autoViewStatus') ? '✅ ON' : '❌ OFF'],
+    ['🌐 Mode',              mode === 'private' ? '🔒 PRIVATE' : '🌍 PUBLIC'],
+    ['🤖 Chatbot',           db.getBotSetting('aiChatbot') ? '✅ ON' : '❌ OFF'],
+    ['👁️ Auto View Status',  db.getBotSetting('autoViewStatus') ? '✅ ON' : '❌ OFF'],
     ['💚 Auto React Status', db.getBotSetting('autoReactStatus') ? '✅ ON' : '❌ OFF'],
-    ['🗑️ Anti Delete',   db.getBotSetting('antiDelete') ? '✅ ON' : '❌ OFF'],
-    ['✏️ Anti Edit',     db.getBotSetting('antiEdit') ? '✅ ON' : '❌ OFF'],
-    ['📞 Anti Call',     db.getBotSetting('antiCall') ? '✅ ON' : '❌ OFF'],
-    ['💤 Always Online', db.getBotSetting('alwaysOnline') ? '✅ ON' : '❌ OFF'],
-    ['📖 Auto Read',     db.getBotSetting('autoRead') ? '✅ ON' : '❌ OFF'],
+    ['🗑️ Anti Delete',       db.getBotSetting('antiDelete') ? '✅ ON' : '❌ OFF'],
+    ['✏️ Anti Edit',         db.getBotSetting('antiEdit') ? '✅ ON' : '❌ OFF'],
+    ['📞 Anti Call',         db.getBotSetting('antiCall') ? '✅ ON' : '❌ OFF'],
+    ['💤 Always Online',     db.getBotSetting('alwaysOnline') ? '✅ ON' : '❌ OFF'],
+    ['📖 Auto Read',         db.getBotSetting('autoRead') ? '✅ ON' : '❌ OFF'],
   ];
 
-  const statusLines = flags.map(([k, v]) => `${k}: ${v}`).join('\n');
+  const content =
+    `👤 *Owner:*    ${ownerName}\n` +
+    `🏷️ *Prefix:*   ${prefix}\n` +
+    `⏱️ *Uptime:*   ${getUptime()}\n` +
+    `💾 *RAM:*      ${(mem.rss / 1024 / 1024).toFixed(1)} MB\n` +
+    `📊 *Messages:* ${sessionState.messageCount}\n\n` +
+    flags.map(([k, v]) => `${k}: ${v}`).join('\n');
 
-  await sock.sendMessage(from, {
-    text: `🔥 *${botName} — Bot Status*\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
-      `👤 *Owner:* ${ownerName}\n` +
-      `🏷️ *Prefix:* ${prefix}\n` +
-      `⏱️ *Uptime:* ${getUptime()}\n` +
-      `💾 *RAM:* ${(mem.rss / 1024 / 1024).toFixed(1)} MB\n` +
-      `📊 *Messages handled:* ${sessionState.messageCount}\n` +
-      `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n${statusLines}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰`
-  }, { quoted: msg });
+  await sendFireboxCard(sock, from, msg, { title: `🔥 ${botName} Status`, content });
 }
 
 async function pair(ctx) {
   const { sock, from, msg } = ctx;
   const botNum = sock.user?.id?.split(':')[0] || '?';
   const botName = db.getBotSetting('botName') || 'Firebox';
-  await sock.sendMessage(from, {
-    text: `🔥 *${botName} — Pairing Info*\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
-      `📱 *Bot Number:* +${botNum}\n` +
-      `⏱️ *Uptime:* ${getUptime()}\n\n` +
-      `*To deploy on a new number:*\n` +
-      `1️⃣ Open the bot's web panel\n` +
-      `2️⃣ Go to */pair* page\n` +
-      `3️⃣ Scan QR or enter phone number for pairing code\n` +
-      `4️⃣ Bot connects automatically!\n\n` +
-      `*To save session:*\n` +
-      `• Click *Export Session ID* on the panel\n` +
-      `• Save it to deploy anywhere instantly\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰`
-  }, { quoted: msg });
+  const panelUrl = `https://${process.env.REPL_SLUG || 'firebox'}.replit.app/pair`;
+  const content =
+    `📱 *Bot Number:* +${botNum}\n` +
+    `⏱️ *Uptime:* ${getUptime()}\n\n` +
+    `*To deploy on a new number:*\n` +
+    `1️⃣ Open the bot's web panel\n` +
+    `2️⃣ Go to */pair* page\n` +
+    `3️⃣ Scan QR or enter phone number for pairing code\n` +
+    `4️⃣ Bot connects automatically!\n\n` +
+    `*To save session:*\n` +
+    `• Click *Export Session ID* on the panel\n` +
+    `• Save it to deploy anywhere instantly`;
+  await sendFireboxCard(sock, from, msg, {
+    title: `🔥 ${botName} Pairing`,
+    content,
+    buttons: [{ text: '🌐 Open Panel', url: panelUrl }],
+  });
 }
 
 async function repo(ctx) {
   const { sock, from, msg } = ctx;
-  await sock.sendMessage(from, {
-    text: `📦 *Firebox WhatsApp Bot*\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
-      `🔥 *Name:* Firebox Bot\n` +
-      `🏷️ *Version:* v2.0.0\n` +
-      `🤖 *Engine:* @whiskeysockets/baileys\n` +
-      `💡 *Language:* Node.js\n` +
-      `🧠 *AI:* Google Gemini 2.0 Flash\n\n` +
-      `📋 *Features:*\n` +
-      `• 200+ commands across all categories\n` +
-      `• AI chat, image generation, audio effects\n` +
-      `• Group management & auto-mod\n` +
-      `• Downloads: YT, TikTok, IG, FB, Twitter\n` +
-      `• Ephoto360 image effects\n` +
-      `• Bible & Quran verse lookup\n` +
-      `• Session export for easy deployment\n\n` +
-      `🌐 *Panel:* https://${process.env.REPL_SLUG || 'firebox'}.replit.app/pair\n` +
-      `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n_Powered by Firebox ❤️_`
-  }, { quoted: msg });
+  const panelUrl = `https://${process.env.REPL_SLUG || 'firebox'}.replit.app/pair`;
+  const content =
+    `🔥 *Name:*     Firebox Bot\n` +
+    `🏷️ *Version:*  v2.0.0\n` +
+    `🤖 *Engine:*   @whiskeysockets/baileys\n` +
+    `💡 *Language:* Node.js\n` +
+    `🧠 *AI:*       Google Gemini 2.0 Flash\n\n` +
+    `📋 *Features:*\n` +
+    `• 200+ commands across all categories\n` +
+    `• AI chat, image generation, audio effects\n` +
+    `• Group management & auto-mod\n` +
+    `• Downloads: YT, TikTok, IG, FB, Twitter\n` +
+    `• Ephoto360 image effects\n` +
+    `• Bible & Quran verse lookup\n` +
+    `• Session export for easy deployment\n\n` +
+    `_Powered by Firebox ❤️_`;
+  await sendFireboxCard(sock, from, msg, {
+    title: '📦 Firebox Bot Info',
+    content,
+    buttons: [{ text: '🌐 Web Panel', url: panelUrl }],
+  });
 }
 
 async function channel(ctx) {
   const { sock, from, msg } = ctx;
   const link = db.getBotSetting('channelLink');
   if (!link) {
-    return sock.sendMessage(from, {
-      text: `📢 *Follow Our Channel*\n\n_No channel link has been set yet. Ask the owner to configure it._`
-    }, { quoted: msg });
+    return sendFireboxCard(sock, from, msg, {
+      title: '📢 Our Channel',
+      content: '_No channel link has been set yet. Ask the owner to configure it with .setchannel_',
+    });
   }
-  await sock.sendMessage(from, {
-    text: `📢 *Follow Our Channel!*\n\n👇 Tap the link below to follow:\n${link}\n\n_Stay updated with the latest news and updates from the owner._`
-  }, { quoted: msg });
+  await sendFireboxCard(sock, from, msg, {
+    title: '📢 Follow Our Channel!',
+    content: `👇 Tap the button below to follow!\n\n_Stay updated with the latest news and updates._`,
+    buttons: [{ text: '📢 Join Channel', url: link }],
+  });
 }
 
 module.exports = { ping, ping2, menu, help, info, owner, runtime, botstatus, pair, repo, channel };

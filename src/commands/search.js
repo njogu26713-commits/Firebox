@@ -1,10 +1,9 @@
 const axios = require('axios');
 const ytSearch = require('yt-search');
+const { sendFireboxCard } = require('../card');
 
-async function send(sock, from, msg, text) {
-  const lines = text.split('\n');
-  if (/\*[^*\n]+\*/.test(lines[0])) lines[0] = '> ' + lines[0];
-  await sock.sendMessage(from, { text: lines.join('\n') }, { quoted: msg });
+async function send(sock, from, msg, text, title) {
+  return sendFireboxCard(sock, from, msg, { title: title || '🔍 Firebox Search', content: text });
 }
 
 async function weather(ctx) {
@@ -200,18 +199,18 @@ _Use .lyrics ${title} to get the lyrics_`;
     if (artworkUrl) {
       try {
         const imgRes = await axios.get(artworkUrl, { responseType: 'arraybuffer', timeout: 15000 });
-        await sock.sendMessage(from, {
-          image: Buffer.from(imgRes.data),
-          caption,
-          mimetype: 'image/jpeg'
-        }, { quoted: msg });
+        await sendFireboxCard(sock, from, msg, {
+          title: `🎵 ${title} — ${artist}`,
+          content: caption,
+          media: { type: 'image', buffer: Buffer.from(imgRes.data), mimetype: 'image/jpeg' },
+        });
         return;
       } catch {
         // fall through to text reply if image fetch fails
       }
     }
 
-    await send(sock, from, msg, caption);
+    await send(sock, from, msg, caption, `🎵 ${title}`);
   } catch (err) {
     await send(sock, from, msg, `❌ Could not fetch song info for "*${text}*".`);
   }
@@ -270,11 +269,15 @@ async function shazam(ctx) {
     if (imgUrl) {
       try {
         const imgRes = await axios.get(imgUrl, { responseType: 'arraybuffer', timeout: 15000 });
-        await sock.sendMessage(from, { image: Buffer.from(imgRes.data), caption: reply, mimetype: 'image/jpeg' }, { quoted: msg });
+        await sendFireboxCard(sock, from, msg, {
+          title: `🎵 ${track.title || 'Song Identified'}`,
+          content: reply,
+          media: { type: 'image', buffer: Buffer.from(imgRes.data), mimetype: 'image/jpeg' },
+        });
         return;
       } catch {}
     }
-    await send(sock, from, msg, reply);
+    await send(sock, from, msg, reply, '🎵 Shazam');
   } catch (err) {
     if (err.response?.status === 401 || err.response?.status === 403 || !process.env.RAPIDAPI_KEY) {
       await send(sock, from, msg,

@@ -1,12 +1,11 @@
 const { openRouterPrompt, openRouterChat, openRouterVision } = require('../openrouter');
 const { downloadContentFromMessage, getContentType } = require('@whiskeysockets/baileys');
+const { sendFireboxCard } = require('../card');
 
 const PROMPT_TTL = 5 * 60 * 1000;
 
-async function send(sock, from, msg, text) {
-  const lines = text.split('\n');
-  if (/\*[^*\n]+\*/.test(lines[0])) lines[0] = '> ' + lines[0];
-  await sock.sendMessage(from, { text: lines.join('\n') }, { quoted: msg });
+async function send(sock, from, msg, text, title) {
+  return sendFireboxCard(sock, from, msg, { title: title || '🤖 Firebox AI', content: text });
 }
 
 function parseSuggestions(raw) {
@@ -24,31 +23,21 @@ function parseSuggestions(raw) {
 
 async function sendWithPrompts(sock, from, msg, sessionState, sender, header, rawReply, cmdPrefix) {
   const { mainReply, suggestions } = parseSuggestions(rawReply);
-  await sock.sendMessage(from, { text: `${header}${mainReply}` }, { quoted: msg });
+  await sendFireboxCard(sock, from, msg, {
+    title: '🤖 Firebox AI',
+    content: `${header}${mainReply}`,
+  });
   if (suggestions.length > 0) {
     sessionState.pendingPrompts.set(sender, {
       prompts: suggestions, cmdPrefix, type: 'command',
       expiresAt: Date.now() + PROMPT_TTL
     });
-
-    // Try sending WhatsApp quick-reply buttons; fall back to numbered text
-    try {
-      const buttons = suggestions.map((s, i) => ({
-        buttonId: `${i + 1}`,
-        buttonText: { displayText: s.length > 20 ? s.slice(0, 18) + '…' : s },
-        type: 1
-      }));
-      await sock.sendMessage(from, {
-        buttons,
-        text: '💡 *Quick follow-ups:*',
-        footer: 'Tap a button or reply 1 / 2 / 3',
-        headerType: 1
-      });
-    } catch {
-      // Fallback: plain numbered list
-      const lines = suggestions.map((s, i) => `  *${i + 1}.* ${s}`).join('\n');
-      await sock.sendMessage(from, { text: `💡 *Follow-up prompts — reply 1, 2 or 3:*\n\n${lines}` });
-    }
+    const lines = suggestions.map((s, i) => `  *${i + 1}.* ${s}`).join('\n');
+    await sendFireboxCard(sock, from, null, {
+      title: '💡 Follow-up Prompts',
+      content: `Reply *1*, *2* or *3* to continue:\n\n${lines}`,
+      noQuote: true,
+    });
   }
 }
 
@@ -241,14 +230,18 @@ async function simi(ctx) {
 
 async function dalle(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '🎨 *Image Generate (DALL-E style)*\n\nUsage: `.dalle <prompt>`\nExample: `.dalle a sunset over Mount Kenya, photorealistic`');
-  await send(sock, from, msg, `🎨 Generating image for: _"${text}"_...`);
+  if (!text) return send(sock, from, msg, 'Usage: `.dalle <prompt>`\nExample: `.dalle a sunset over Mount Kenya, photorealistic`', '🎨 AI Image Generate');
+  await send(sock, from, msg, `Generating image for: _"${text}"_...`, '🎨 AI Image Generate');
   try {
     const axios = require('axios');
     const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(text)}?width=1024&height=1024&nologo=true&enhance=true&model=flux`;
     const res = await axios.get(url, { responseType: 'arraybuffer', timeout: 60000 });
-    await sock.sendMessage(from, { image: Buffer.from(res.data), caption: `🎨 *Generated Image*\n_"${text}"_`, mimetype: 'image/jpeg' }, { quoted: msg });
-  } catch (err) { await send(sock, from, msg, `❌ Image generation failed: ${err.message}`); }
+    await sendFireboxCard(sock, from, msg, {
+      title: '🎨 AI Image Generated',
+      content: `✅ Image ready!\n\n📝 *Prompt:* _"${text}"_`,
+      media: { type: 'image', buffer: Buffer.from(res.data), mimetype: 'image/jpeg' },
+    });
+  } catch (err) { await send(sock, from, msg, `❌ Image generation failed: ${err.message}`, '🎨 AI Image Generate'); }
 }
 
 async function generate(ctx) { return dalle(ctx); }

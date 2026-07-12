@@ -6,6 +6,7 @@ const { getContentType, downloadContentFromMessage } = require('@whiskeysockets/
 
 const TMP = path.join(__dirname, '../../tmp');
 if (!fs.existsSync(TMP)) fs.mkdirSync(TMP, { recursive: true });
+const { sendFireboxCard } = require('../card');
 
 // Recursively unwrap common message containers to find view-once content
 function extractViewOnce(m) {
@@ -20,26 +21,25 @@ function extractViewOnce(m) {
   return null;
 }
 
-async function send(sock, from, msg, text) {
-  const lines = text.split('\n');
-  if (/\*[^*\n]+\*/.test(lines[0])) lines[0] = '> ' + lines[0];
-  await sock.sendMessage(from, { text: lines.join('\n') }, { quoted: msg });
+async function send(sock, from, msg, text, title) {
+  return sendFireboxCard(sock, from, msg, { title: title || '🛠️ Firebox Tools', content: text });
 }
 
 async function qrcode(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '📲 Usage: .qrcode <text or URL>\nExample: .qrcode https://google.com');
+  if (!text) return send(sock, from, msg, '📲 Usage: .qrcode <text or URL>\nExample: .qrcode https://google.com', '📲 QR Code');
   try {
     const outPath = path.join(TMP, `qr_${Date.now()}.png`);
     await QRCode.toFile(outPath, text, { width: 512, margin: 2 });
     const buffer = fs.readFileSync(outPath);
-    await sock.sendMessage(from, {
-      image: buffer,
-      caption: `📲 *QR Code Generated*\n📝 Content: ${text}`
-    }, { quoted: msg });
     fs.unlinkSync(outPath);
+    await sendFireboxCard(sock, from, msg, {
+      title: '📲 QR Code Generated',
+      content: `📝 *Content:* ${text}`,
+      media: { type: 'image', buffer, mimetype: 'image/png' },
+    });
   } catch (err) {
-    await send(sock, from, msg, `❌ Failed to generate QR: ${err.message}`);
+    await send(sock, from, msg, `❌ Failed to generate QR: ${err.message}`, '📲 QR Code');
   }
 }
 
@@ -161,11 +161,12 @@ async function getpp(ctx) {
       return send(sock, from, msg, '❌ That user has no profile picture set.');
     }
     const res = await axios.get(ppUrl, { responseType: 'arraybuffer', timeout: 15000 });
-    await sock.sendMessage(from, {
-      image: Buffer.from(res.data),
-      caption: `🖼️ Profile picture of @${jid.split('@')[0]}`,
-      mentions: [jid]
-    }, { quoted: msg });
+    await sendFireboxCard(sock, from, msg, {
+      title: '🖼️ Profile Picture',
+      content: `📱 *Number:* @${jid.split('@')[0]}`,
+      media: { type: 'image', buffer: Buffer.from(res.data), mimetype: 'image/jpeg' },
+      mentions: [jid],
+    });
   } catch (err) {
     const msg2 = err.message || '';
     const reason = msg2.includes('not-authorized') || msg2.includes('404')
@@ -175,7 +176,7 @@ async function getpp(ctx) {
         : msg2.includes('timed') || msg2.includes('timeout')
           ? 'Request timed out. Try again.'
           : `Could not fetch picture (${msg2})`;
-    await send(sock, from, msg, `❌ ${reason}`);
+    await send(sock, from, msg, `❌ ${reason}`, '🖼️ Profile Picture');
   }
 }
 
@@ -200,18 +201,19 @@ async function time(ctx) {
 
 async function emojimix(ctx) {
   const { sock, from, msg, args } = ctx;
-  if (args.length < 2) return send(sock, from, msg, '🎭 Usage: .emojimix 😀 😎\nExample: .emojimix 🔥 💧');
+  if (args.length < 2) return send(sock, from, msg, '🎭 Usage: .emojimix 😀 😎\nExample: .emojimix 🔥 💧', '🎭 Emoji Mix');
   const e1 = encodeURIComponent(args[0]);
   const e2 = encodeURIComponent(args[1]);
   try {
     const url = `https://www.gstatic.com/android/keyboard/emojikitchen/20201001/${e1}/${e1}_${e2}.png`;
     const res = await axios.get(url, { responseType: 'arraybuffer', timeout: 10000 });
-    await sock.sendMessage(from, {
-      image: Buffer.from(res.data),
-      caption: `🎭 Emoji Mix: ${args[0]} + ${args[1]}`
-    }, { quoted: msg });
+    await sendFireboxCard(sock, from, msg, {
+      title: '🎭 Emoji Mix',
+      content: `${args[0]} + ${args[1]} = magic! ✨`,
+      media: { type: 'image', buffer: Buffer.from(res.data), mimetype: 'image/png' },
+    });
   } catch {
-    await send(sock, from, msg, `❌ Could not mix those emojis. Try different ones!`);
+    await send(sock, from, msg, `❌ Could not mix those emojis. Try different ones!`, '🎭 Emoji Mix');
   }
 }
 
@@ -793,12 +795,13 @@ async function readImage(ctx) {
   const type = getContentType(target.message);
 
   if (type !== 'imageMessage') {
-    return sock.sendMessage(from, {
-      text: '📷 *How to use .read*\n\nReply to an image with *.read* and I\'ll extract any text from it.\n\n_Example: someone posts a screenshot → you reply with_ *.read*'
-    }, { quoted: msg });
+    return send(sock, from, msg,
+      'Reply to an image with *.read* and I\'ll extract any text from it.\n\n_Example: someone posts a screenshot → you reply with_ *.read*',
+      '📷 Read Image Text'
+    );
   }
 
-  await sock.sendMessage(from, { text: '🔍 Reading text from image, please wait...' }, { quoted: msg });
+  await send(sock, from, msg, '🔍 Reading text from image, please wait...', '📷 Read Image');
 
   const tmpPath = path.join(TMP, `ocr_${Date.now()}.jpg`);
   try {
@@ -818,16 +821,17 @@ async function readImage(ctx) {
 
     const cleaned = text.trim();
     if (!cleaned) {
-      return sock.sendMessage(from, { text: '❌ No readable text found in this image.' }, { quoted: msg });
+      return send(sock, from, msg, '❌ No readable text found in this image.', '📷 Read Image');
     }
 
     const conf = Math.round(confidence);
-    await sock.sendMessage(from, {
-      text: `📄 *Text extracted from image* _(${conf}% confidence)_\n\n${cleaned}`
-    }, { quoted: msg });
+    await send(sock, from, msg,
+      `📄 *Text extracted* _(${conf}% confidence)_\n\n${cleaned}`,
+      '📷 Read Image Text'
+    );
 
   } catch (err) {
-    await sock.sendMessage(from, { text: `❌ OCR failed: ${err.message}` }, { quoted: msg });
+    await send(sock, from, msg, `❌ OCR failed: ${err.message}`, '📷 Read Image');
   } finally {
     if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
   }
