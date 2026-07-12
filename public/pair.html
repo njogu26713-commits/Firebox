@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Firebox — Dashboard</title>
+  <title>Firebox — Connect Bot</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
   <style>
@@ -55,206 +55,10 @@
     nav a.active { color: var(--blue); background: rgba(59,130,246,.12); }
 
     /* LAYOUT */
-    .container { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
+    .container { max-width: 680px; margin: 0 auto; padding: 40px 24px 64px; }
     .page-header { margin-bottom: 28px; }
     .page-header h2 { font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 4px; }
     .page-header p  { font-size: 0.85rem; color: var(--muted); }
-
-    /* ── USER COIN CARD ─────────────────────────────────────── */
-    .coin-card {
-      background: linear-gradient(135deg, var(--bg2), #0d1e38);
-      border: 1px solid var(--border2); border-radius: 20px;
-      padding: 28px 30px; margin-bottom: 16px;
-      position: relative; overflow: hidden;
-    }
-    .coin-card::before {
-      content: '';
-      position: absolute; inset: 0;
-      background: radial-gradient(ellipse 60% 80% at 90% 50%, rgba(245,158,11,.07) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    .coin-card-inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; position: relative; }
-    .coin-left { display: flex; align-items: center; gap: 20px; }
-    .coin-orb {
-      width: 68px; height: 68px; flex-shrink: 0;
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-      border-radius: 50%; display: flex; align-items: center; justify-content: center;
-      font-size: 2rem; box-shadow: 0 0 32px rgba(245,158,11,.4);
-      animation: orb-pulse 3s ease-in-out infinite;
-    }
-    @keyframes orb-pulse {
-      0%,100% { box-shadow: 0 0 32px rgba(245,158,11,.4); }
-      50%      { box-shadow: 0 0 52px rgba(245,158,11,.65); }
-    }
-    .coin-info label {
-      font-size: 0.68rem; font-weight: 700; color: var(--muted);
-      text-transform: uppercase; letter-spacing: 1.2px; display: block; margin-bottom: 6px;
-    }
-    .coin-balance-row { display: flex; align-items: center; gap: 12px; }
-    #coin-balance {
-      font-size: 2.5rem; font-weight: 900; color: #fff;
-      font-variant-numeric: tabular-nums;
-    }
-    .coin-status {
-      padding: 3px 10px; border-radius: 20px; font-size: 0.68rem; font-weight: 700;
-    }
-    .coin-status.active { background: rgba(34,197,94,.15); color: var(--green); border: 1px solid rgba(34,197,94,.25); }
-    .coin-status.low    { background: rgba(245,158,11,.15); color: #f59e0b; border: 1px solid rgba(245,158,11,.25); }
-    .coin-status.empty  { background: rgba(239,68,68,.12); color: var(--red); border: 1px solid rgba(239,68,68,.2); }
-    .coin-spent { font-size: 0.74rem; color: var(--muted); margin-top: 6px; }
-    .coin-spent span { color: #94a3b8; font-weight: 600; }
-
-    /* ── RATE PILLS ─────────────────────────────────────────── */
-    .rate-pills { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
-    .rate-pill {
-      background: var(--bg2); border: 1px solid var(--border);
-      border-radius: 30px; padding: 8px 18px;
-      display: flex; align-items: center; gap: 10px; font-size: 0.82rem;
-    }
-    .rate-pill-icon { font-size: 1rem; }
-    .rate-pill-name { color: var(--muted); }
-    .rate-pill-cost { font-weight: 800; color: #fff; margin-left: 4px; }
-    .rate-pill-unit { font-size: 0.7rem; color: var(--muted); }
-
-    /* ── BUY COINS BUTTON (user-facing) ─────────────────────── */
-    .btn-buy-coins {
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-      color: #fff; font-size: 0.95rem; font-weight: 700;
-      border: none; border-radius: 12px; padding: 13px 28px;
-      cursor: pointer; transition: all .2s; font-family: 'Inter', sans-serif;
-      box-shadow: 0 4px 20px rgba(245,158,11,.4);
-      display: flex; align-items: center; gap: 8px;
-    }
-    .btn-buy-coins:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(245,158,11,.5); }
-
-    /* ── BUY COINS MODAL ────────────────────────────────────── */
-    .overlay {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,.82); z-index: 100;
-      align-items: center; justify-content: center; backdrop-filter: blur(4px);
-    }
-    .overlay.open { display: flex; }
-    .modal {
-      background: var(--bg2); border: 1px solid var(--border2);
-      border-radius: 22px; padding: 32px;
-      width: 440px; max-width: 94vw;
-      box-shadow: 0 24px 80px rgba(0,0,0,.6);
-    }
-    .modal-title { font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 6px; }
-    .modal-sub   { font-size: 0.8rem; color: var(--muted); margin-bottom: 24px; }
-
-    .amount-row { display: flex; gap: 10px; margin-bottom: 20px; }
-    .amount-btn {
-      flex: 1; padding: 10px; background: var(--bg3); border: 1px solid var(--border2);
-      border-radius: 10px; color: #94a3b8; font-size: 0.82rem; font-weight: 700;
-      cursor: pointer; transition: all .2s; font-family: 'Inter', sans-serif;
-      text-align: center;
-    }
-    .amount-btn:hover, .amount-btn.selected {
-      background: rgba(245,158,11,.15); border-color: #f59e0b; color: #f59e0b;
-    }
-    .custom-amount-wrap { margin-bottom: 20px; }
-    .custom-amount-wrap label { font-size: 0.7rem; font-weight: 700; color: var(--blue); letter-spacing: 1px; display: block; margin-bottom: 8px; }
-    .custom-amount-input {
-      width: 100%; padding: 12px 16px;
-      background: var(--bg); border: 1px solid var(--border2);
-      border-radius: 12px; color: #fff; font-size: 1rem; font-weight: 700;
-      font-family: 'Inter', sans-serif; transition: border-color .2s;
-    }
-    .custom-amount-input:focus { outline: none; border-color: var(--gold); }
-
-    .payment-box {
-      background: linear-gradient(135deg, rgba(245,158,11,.1), rgba(245,158,11,.05));
-      border: 1px solid rgba(245,158,11,.3); border-radius: 14px;
-      padding: 20px 24px; margin-bottom: 20px; display: none;
-    }
-    .payment-box.show { display: block; }
-    .payment-label { font-size: 0.68rem; font-weight: 700; color: #f59e0b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-    .payment-steps { display: flex; flex-direction: column; gap: 10px; }
-    .payment-step { display: flex; align-items: flex-start; gap: 12px; }
-    .step-num {
-      width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
-      background: rgba(245,158,11,.2); color: #f59e0b;
-      font-size: 0.72rem; font-weight: 800;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .step-text { font-size: 0.82rem; color: #94a3b8; line-height: 1.5; padding-top: 2px; }
-    .step-text strong { color: #fff; }
-    .step-text .pay-number {
-      font-family: 'JetBrains Mono', monospace; font-size: 1.1rem;
-      font-weight: 700; color: #f59e0b; letter-spacing: 1px;
-      display: block; margin-top: 2px;
-    }
-    .step-text .pay-amount {
-      font-size: 1.3rem; font-weight: 900; color: #fff;
-    }
-    .modal-row { display: flex; gap: 10px; justify-content: flex-end; }
-
-    /* ── ADMIN PANEL ────────────────────────────────────────── */
-    /* ── ADD ANOTHER BOT ────────────────────────────────────── */
-    .add-bot-wrap { text-align: center; margin: 8px 0 24px; }
-    .btn-add-bot {
-      display: inline-flex; align-items: center; gap: 10px;
-      padding: 13px 28px; border-radius: 12px; font-size: 0.9rem; font-weight: 700;
-      background: rgba(59,130,246,.12); color: var(--blue);
-      border: 1px dashed rgba(59,130,246,.35); cursor: pointer;
-      transition: all .2s;
-    }
-    .btn-add-bot:hover { background: rgba(59,130,246,.2); border-color: var(--blue); transform: translateY(-1px); }
-
-    .admin-section { margin-bottom: 24px; }
-    .admin-toggle {
-      display: flex; align-items: center; gap: 10px;
-      cursor: pointer; user-select: none;
-      padding: 12px 18px; border-radius: 12px;
-      background: var(--bg2); border: 1px solid var(--border);
-      margin-bottom: 10px; transition: border-color .2s;
-    }
-    .admin-toggle:hover { border-color: var(--border2); }
-    .admin-toggle-label { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
-    .admin-toggle-icon { margin-left: auto; font-size: 0.8rem; color: var(--muted); transition: transform .2s; }
-    .admin-toggle-icon.open { transform: rotate(180deg); }
-    .admin-panel {
-      display: none;
-      background: var(--bg2); border: 1px solid var(--border);
-      border-radius: 14px; padding: 22px 24px;
-    }
-    .admin-panel.open { display: block; }
-    .admin-panel-title { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
-    .admin-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    .admin-input {
-      width: 150px; padding: 10px 14px;
-      background: var(--bg); border: 1px solid var(--border2);
-      border-radius: 10px; color: #fff; font-size: 0.9rem;
-      font-family: 'Inter', sans-serif; transition: border-color .2s;
-    }
-    .admin-input:focus { outline: none; border-color: var(--blue); }
-    .admin-note { font-size: 0.74rem; color: var(--muted); margin-top: 12px; line-height: 1.6; }
-    .admin-note strong { color: #94a3b8; }
-
-    /* ── COIN HISTORY ───────────────────────────────────────── */
-    .history-card {
-      background: var(--bg2); border: 1px solid var(--border);
-      border-radius: 14px; overflow: hidden; margin-bottom: 24px;
-    }
-    .card-hdr {
-      padding: 14px 22px; background: rgba(0,0,0,.2);
-      border-bottom: 1px solid var(--border);
-      font-size: 0.7rem; font-weight: 700; color: var(--muted);
-      text-transform: uppercase; letter-spacing: 1.2px;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .history-item {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 11px 22px; border-bottom: 1px solid rgba(255,255,255,.03);
-      font-size: 0.82rem; gap: 12px;
-    }
-    .history-item:last-child { border-bottom: none; }
-    .history-note { color: #94a3b8; }
-    .history-date { font-size: 0.7rem; color: var(--muted); }
-    .history-amount { font-weight: 700; font-family: 'JetBrains Mono', monospace; }
-    .history-amount.plus  { color: var(--green); }
-    .history-amount.minus { color: var(--red); }
 
     /* ── CONNECTED BANNER ───────────────────────────────────── */
     .connected-banner {
@@ -284,28 +88,9 @@
       background: var(--bg2); border: 1px solid var(--border);
       border-radius: 20px; overflow: hidden; margin-bottom: 24px;
     }
-    .pair-body { display: grid; grid-template-columns: 1fr 1fr; }
-    @media (max-width: 580px) { .pair-body { grid-template-columns: 1fr; } }
-    .qr-side {
-      border-right: 1px solid var(--border); padding: 40px 32px;
-      display: flex; flex-direction: column; align-items: center; gap: 20px;
-    }
-    .qr-wrap { background: #fff; border-radius: 16px; padding: 12px; line-height: 0; }
-    .qr-wrap img { width: 190px; height: 190px; border-radius: 8px; display: block; }
-    .qr-empty {
-      width: 190px; height: 190px; background: var(--bg); border-radius: 16px;
-      border: 2px dashed var(--border2);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 12px; color: var(--muted2);
-    }
-    .qr-empty p { font-size: 0.78rem; text-align: center; line-height: 1.6; }
-    .qr-hint { font-size: 0.76rem; color: var(--muted); text-align: center; line-height: 1.7; }
-    .qr-hint strong { color: #64748b; }
-    .code-side {
-      padding: 40px 36px; display: flex; flex-direction: column; gap: 22px; justify-content: center;
-    }
-    .code-side h3 { font-size: 1rem; font-weight: 700; color: #fff; }
-    .code-side p  { font-size: 0.82rem; color: var(--muted); line-height: 1.7; }
+    .pair-body { padding: 40px 36px; display: flex; flex-direction: column; gap: 22px; }
+    .pair-body h3 { font-size: 1rem; font-weight: 700; color: #fff; }
+    .pair-body p  { font-size: 0.82rem; color: var(--muted); line-height: 1.7; }
     .input-lbl { font-size: 0.68rem; font-weight: 700; color: var(--blue); letter-spacing: 1px; margin-bottom: 8px; }
     .phone-row { display: flex; gap: 8px; }
     .phone-row input {
@@ -353,6 +138,48 @@
     .badge-off { background: rgba(239,68,68,.12);   color: var(--red);   border: 1px solid rgba(239,68,68,.2); }
     .sess-actions { display: flex; gap: 8px; }
 
+    /* ── ADD ANOTHER BOT ────────────────────────────────────── */
+    .add-bot-wrap { text-align: center; margin: 8px 0 24px; }
+    .btn-add-bot {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 13px 28px; border-radius: 12px; font-size: 0.9rem; font-weight: 700;
+      background: rgba(59,130,246,.12); color: var(--blue);
+      border: 1px dashed rgba(59,130,246,.35); cursor: pointer;
+      transition: all .2s;
+    }
+    .btn-add-bot:hover { background: rgba(59,130,246,.2); border-color: var(--blue); transform: translateY(-1px); }
+
+    /* ── ADMIN PANEL ────────────────────────────────────────── */
+    .admin-section { margin-bottom: 24px; }
+    .admin-toggle {
+      display: flex; align-items: center; gap: 10px;
+      cursor: pointer; user-select: none;
+      padding: 12px 18px; border-radius: 12px;
+      background: var(--bg2); border: 1px solid var(--border);
+      margin-bottom: 10px; transition: border-color .2s;
+    }
+    .admin-toggle:hover { border-color: var(--border2); }
+    .admin-toggle-label { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    .admin-toggle-icon { margin-left: auto; font-size: 0.8rem; color: var(--muted); transition: transform .2s; }
+    .admin-toggle-icon.open { transform: rotate(180deg); }
+    .admin-panel {
+      display: none;
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 14px; padding: 22px 24px;
+    }
+    .admin-panel.open { display: block; }
+    .admin-panel-title { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+    .admin-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .admin-input {
+      width: 150px; padding: 10px 14px;
+      background: var(--bg); border: 1px solid var(--border2);
+      border-radius: 10px; color: #fff; font-size: 0.9rem;
+      font-family: 'Inter', sans-serif; transition: border-color .2s;
+    }
+    .admin-input:focus { outline: none; border-color: var(--blue); }
+    .admin-note { font-size: 0.74rem; color: var(--muted); margin-top: 12px; line-height: 1.6; }
+    .admin-note strong { color: #94a3b8; }
+
     /* ── BUTTONS ────────────────────────────────────────────── */
     .btn {
       border: none; border-radius: 10px; cursor: pointer;
@@ -372,10 +199,25 @@
     .btn-full   { width: 100%; justify-content: center; padding: 13px; font-size: 0.95rem; border-radius: 12px; }
 
     /* ── EXPORT MODAL ───────────────────────────────────────── */
+    .overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.82); z-index: 100;
+      align-items: center; justify-content: center; backdrop-filter: blur(4px);
+    }
+    .overlay.open { display: flex; }
+    .modal {
+      background: var(--bg2); border: 1px solid var(--border2);
+      border-radius: 22px; padding: 32px;
+      width: 440px; max-width: 94vw;
+      box-shadow: 0 24px 80px rgba(0,0,0,.6);
+    }
+    .modal-title { font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 6px; }
+    .modal-row { display: flex; gap: 10px; justify-content: flex-end; }
     .export-box {
       background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
       padding: 12px 14px; word-break: break-all; font-size: 0.68rem;
       color: #64748b; max-height: 80px; overflow-y: auto; font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 20px;
     }
 
     /* ── TOAST ──────────────────────────────────────────────── */
@@ -397,14 +239,7 @@
       .brand-text span { display: none; }
       nav a { padding: 6px 12px; font-size: 0.78rem; }
       .container { padding: 20px 16px 48px; }
-      .coin-card { padding: 20px; }
-      .coin-card-inner { flex-direction: column; align-items: flex-start; }
-      #coin-balance { font-size: 2rem; }
-      .coin-orb { width: 54px; height: 54px; font-size: 1.6rem; }
-      .amount-row { gap: 6px; }
-      .qr-side { border-right: none; border-bottom: 1px solid var(--border); padding: 28px 20px; }
-      .qr-wrap img, .qr-empty { width: 160px; height: 160px; }
-      .code-side { padding: 24px 20px; }
+      .pair-body { padding: 24px 20px; }
       .code-digits { font-size: 1.8rem; letter-spacing: 5px; }
       .toast { left: 16px; right: 16px; bottom: 16px; max-width: none; }
       .connected-banner { flex-direction: column; align-items: flex-start; }
@@ -419,100 +254,63 @@
     <div class="brand-icon">🔥</div>
     <div class="brand-text"><h1>Firebox</h1><span>WhatsApp Bot</span></div>
   </a>
+  <nav>
+    <a href="/pair" class="active">Connect</a>
+    <a href="/dashboard">Dashboard</a>
+  </nav>
 </header>
 
 <div class="container">
 
   <div class="page-header">
-    <h2>Bot Dashboard</h2>
-    <p>Manage sessions and coin balance.</p>
+    <h2>Connect a Bot</h2>
+    <p>Pair a new WhatsApp number using a pairing code.</p>
   </div>
 
-  <!-- ── USER COIN CARD ──────────────────────────────────────────────────── -->
-  <div class="coin-card">
-    <div class="coin-card-inner">
-      <div class="coin-left">
-        <div class="coin-orb">🪙</div>
-        <div class="coin-info">
-          <label>Your Coin Balance</label>
-          <div class="coin-balance-row">
-            <span id="coin-balance">—</span>
-            <span class="coin-status active" id="coin-status">ACTIVE</span>
-          </div>
-          <div class="coin-spent">Total spent: <span id="coin-spent">0</span> coins</div>
-        </div>
+  <!-- ── CONNECTED BANNER ────────────────────────────────────────────────── -->
+  <div class="connected-banner" id="connected-banner">
+    <div class="connected-left">
+      <div class="live-dot"></div>
+      <div class="connected-info">
+        <h3 id="banner-name">Bot Connected</h3>
+        <p id="banner-num"></p>
       </div>
-      <button class="btn-buy-coins" onclick="openBuyModal()">🪙 Buy Coins</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-val" id="banner-msgs">—</div><div class="stat-lbl">Messages</div></div>
+      <div class="stat"><div class="stat-val" id="banner-cmds">—</div><div class="stat-lbl">Commands</div></div>
+    </div>
+    <div class="banner-actions">
+      <button class="btn btn-ghost btn-sm" onclick="exportPrimary()">📤 Export</button>
+      <button class="btn btn-red btn-sm" onclick="removePrimary()">✕ Disconnect</button>
     </div>
   </div>
 
-  <!-- ── COIN RATES ──────────────────────────────────────────────────────── -->
-  <div class="rate-pills">
-    <div class="rate-pill">
-      <span class="rate-pill-icon">🤖</span>
-      <span class="rate-pill-name">AI Commands</span>
-      <span class="rate-pill-cost">5</span>
-      <span class="rate-pill-unit">coins</span>
-    </div>
-    <div class="rate-pill">
-      <span class="rate-pill-icon">⬇️</span>
-      <span class="rate-pill-name">Downloads</span>
-      <span class="rate-pill-cost">3</span>
-      <span class="rate-pill-unit">coins</span>
-    </div>
-    <div class="rate-pill">
-      <span class="rate-pill-icon">⚡</span>
-      <span class="rate-pill-name">Regular</span>
-      <span class="rate-pill-cost">1</span>
-      <span class="rate-pill-unit">coin</span>
-    </div>
+  <!-- ── ADD ANOTHER BOT ─────────────────────────────────────────────────── -->
+  <div class="add-bot-wrap" id="add-bot-wrap" style="display:none">
+    <button class="btn-add-bot" onclick="addAnotherBot()">➕ Connect Another Number</button>
   </div>
-
-  <!-- ── COIN HISTORY ─────────────────────────────────────────────────────── -->
-  <div class="history-card" id="history-card" style="display:none">
-    <div class="card-hdr">
-      <span>Recent Coin Activity</span>
-      <span id="history-count" style="color:var(--muted)"></span>
-    </div>
-    <div id="coin-history-list"></div>
-  </div>
-
 
   <!-- ── PAIR CARD ───────────────────────────────────────────────────────── -->
   <div class="pair-card" id="pair-card">
-    <div class="card-hdr" style="padding:14px 24px;background:rgba(0,0,0,.2);border-bottom:1px solid var(--border);font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px">
-      Connect via QR or Pairing Code
-    </div>
     <div class="pair-body">
-      <div class="qr-side">
-        <div class="qr-wrap" id="qr-wrap" style="display:none">
-          <img id="qr-img" src="" alt="QR" />
-        </div>
-        <div class="qr-empty" id="qr-empty">
-          <div style="font-size:2.5rem;opacity:.5">📱</div>
-          <p>Click <strong style="color:var(--blue)">Start Pairing</strong><br>to generate the QR code</p>
-        </div>
-        <div class="qr-hint">WhatsApp → <strong>Linked Devices</strong><br>→ Link a Device → Scan</div>
+      <div>
+        <h3>Use a Pairing Code</h3>
+        <p>Enter your WhatsApp number to receive an 8-digit code — no camera needed.</p>
       </div>
-      <div class="code-side">
-        <div>
-          <h3>Use a Pairing Code</h3>
-          <p>Enter your number to get an 8-digit code — no camera needed.</p>
+      <div>
+        <div class="input-lbl">PHONE NUMBER</div>
+        <div class="phone-row">
+          <input type="tel" id="pair-phone" placeholder="254712345678" />
+          <button class="btn btn-ghost btn-sm" id="get-code-btn" onclick="getPairingCode()">Get Code</button>
         </div>
-        <div>
-          <div class="input-lbl">PHONE NUMBER</div>
-          <div class="phone-row">
-            <input type="tel" id="pair-phone" placeholder="254712345678" />
-            <button class="btn btn-ghost btn-sm" id="get-code-btn" onclick="getPairingCode()">Get Code</button>
-          </div>
-        </div>
-        <div class="code-display" id="code-display" style="display:none">
-          <div class="code-digits" id="code-value">—</div>
-          <div class="code-hint-txt">WhatsApp → Linked Devices → Link with phone number → enter code</div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="copyCode()">📋 Copy Code</button>
-        </div>
-        <button class="btn btn-blue btn-full" id="start-btn" onclick="startPairing()">⚡ Start Pairing</button>
       </div>
+      <div class="code-display" id="code-display" style="display:none">
+        <div class="code-digits" id="code-value">—</div>
+        <div class="code-hint-txt">WhatsApp → Linked Devices → Link with phone number → enter code</div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="copyCode()">📋 Copy Code</button>
+      </div>
+      <button class="btn btn-blue btn-full" id="start-btn" onclick="startPairing()">⚡ Start Pairing</button>
     </div>
     <div class="pair-footer">
       <div class="dot dot-idle" id="status-dot"></div>
@@ -520,63 +318,15 @@
     </div>
   </div>
 
-
-</div>
-
-<!-- ── BUY COINS MODAL ─────────────────────────────────────────────────────── -->
-<div class="overlay" id="buy-overlay">
-  <div class="modal">
-    <div class="modal-title">🪙 Buy Coins</div>
-    <div class="modal-sub">Select how many coins you want, then follow the payment steps below.</div>
-
-    <div class="amount-row">
-      <button class="amount-btn" onclick="selectAmount(100)">100</button>
-      <button class="amount-btn" onclick="selectAmount(250)">250</button>
-      <button class="amount-btn" onclick="selectAmount(500)">500</button>
-      <button class="amount-btn" onclick="selectAmount(1000)">1000</button>
-    </div>
-
-    <div class="custom-amount-wrap">
-      <label>OR ENTER CUSTOM AMOUNT</label>
-      <input type="number" class="custom-amount-input" id="buy-amount-input"
-        placeholder="e.g. 750" min="1" oninput="updatePayment()" />
-    </div>
-
-    <div class="payment-box" id="payment-box">
-      <div class="payment-label">💳 Payment Instructions</div>
-      <div class="payment-steps">
-        <div class="payment-step">
-          <div class="step-num">1</div>
-          <div class="step-text">
-            Send exactly <span class="pay-amount" id="pay-ksh">—</span>
-            <strong> KSh</strong> via M-Pesa to:<br>
-            <span class="pay-number">0118234849</span>
-          </div>
-        </div>
-        <div class="payment-step">
-          <div class="step-num">2</div>
-          <div class="step-text">Send your M-Pesa <strong>confirmation message</strong> to the bot on WhatsApp.</div>
-        </div>
-        <div class="payment-step">
-          <div class="step-num">3</div>
-          <div class="step-text">The admin will verify and credit <strong><span id="pay-coins">—</span> coins</strong> to your balance.</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="modal-row">
-      <button class="btn btn-ghost" onclick="closeBuyModal()">Close</button>
-    </div>
-  </div>
 </div>
 
 <!-- ── EXPORT MODAL ────────────────────────────────────────────────────────── -->
 <div class="overlay" id="export-overlay">
   <div class="modal">
     <div class="modal-title">📤 Export Session ID</div>
-    <div style="font-size:0.72rem;color:var(--muted);margin-bottom:10px">Session ID:</div>
+    <div style="font-size:0.72rem;color:var(--muted);margin:10px 0">Session ID:</div>
     <div class="export-box" id="export-val"></div>
-    <div class="modal-row" style="margin-top:20px">
+    <div class="modal-row">
       <button class="btn btn-ghost" onclick="closeExport()">Close</button>
       <button class="btn btn-blue" onclick="copyExport()">📋 Copy</button>
     </div>
@@ -586,9 +336,6 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  // ── Coin rate: 10 coins = 1 KSh ──
-  const COINS_PER_KSH = 10;
-
   let sessions = [], pairingId = null, pollTimer = null;
 
   function toast(msg, type) {
@@ -601,121 +348,11 @@
 
   function fmtUp(u) { return u ? `${u.hours}h ${u.minutes}m` : '—'; }
 
-  // ── Buy coins modal ────────────────────────────────────────────────────
-  let selectedCoins = 0;
-
-  function openBuyModal() {
-    document.getElementById('buy-amount-input').value = '';
-    document.getElementById('payment-box').classList.remove('show');
-    document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
-    selectedCoins = 0;
-    document.getElementById('buy-overlay').classList.add('open');
-  }
-  function closeBuyModal() {
-    document.getElementById('buy-overlay').classList.remove('open');
-  }
-  function selectAmount(n) {
-    selectedCoins = n;
-    document.getElementById('buy-amount-input').value = n;
-    document.querySelectorAll('.amount-btn').forEach(b => {
-      b.classList.toggle('selected', parseInt(b.textContent) === n);
-    });
-    updatePayment();
-  }
-  function updatePayment() {
-    const input = document.getElementById('buy-amount-input');
-    const coins = parseInt(input.value) || 0;
-    selectedCoins = coins;
-    document.querySelectorAll('.amount-btn').forEach(b => {
-      b.classList.toggle('selected', parseInt(b.textContent) === coins);
-    });
-    const box = document.getElementById('payment-box');
-    if (coins > 0) {
-      const ksh = Math.ceil(coins / COINS_PER_KSH);
-      document.getElementById('pay-ksh').textContent = ksh;
-      document.getElementById('pay-coins').textContent = coins.toLocaleString();
-      box.classList.add('show');
-    } else {
-      box.classList.remove('show');
-    }
-  }
-
   // ── Admin panel toggle ─────────────────────────────────────────────────
   function toggleAdmin() {
     const panel = document.getElementById('admin-panel');
     const arrow = document.getElementById('admin-arrow');
-    panel.classList.toggle('open');
-    arrow.classList.toggle('open');
-  }
-
-  // ── Admin: add coins directly ──────────────────────────────────────────
-  async function adminAddCoins() {
-    const input = document.getElementById('admin-coin-input');
-    const amt = parseInt(input.value);
-    if (!amt || amt <= 0) { toast('Enter a valid amount', 'error'); return; }
-    try {
-      const res = await fetch('/api/coins/add', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ amount: amt, note: 'Admin top-up' })
-      });
-      const d = await res.json();
-      if (d.success) {
-        toast(`✅ Added ${amt} coins. New balance: ${d.balance.toLocaleString()}`, 'success');
-        input.value = '';
-        fetchCoins();
-      } else { toast(d.error || 'Failed', 'error'); }
-    } catch(e) { toast('Error: ' + e.message, 'error'); }
-  }
-
-  // ── Fetch coins ────────────────────────────────────────────────────────
-  async function fetchCoins() {
-    try {
-      const res = await fetch('/api/coins');
-      const d = await res.json();
-      const bal = d.balance ?? 0;
-      animateNumber('coin-balance', bal);
-      document.getElementById('coin-spent').textContent = (d.totalSpent ?? 0).toLocaleString();
-      const st = document.getElementById('coin-status');
-      if (bal <= 0)  { st.textContent = 'EMPTY'; st.className = 'coin-status empty'; }
-      else if (bal < 20) { st.textContent = 'LOW'; st.className = 'coin-status low'; }
-      else           { st.textContent = 'ACTIVE'; st.className = 'coin-status active'; }
-
-      const hist = d.history || [];
-      const box  = document.getElementById('history-card');
-      const list = document.getElementById('coin-history-list');
-      if (hist.length) {
-        box.style.display = 'block';
-        document.getElementById('history-count').textContent = hist.length + ' entries';
-        list.innerHTML = hist.slice(0,10).map(h => {
-          const isAdd = h.type === 'add' || h.type === 'set';
-          const sign  = isAdd ? '+' : '-';
-          const dt    = h.ts ? new Date(h.ts).toLocaleString() : '';
-          return `<div class="history-item">
-            <div style="display:flex;align-items:center;gap:10px">
-              <span style="font-size:1rem">${isAdd ? '➕' : '🔻'}</span>
-              <div>
-                <div class="history-note">${h.note || (isAdd ? 'Top-up' : 'Command')}</div>
-                <div class="history-date">${dt}</div>
-              </div>
-            </div>
-            <div class="history-amount ${isAdd ? 'plus' : 'minus'}">${sign}${h.amount}</div>
-          </div>`;
-        }).join('');
-      } else { box.style.display = 'none'; }
-    } catch {}
-  }
-
-  function animateNumber(id, target) {
-    const el = document.getElementById(id);
-    const cur = parseInt(el.textContent.replace(/\D/g,'')) || 0;
-    if (cur === target) { el.textContent = target.toLocaleString(); return; }
-    let step = 0, steps = 30;
-    const diff = target - cur;
-    const t = setInterval(() => {
-      step++;
-      el.textContent = Math.round(cur + diff * step/steps).toLocaleString();
-      if (step >= steps) clearInterval(t);
-    }, 16);
+    if (panel) { panel.classList.toggle('open'); arrow.classList.toggle('open'); }
   }
 
   // ── Sessions ───────────────────────────────────────────────────────────
@@ -733,7 +370,6 @@
       const s = sessions.find(s => s.id === pairingId);
       if (s) {
         updateCard(s);
-        // Pairing complete — redirect to dashboard
         if (s.status === 'connected') {
           pairingId = null;
           toast('✅ Bot connected! Redirecting to dashboard…', 'success');
@@ -744,15 +380,10 @@
       const connecting = sessions.find(s => s.status === 'connecting');
       if (connecting) { pairingId = connecting.id; updateCard(connecting); }
     }
-
-    // Sessions are managed on the Dashboard page
   }
 
   function addAnotherBot() {
     pairingId = null;
-    // Reset pair card to idle state
-    document.getElementById('qr-wrap').style.display = 'none';
-    document.getElementById('qr-empty').style.display = 'block';
     document.getElementById('code-display').style.display = 'none';
     document.getElementById('pair-phone').value = '';
     setStatus('dot-idle', 'var(--muted)', 'Idle — click Start Pairing to begin');
@@ -770,12 +401,7 @@
       txt.textContent = '✅ Connected — ' + (s.number ? '+'+s.number : '');
     } else if (s.status === 'connecting') {
       dot.className = 'dot dot-busy'; txt.style.color = '#f59e0b';
-      txt.textContent = 'Waiting for scan or pairing code…';
-      if (s.qrImage) {
-        document.getElementById('qr-img').src = s.qrImage;
-        document.getElementById('qr-wrap').style.display = 'inline-block';
-        document.getElementById('qr-empty').style.display = 'none';
-      }
+      txt.textContent = 'Waiting for pairing code confirmation…';
       if (s.pairingCode) {
         document.getElementById('code-value').textContent = s.pairingCode;
         document.getElementById('code-display').style.display = 'block';
@@ -799,7 +425,7 @@
         body: JSON.stringify({ name: 'Bot ' + (sessions.length + 1) })
       });
       const s = await res.json();
-      if (s.id) { pairingId = s.id; toast('Session started — scan the QR or use pairing code'); schedPoll(); }
+      if (s.id) { pairingId = s.id; toast('Session started — enter your number to get a pairing code'); schedPoll(); }
       else { toast(s.error || 'Failed to start', 'error'); }
     } catch(e) { toast('Error: ' + e.message, 'error'); }
     btn.disabled = false; btn.textContent = '⚡ Start Pairing';
@@ -871,13 +497,10 @@
     }, 3000);
   }
 
-  document.getElementById('buy-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeBuyModal(); });
   document.getElementById('export-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeExport(); });
 
-  fetchCoins();
   fetchSessions();
   setInterval(fetchSessions, 6000);
-  setInterval(fetchCoins, 5000);
 </script>
 </body>
 </html>
