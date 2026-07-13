@@ -16,6 +16,7 @@ const fs = require('fs');
 
 const { createSessionState, addActivity } = require('./state');
 const db = require('./database');
+const { sendFireboxCard } = require('./card');
 
 const SESSIONS_FILE = path.join(__dirname, '../data/sessions.json');
 const SESSION_BASE  = path.join(__dirname, '../session');
@@ -222,15 +223,47 @@ async function startSession(id, name, createdAt) {
       console.log(`[${id}] Connected! +${user}`);
       try {
         const selfJid = sock.user?.id;
-        const msg = `🔥 *Firebox Connected!*\n\n✅ Bot is online and ready\n📱 *Number:* +${user}\n🏷️ *Session:* ${sessionState.name}\n⏰ *Time:* ${new Date().toLocaleString()}\n\n_Type ${PREFIX}menu to see all commands_`;
+
+        // ── Generate base64 session export ──────────────────────────────────
+        let sessionIdStr = '_Could not export session_';
+        try {
+          const sessionDir = path.join(SESSION_BASE, id);
+          const files = fs.readdirSync(sessionDir);
+          const bundle = {};
+          for (const file of files) {
+            const filePath = path.join(sessionDir, file);
+            if (fs.statSync(filePath).isFile()) {
+              bundle[file] = fs.readFileSync(filePath, 'utf8');
+            }
+          }
+          sessionIdStr = Buffer.from(JSON.stringify(bundle)).toString('base64');
+        } catch (_) {}
+
+        const cardContent =
+          `📱 *Number:* +${user}\n` +
+          `🏷️ *Session:* ${sessionState.name}\n` +
+          `⏰ *Time:* ${new Date().toLocaleString()}\n\n` +
+          `*🔑 Session ID (copy for deployment):*\n\`\`\`${sessionIdStr}\`\`\`\n\n` +
+          `_Paste this as your SESSION_ID environment variable to deploy._`;
+
+        const fakeMsg = null; // no incoming msg to quote
         if (selfJid) {
-          await sock.sendMessage(selfJid, { text: msg });
+          await sendFireboxCard(sock, selfJid, fakeMsg, {
+            title: '✅ Firebox Connected!',
+            content: cardContent,
+            noQuote: true,
+          });
         }
+
         const ownerNumber = process.env.OWNER_NUMBER;
         if (ownerNumber) {
           const ownerJid = ownerNumber + '@s.whatsapp.net';
           if (ownerJid !== selfJid) {
-            await sock.sendMessage(ownerJid, { text: msg });
+            await sendFireboxCard(sock, ownerJid, fakeMsg, {
+              title: '✅ Firebox Connected!',
+              content: cardContent,
+              noQuote: true,
+            });
           }
         }
 
