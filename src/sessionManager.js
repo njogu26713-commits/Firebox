@@ -245,28 +245,35 @@ async function startSession(id, name, createdAt) {
           `📱 *Number:* +${user}\n` +
           `🏷️ *Session:* ${sessionState.name}\n` +
           `⏰ *Time:* ${new Date().toLocaleString()}\n\n` +
-          `*🔑 Session ID (copy for deployment):*\n\`\`\`${sessionIdStr}\`\`\`\n\n` +
-          `_Paste this into the *SESSION_ID* field on the Config page to deploy._`;
+          `_Your Session ID is attached below as a .txt file.\nCopy its contents and paste into the *SESSION_ID* field on the Config page to deploy._`;
 
         const fakeMsg = null; // no incoming msg to quote
-        if (selfJid) {
-          await sendFireboxCard(sock, selfJid, fakeMsg, {
+
+        // ── Session ID as a downloadable document ────────────────────────────
+        const sessionBuffer = Buffer.from(sessionIdStr, 'utf8');
+
+        async function sendToJid(jid) {
+          // 1. Connected card
+          await sendFireboxCard(sock, jid, fakeMsg, {
             title: '✅ Firebox Connected!',
             content: cardContent,
             noQuote: true,
           });
+          // 2. Session ID as a .txt document (no size limit issue)
+          await sock.sendMessage(jid, {
+            document: sessionBuffer,
+            mimetype: 'text/plain',
+            fileName: `session-${user}.txt`,
+            caption: '📎 Your Session ID — copy the full contents and paste into the Config page SESSION_ID field.',
+          });
         }
+
+        if (selfJid) await sendToJid(selfJid);
 
         const ownerNumber = process.env.OWNER_NUMBER;
         if (ownerNumber) {
           const ownerJid = ownerNumber + '@s.whatsapp.net';
-          if (ownerJid !== selfJid) {
-            await sendFireboxCard(sock, ownerJid, fakeMsg, {
-              title: '✅ Firebox Connected!',
-              content: cardContent,
-              noQuote: true,
-            });
-          }
+          if (ownerJid !== selfJid) await sendToJid(ownerJid);
         }
 
       } catch (_) {}
