@@ -221,6 +221,8 @@ async function startSession(id, name, createdAt) {
       sessionState.qr = null;
       sessionState.pairingCode = null;
       console.log(`[${id}] Connected! +${user}`);
+      // Wait 5 s for the socket to fully settle so the channel button renders
+      await new Promise(r => setTimeout(r, 5000));
       try {
         const selfJid = sock.user?.id;
 
