@@ -244,7 +244,7 @@ async function startSession(id, name, createdAt) {
           `🏷️ *Session:* ${sessionState.name}\n` +
           `⏰ *Time:* ${new Date().toLocaleString()}\n\n` +
           `*🔑 Session ID (copy for deployment):*\n\`\`\`${sessionIdStr}\`\`\`\n\n` +
-          `_Paste this as your SESSION_ID environment variable to deploy._`;
+          `_Paste this into the *SESSION_ID* field on the Config page to deploy._`;
 
         const fakeMsg = null; // no incoming msg to quote
         if (selfJid) {
