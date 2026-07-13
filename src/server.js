@@ -6,6 +6,24 @@ const db = require('./database');
 
 const app = express();
 const PORT = 5000;
+
+// ── In-memory log buffer (last 300 lines) ─────────────────────────────────────
+const LOG_BUFFER = [];
+const LOG_MAX = 300;
+let logSeq = 0;
+
+function pushLog(level, args) {
+  const text = args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
+  LOG_BUFFER.push({ seq: ++logSeq, ts: Date.now(), level, text });
+  if (LOG_BUFFER.length > LOG_MAX) LOG_BUFFER.shift();
+}
+
+const _log   = console.log.bind(console);
+const _error = console.error.bind(console);
+const _warn  = console.warn.bind(console);
+console.log   = (...a) => { pushLog('info',  a); _log(...a); };
+console.error = (...a) => { pushLog('error', a); _error(...a); };
+console.warn  = (...a) => { pushLog('warn',  a); _warn(...a); };
 const SESSION_BASE = path.join(__dirname, '../session');
 
 app.use(express.json());
@@ -212,6 +230,14 @@ app.post('/api/config', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// ── GET /api/logs — return recent log lines (poll with ?since=seq) ───────────
+
+app.get('/api/logs', (req, res) => {
+  const since = parseInt(req.query.since, 10) || 0;
+  const lines = LOG_BUFFER.filter(l => l.seq > since);
+  res.json({ lines, next: logSeq });
 });
 
 // ── GET /api/sessions/:id/export — export session as base64 string ────────────

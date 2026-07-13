@@ -235,6 +235,50 @@
     .toast.success { background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.3); color: var(--green); }
     .toast.error   { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.2); color: var(--red); }
 
+    /* ── DEPLOY LOGS ─────────────────────────────────────────────────────── */
+    .log-panel {
+      display: none;
+      background: #020608;
+      border: 1px solid var(--border2);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-top: 24px;
+    }
+    .log-panel.visible { display: block; }
+    .log-panel-hdr {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px;
+      background: rgba(0,0,0,.4);
+      border-bottom: 1px solid var(--border);
+    }
+    .log-panel-hdr-left { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; font-weight: 700; color: var(--text); }
+    .log-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      animation: blink 1.2s infinite;
+    }
+    .log-dot.idle { background: var(--muted); box-shadow: none; animation: none; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .log-clear-btn {
+      background: none; border: 1px solid var(--border); color: var(--muted);
+      border-radius: 6px; padding: 4px 12px; font-size: 0.72rem; cursor: pointer;
+      font-family: 'Inter', sans-serif; transition: all .2s;
+    }
+    .log-clear-btn:hover { color: var(--text); border-color: var(--border2); }
+    .log-body {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem; line-height: 1.7;
+      padding: 16px 20px;
+      max-height: 340px; overflow-y: auto;
+      color: #7dd3a8;
+    }
+    .log-body:empty::before { content: 'Waiting for logs…'; color: var(--muted); }
+    .log-line { white-space: pre-wrap; word-break: break-all; }
+    .log-line.error { color: #f87171; }
+    .log-line.warn  { color: #fbbf24; }
+    .log-line.info  { color: #86efac; }
+
     /* ── RESPONSIVE ──────────────────────────────────────────────────────── */
     @media (max-width: 640px) {
       header { padding: 0 16px; }
@@ -394,6 +438,18 @@
     <button class="btn btn-blue" id="save-btn" onclick="saveConfig()">💾 Save & Apply</button>
   </div>
 
+  <!-- ── DEPLOY LOGS ─────────────────────────────────────────────────────── -->
+  <div class="log-panel" id="log-panel">
+    <div class="log-panel-hdr">
+      <div class="log-panel-hdr-left">
+        <div class="log-dot" id="log-dot"></div>
+        <span id="log-status-text">Deployment Logs</span>
+      </div>
+      <button class="log-clear-btn" onclick="clearLogs()">Clear</button>
+    </div>
+    <div class="log-body" id="log-body"></div>
+  </div>
+
 </div>
 
 <div class="toast" id="toast"></div>
@@ -446,6 +502,7 @@
     const btn   = document.getElementById('save-btn');
     const msgEl = document.getElementById('save-msg');
     btn.disabled = true; btn.innerHTML = '⏳ Saving…';
+    startLogs();
 
     const updates = {};
     const keys = ['SESSION_ID','OWNER_NUMBER','OWNER_NAME','PREFIX','BOT_NAME'];
@@ -481,6 +538,52 @@
 
   loadConfig();
   loadCoins();
+
+  // ── Live deployment logs ────────────────────────────────────────────────
+  let logSeq = 0;
+  let logTimer = null;
+  let logActive = false;
+
+  function startLogs() {
+    const panel = document.getElementById('log-panel');
+    panel.classList.add('visible');
+    logActive = true;
+    document.getElementById('log-dot').classList.remove('idle');
+    document.getElementById('log-status-text').textContent = 'Live — Deployment Logs';
+    pollLogs();
+  }
+
+  function stopLogs() {
+    logActive = false;
+    clearTimeout(logTimer);
+    document.getElementById('log-dot').classList.add('idle');
+    document.getElementById('log-status-text').textContent = 'Deployment Logs';
+  }
+
+  function clearLogs() {
+    document.getElementById('log-body').innerHTML = '';
+  }
+
+  async function pollLogs() {
+    if (!logActive) return;
+    try {
+      const res = await fetch('/api/logs?since=' + logSeq);
+      const d = await res.json();
+      if (d.lines && d.lines.length) {
+        const body = document.getElementById('log-body');
+        for (const line of d.lines) {
+          const el = document.createElement('div');
+          el.className = 'log-line ' + (line.level || 'info');
+          const time = new Date(line.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          el.textContent = '[' + time + '] ' + line.text;
+          body.appendChild(el);
+        }
+        body.scrollTop = body.scrollHeight;
+        logSeq = d.next;
+      }
+    } catch (_) {}
+    logTimer = setTimeout(pollLogs, 800);
+  }
 </script>
 </body>
 </html>
