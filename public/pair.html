@@ -299,8 +299,8 @@
         }
         if (s.status === 'connected') {
           clearInterval(pollTimer);
-          setStatus('dot-on', 'var(--green)', '✅ Connected! Go to Dashboard to manage your bot.');
-          toast('✅ Bot connected!', 'success');
+          setStatus('dot-on', 'var(--green)', '✅ Connected! Check your WhatsApp — your Session ID was sent. Paste it on the Config page to deploy.');
+          toast('✅ Bot connected! Session ID sent to your WhatsApp.', 'success');
           pairingId = null;
         }
       } catch {}
