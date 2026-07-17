@@ -12,6 +12,7 @@ const hacking  = require('./commands/hacking');
 const audio    = require('./commands/audio');
 const ephoto   = require('./commands/ephoto');
 const religion = require('./commands/religion');
+const fun      = require('./commands/fun');
 const db       = require('./database');
 const { addActivity } = require('./state');
 const { sessions } = require('./sessionManager');
@@ -472,6 +473,24 @@ async function handleMessage(sock, msg, prefix, sessionState) {
     // ── RELIGION ─────────────────────────────────────────────────────────────
     case 'bible': case 'verse':                  return religion.bible(ctx);
     case 'quran': case 'surah':                  return religion.quran(ctx);
+
+    // ── FUN (FOXY-style) ──────────────────────────────────────────────────────
+    case 'bf':                                   return fun.bf(ctx);
+    case 'gf':                                   return fun.gf(ctx);
+    case 'couple':                               return fun.couple(ctx);
+    case 'gay':                                  return fun.gay(ctx);
+    case 'getjid': case 'jid':                  return fun.getjid(ctx);
+    case 'device':                               return fun.device(ctx);
+    case 'movie':                                return fun.movie(ctx);
+    case 'trailer':                              return fun.trailer(ctx);
+    case 'readsite': case 'web':                return fun.readsite(ctx);
+    case 'goodmorning': case 'gm':              return fun.goodmorning(ctx);
+    case 'goodnight': case 'gn':                return fun.goodnight(ctx);
+    case 'channelstatus': case 'cstatus':       return fun.channelstatus(ctx);
+    case 'hack':                                 return fun.hack(ctx);
+    case 'up': case 'uptime':                   return fun.up(ctx);
+    case 'snake':                                return fun.snake(ctx);
+    case 'tictactoe': case 'ttt':               return fun.tictactoe(ctx);
 
     // ── GAMES / FUN ───────────────────────────────────────────────────────────
     case '8ball':                          return games.eightBall(ctx);

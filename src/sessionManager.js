@@ -851,10 +851,59 @@ function isSetupRequired() {
   return true;
 }
 
+// ── Import session from SESSION_ID env var (FIREBOX-BOT: / FOXY-BOT: / plain base64) ──
+function importSessionFromEnv() {
+  const raw = process.env.SESSION_ID;
+  if (!raw || raw.trim() === '') return null;
+
+  try {
+    // Strip known prefixes
+    let b64 = raw.trim();
+    for (const prefix of ['FIREBOX-BOT:', 'FOXY-BOT:', 'FIREBOX:', 'FOXY:']) {
+      if (b64.startsWith(prefix)) { b64 = b64.slice(prefix.length); break; }
+    }
+
+    const decoded = JSON.parse(Buffer.from(b64, 'base64').toString('utf8'));
+    const id = 'sess_env';
+    const sessionDir = path.join(SESSION_BASE, id);
+
+    // Detect format: bundle (keys are filenames like "creds.json") vs raw creds object
+    const isBundle = typeof decoded === 'object' && decoded !== null && 'creds.json' in decoded;
+
+    if (isBundle) {
+      // Full bundle — write each file
+      if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
+      for (const [filename, content] of Object.entries(decoded)) {
+        fs.writeFileSync(path.join(sessionDir, filename), typeof content === 'string' ? content : JSON.stringify(content));
+      }
+    } else {
+      // Creds-only format (from pair.js) — write as creds.json
+      if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
+      fs.writeFileSync(path.join(sessionDir, 'creds.json'), JSON.stringify(decoded, null, 2));
+    }
+
+    // Register in sessions list if not already present
+    const list = loadSessionList();
+    if (!list.find(s => s.id === id)) {
+      list.push({ id, name: 'ENV Session', createdAt: Date.now() });
+      fs.writeFileSync(SESSIONS_FILE, JSON.stringify(list, null, 2));
+    }
+
+    console.log(`[SESSIONS] ✅ Imported session from SESSION_ID env var (${isBundle ? 'bundle' : 'creds-only'} format)`);
+    return id;
+  } catch (e) {
+    console.error('[SESSIONS] ❌ Failed to import SESSION_ID:', e.message);
+    return null;
+  }
+}
+
 async function loadAndStartAll() {
   if (!fs.existsSync(path.join(__dirname, '../data'))) {
     fs.mkdirSync(path.join(__dirname, '../data'), { recursive: true });
   }
+
+  // Import from SESSION_ID env var if set
+  importSessionFromEnv();
 
   if (isSetupRequired()) {
     console.log('[SESSIONS] ⚠️  No session found. Open the dashboard to pair a bot.');
