@@ -47,7 +47,7 @@ async function sendFireboxCard(sock, from, msg, opts = {}) {
   const version    = 'v2.0.0';
   const uptime     = getUptime();
 
-  const footerText = footer || `🔥 ${botName} ${version}  •  ⏱️ ${uptime}`;
+  const footerText = footer || '';
   const baseOpts   = (!noQuote && msg) ? { quoted: msg } : {};
 
   /* ── Build CTA buttons ─────────────────────────────────────────────────── */
@@ -117,8 +117,7 @@ async function sendFireboxCard(sock, from, msg, opts = {}) {
     await sock.sendMessage(from, {
       interactiveMessage: {
         header: {
-          title: `🔥 ${botName.toUpperCase()}`,
-          subtitle: title,
+          title: title,
           hasMediaAttachment: false,
         },
         body:   { text: content },
@@ -131,8 +130,8 @@ async function sendFireboxCard(sock, from, msg, opts = {}) {
     }, cardOpts);
   } catch (_) {
     /* ── Fallback: premium rich text ─────────────────────────────────────── */
-    const border = '━━━━━━━━━━━━━━━━━━━━';
-    let text = `🔥 *${botName.toUpperCase()}*\n${border}\n*${title}*\n\n${content}\n\n${border}\n_${footerText}_`;
+    let text = `*${title}*\n\n${content}`;
+    if (footerText) text += `\n\n_${footerText}_`;
     if (channelLink) text += `\n\n📢 *Channel:* ${channelLink}`;
     for (const btn of buttons) {
       if (btn && btn.url) text += `\n🔗 *${btn.text}:* ${btn.url}`;
