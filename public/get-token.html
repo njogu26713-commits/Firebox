@@ -45,12 +45,6 @@
     .brand-text h1 { font-size: 1.15rem; font-weight: 800; color: #fff; }
     .brand-text span { font-size: 0.72rem; color: var(--muted); }
     nav { margin-left: auto; display: flex; gap: 2px; }
-    nav a {
-      padding: 7px 18px; text-decoration: none; color: var(--muted);
-      font-size: 0.85rem; font-weight: 600; border-radius: 8px; transition: all .2s;
-    }
-    nav a:hover { color: var(--text); background: var(--bg3); }
-    nav a.active { color: var(--blue); background: rgba(59,130,246,.12); }
 
     /* ── LAYOUT ─────────────────────────────────────────────── */
     .container {
@@ -185,10 +179,7 @@
     <div class="brand-icon">🔥</div>
     <div class="brand-text"><h1>Firebox</h1><span>WhatsApp Bot</span></div>
   </a>
-  <nav>
-    <a href="/get-token" class="active">Get Token</a>
-    <a href="/activate">Activate</a>
-  </nav>
+  <nav></nav>
 </header>
 
 <div class="container">
@@ -230,7 +221,6 @@
         </div>
         <div class="token-actions">
           <button class="btn btn-green" id="copy-btn" onclick="copyToken()">📋 Copy Token</button>
-          <a href="/activate" class="btn btn-blue">⚡ Activate Now →</a>
         </div>
       </div>
 
