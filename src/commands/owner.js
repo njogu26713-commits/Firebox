@@ -83,7 +83,7 @@ async function setprefix(ctx) {
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
   if (!text || text.length > 3) return send(sock, from, msg, '❌ Usage: .setprefix <symbol>\nExample: .setprefix !');
   process.env.PREFIX = text.trim();
-  await send(sock, from, msg, `✅ Prefix changed to *${text.trim()}*\n\n_Note: This resets on restart. Edit the .env file to make it permanent._`);
+  await send(sock, from, msg, `✅ Prefix changed to *${text.trim()}*\n_Note: This resets on restart. Edit the .env file to make it permanent._`);
 }
 
 async function forward(ctx) {
@@ -159,8 +159,8 @@ function formatCountdown(ms) {
 async function schedule(ctx) {
   const { sock, from, msg, args, text } = ctx;
   if (args.length < 2) return send(sock, from, msg,
-    '⏰ *Usage:* .schedule <delay> <message>\n\n' +
-    '*Delay formats:*\n• 30s — 30 seconds\n• 5m — 5 minutes\n• 2h — 2 hours\n• 1d — 1 day\n\n' +
+    '⏰ *Usage:* .schedule <delay> <message>\n' +
+    '*Delay formats:*\n• 30s — 30 seconds\n• 5m — 5 minutes\n• 2h — 2 hours\n• 1d — 1 day\n' +
     '*Example:* .schedule 10m Good morning everyone! 🌅');
 
   const delayStr = args[0];
@@ -176,10 +176,10 @@ async function schedule(ctx) {
   db.addSchedule({ id, jid: from, message: content, sendAt, createdAt: Date.now() });
 
   await send(sock, from, msg,
-    `✅ *Message Scheduled!*\n\n` +
+    `✅ *Message Scheduled!*\n` +
     `🆔 ID: \`${id}\`\n` +
     `⏰ Sends in: *${formatCountdown(delayMs)}*\n` +
-    `📝 Message: "${content}"\n\n` +
+    `📝 Message: "${content}"\n` +
     `_Use .cancelschedule ${id} to cancel_`);
 }
 
@@ -194,9 +194,9 @@ async function schedulelist(ctx) {
     const remaining = s.sendAt - now;
     const timeStr = remaining > 0 ? `in ${formatCountdown(remaining)}` : 'sending soon...';
     return `*${i + 1}.* [${s.id}]\n⏰ ${timeStr}\n📝 "${s.message.slice(0, 50)}${s.message.length > 50 ? '...' : ''}"`;
-  }).join('\n\n');
+  }).join('\n');
 
-  await send(sock, from, msg, `📋 *Scheduled Messages (${all.length})*\n\n${lines}`);
+  await send(sock, from, msg, `📋 *Scheduled Messages (${all.length})*\n${lines}`);
 }
 
 async function cancelschedule(ctx) {
@@ -220,8 +220,8 @@ async function inbox(ctx) {
   const preview = list.slice(-10).reverse().map((c, i) => {
     const date = new Date(c.receivedAt).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' });
     return `*${i + 1}.* [${c.id}] — ${date}\n💬 "${c.message.slice(0, 80)}${c.message.length > 80 ? '...' : ''}"`;
-  }).join('\n\n');
-  await send(sock, from, msg, `📬 *Confession Inbox (${list.length} total)*\n_Showing last 10_\n\n${preview}\n\n_Use .sharecf <id> to share or .clearcf <id> to delete_`);
+  }).join('\n');
+  await send(sock, from, msg, `📬 *Confession Inbox (${list.length} total)*\n_Showing last 10_\n${preview}\n_Use .sharecf <id> to share or .clearcf <id> to delete_`);
 }
 
 async function sharecf(ctx) {
@@ -231,7 +231,7 @@ async function sharecf(ctx) {
   const cf = db.getConfession(args[0]);
   if (!cf) return send(sock, from, msg, `❌ Confession \`${args[0]}\` not found.`);
   await sock.sendMessage(from, {
-    text: `🤫 *Anonymous Confession*\n\n"${cf.message}"\n\n_Sent anonymously via Firebox Bot_`
+    text: `🤫 *Anonymous Confession*\n"${cf.message}"\n_Sent anonymously via Firebox Bot_`
   });
   db.removeConfession(cf.id);
   await send(sock, from, msg, `✅ Confession shared and removed from inbox.`);
@@ -275,7 +275,7 @@ async function tostatus(ctx) {
       : { video: buffer, caption, mimetype: 'video/mp4', gifPlayback: false };
 
     await sock.sendMessage('status@broadcast', payload);
-    await send(sock, from, msg, `✅ *Status posted!*${caption ? `\n\n📝 Caption: "${caption}"` : ''}`);
+    await send(sock, from, msg, `✅ *Status posted!*${caption ? `\n📝 Caption: "${caption}"` : ''}`);
   } catch (err) {
     await send(sock, from, msg, `❌ Failed to post status: ${err.message}`);
   }
@@ -287,7 +287,7 @@ async function broadcaststatus(ctx) {
   if (!text) return send(sock, from, msg, '📢 Usage: .broadcaststatus <your message>\nExample: .broadcaststatus Hello everyone! 🔥');
   try {
     await sock.sendMessage('status@broadcast', { text });
-    await send(sock, from, msg, `✅ *Status posted!*\n\n📢 "${text}"`);
+    await send(sock, from, msg, `✅ *Status posted!*\n📢 "${text}"`);
   } catch (err) {
     await send(sock, from, msg, `❌ Failed to post status: ${err.message}`);
   }
@@ -301,8 +301,8 @@ async function autoviewstatus(ctx) {
   const enabled = arg === 'on';
   db.setBotSetting('autoViewStatus', enabled);
   await send(sock, from, msg, enabled
-    ? '✅ *Auto View Status: ON*\n\n👁️ I will now automatically view all statuses.'
-    : '🔴 *Auto View Status: OFF*\n\n👁️ I will no longer auto-view statuses.');
+    ? '✅ *Auto View Status: ON*\n👁️ I will now automatically view all statuses.'
+    : '🔴 *Auto View Status: OFF*\n👁️ I will no longer auto-view statuses.');
 }
 
 async function autoreactstatus(ctx) {
@@ -314,7 +314,7 @@ async function autoreactstatus(ctx) {
     db.setBotSetting('autoReactStatus', true);
     db.setBotSetting('autoReactEmoji', 'random');
     return send(sock, from, msg,
-      `✅ *Auto React Status: ON (Random Mode)*\n\n🎲 I will react to each status with a different random emoji:\n🔥 ❤️ 😍 💯 🎉 😂 👏 🥳 😎 💪 🤩 ✨ 😜 🙌 💥\n\n_No two reacts will feel the same!_`);
+      `✅ *Auto React Status: ON (Random Mode)*\n🎲 I will react to each status with a different random emoji:\n🔥 ❤️ 😍 💯 🎉 😂 👏 🥳 😎 💪 🤩 ✨ 😜 🙌 💥\n_No two reacts will feel the same!_`);
   }
 
   if (!['on', 'off'].includes(arg)) {
@@ -322,9 +322,9 @@ async function autoreactstatus(ctx) {
     const emojiSetting = db.getBotSetting('autoReactEmoji') || '🔥';
     const displayEmoji = emojiSetting === 'random' ? '🎲 Random' : emojiSetting;
     return send(sock, from, msg,
-      `💬 *Auto React Status*\n\n` +
+      `💬 *Auto React Status*\n` +
       `*Status:* ${current ? `ON ✅` : 'OFF ❌'}\n` +
-      `*Emoji:* ${displayEmoji}\n\n` +
+      `*Emoji:* ${displayEmoji}\n` +
       `*Commands:*\n` +
       `• .autoreactstatus on — enable with current emoji\n` +
       `• .autoreactstatus on ❤️ — enable with specific emoji\n` +
@@ -340,8 +340,8 @@ async function autoreactstatus(ctx) {
   const emojiSetting = db.getBotSetting('autoReactEmoji') || '🔥';
   const isRandom = emojiSetting === 'random';
   await send(sock, from, msg, enabled
-    ? `✅ *Auto React Status: ON*\n\n${isRandom ? '🎲 Random emoji mode — different reaction every time!' : `${emojiSetting} I will react to every status with ${emojiSetting}`}`
-    : `🔴 *Auto React Status: OFF*\n\nI will no longer react to statuses.`);
+    ? `✅ *Auto React Status: ON*\n${isRandom ? '🎲 Random emoji mode — different reaction every time!' : `${emojiSetting} I will react to every status with ${emojiSetting}`}`
+    : `🔴 *Auto React Status: OFF*\nI will no longer react to statuses.`);
 }
 
 async function aichat(ctx) {
@@ -352,7 +352,7 @@ async function aichat(ctx) {
 
   if (sub === 'off') {
     db.setBotSetting('aiChatbot', false);
-    return send(sock, from, msg, '🔴 *AI Chatbot: OFF*\n\nAI will no longer reply as you.');
+    return send(sock, from, msg, '🔴 *AI Chatbot: OFF*\nAI will no longer reply as you.');
   }
 
   if (sub === 'opener') {
@@ -360,13 +360,13 @@ async function aichat(ctx) {
     if (!opener) {
       const current = db.getBotSetting('aiChatOpener');
       return send(sock, from, msg,
-        `🎯 *AI Chat Opener*\n\n` +
-        `*Current:* ${current ? `"${current}"` : 'None (AI decides)'}\n\n` +
-        `*Usage:* .aichat opener <first message>\n\n` +
+        `🎯 *AI Chat Opener*\n` +
+        `*Current:* ${current ? `"${current}"` : 'None (AI decides)'}\n` +
+        `*Usage:* .aichat opener <first message>\n` +
         `*Examples:*\n` +
         `• .aichat opener Hey! 👋 What's up?\n` +
         `• .aichat opener Hii, umefika sawa? 😄\n` +
-        `• .aichat opener Yoo! Long time no hear 🔥\n\n` +
+        `• .aichat opener Yoo! Long time no hear 🔥\n` +
         `_This is sent as the very first reply to any new contact_\n` +
         `_Use .aichat opener clear to remove it_`);
     }
@@ -375,16 +375,16 @@ async function aichat(ctx) {
       return send(sock, from, msg, '✅ Opener cleared. AI will generate a natural first reply.');
     }
     db.setBotSetting('aiChatOpener', opener);
-    return send(sock, from, msg, `✅ *Opener set!*\n\n🎯 "${opener}"\n\n_This will be sent to every new contact who messages you_`);
+    return send(sock, from, msg, `✅ *Opener set!*\n🎯 "${opener}"\n_This will be sent to every new contact who messages you_`);
   }
 
   if (sub === 'persona') {
     const persona = args.slice(1).join(' ').trim();
     if (!persona) return send(sock, from, msg,
-      '❌ Usage: .aichat persona <describe yourself>\n\n' +
+      '❌ Usage: .aichat persona <describe yourself>\n' +
       '*Example:*\n.aichat persona I am John, a 25 year old guy from Nairobi. I am friendly, funny and I love football. I speak Swahili and English. I reply casually and use emojis sometimes.');
     db.setBotSetting('aiChatbotPersona', persona);
-    return send(sock, from, msg, `✅ *Persona updated!*\n\n👤 "${persona}"\n\n_AI will now reply as you using this description._`);
+    return send(sock, from, msg, `✅ *Persona updated!*\n👤 "${persona}"\n_AI will now reply as you using this description._`);
   }
 
   if (sub === 'add') {
@@ -409,7 +409,7 @@ async function aichat(ctx) {
     const label = targetJid.endsWith('@g.us') ? `Group: ${targetJid.split('@')[0]}` : `+${targetJid.split('@')[0]}`;
     const total = db.getAiChatTargets().length;
     return send(sock, from, msg,
-      `✅ *AI Chat enabled for:*\n📌 ${label}\n\n` +
+      `✅ *AI Chat enabled for:*\n📌 ${label}\n` +
       `🤖 Total targets: *${total}*\n` +
       `_Use .aichat list to see all — .aichat remove <number> to remove_`);
   }
@@ -428,19 +428,19 @@ async function aichat(ctx) {
     const list = db.removeAiChatTarget(targetJid);
     if (list.length === 0) {
       db.setBotSetting('aiChatbot', false);
-      return send(sock, from, msg, '🔴 *AI Chat OFF* — no targets left.\n\nUse .aichat add to add someone.');
+      return send(sock, from, msg, '🔴 *AI Chat OFF* — no targets left.\nUse .aichat add to add someone.');
     }
     return send(sock, from, msg, `✅ Removed. *${list.length}* target(s) remaining.\nUse .aichat list to see them.`);
   }
 
   if (sub === 'list') {
     const targets = db.getAiChatTargets();
-    if (!targets.length) return send(sock, from, msg, '📋 *No AI chat targets set.*\n\nUse .aichat add <number> to add someone.');
+    if (!targets.length) return send(sock, from, msg, '📋 *No AI chat targets set.*\nUse .aichat add <number> to add someone.');
     const lines = targets.map((j, i) => {
       const label = j.endsWith('@g.us') ? `👥 Group ${j.split('@')[0]}` : `👤 +${j.split('@')[0]}`;
       return `${i + 1}. ${label}`;
     }).join('\n');
-    return send(sock, from, msg, `📋 *AI Chat Targets (${targets.length}):*\n\n${lines}\n\n_Use .aichat remove <number> to remove_`);
+    return send(sock, from, msg, `📋 *AI Chat Targets (${targets.length}):*\n${lines}\n_Use .aichat remove <number> to remove_`);
   }
 
   if (sub === 'clear') {
@@ -453,8 +453,8 @@ async function aichat(ctx) {
   if (sub === 'on' || validModes.includes(sub)) {
     const persona = db.getBotSetting('aiChatbotPersona');
     if (!persona) return send(sock, from, msg,
-      '⚠️ *Set your persona first!*\n\n' +
-      'Use .aichat persona <describe yourself> before enabling.\n\n' +
+      '⚠️ *Set your persona first!*\n' +
+      'Use .aichat persona <describe yourself> before enabling.\n' +
       '*Example:*\n.aichat persona I am a 22 year old from Nairobi, friendly and funny, I love music and tech. I reply casually.');
     const mode = validModes.includes(args[1]?.toLowerCase()) ? args[1].toLowerCase()
       : validModes.includes(sub) ? sub
@@ -462,9 +462,9 @@ async function aichat(ctx) {
     db.setBotSetting('aiChatbot', true);
     db.setBotSetting('aiChatbotMode', mode);
     return send(sock, from, msg,
-      `✅ *AI Chatbot: ON*\n\n` +
+      `✅ *AI Chatbot: ON*\n` +
       `📡 Mode: *${mode.toUpperCase()}*\n` +
-      `👤 Persona: "${persona}"\n\n` +
+      `👤 Persona: "${persona}"\n` +
       `_AI will now reply to incoming messages as you._\n` +
       `_Use .aichat off to stop_`);
   }
@@ -474,10 +474,10 @@ async function aichat(ctx) {
   const persona = db.getBotSetting('aiChatbotPersona') || 'Not set';
   const targets = db.getAiChatTargets();
   return send(sock, from, msg,
-    `🤖 *AI Chatbot Settings*\n\n` +
+    `🤖 *AI Chatbot Settings*\n` +
     `*Status:* ${current ? `ON (${mode.toUpperCase()})` : 'OFF'}\n` +
     `*Persona:* "${persona}"\n` +
-    `*Targets:* ${targets.length > 0 ? targets.length + ' specific' : 'none'}\n\n` +
+    `*Targets:* ${targets.length > 0 ? targets.length + ' specific' : 'none'}\n` +
     `*Commands:*\n` +
     `• .aichat persona <about you> — set personality\n` +
     `• .aichat add <number> — enable for specific contact\n` +
@@ -499,14 +499,14 @@ async function autoreply(ctx) {
 
   if (sub === 'off') {
     db.setBotSetting('autoReply', false);
-    return send(sock, from, msg, '🔴 *Auto Reply: OFF*\n\nI will no longer auto-reply to messages.');
+    return send(sock, from, msg, '🔴 *Auto Reply: OFF*\nI will no longer auto-reply to messages.');
   }
 
   if (sub === 'msg') {
     const newMsg = args.slice(1).join(' ').trim();
     if (!newMsg) return send(sock, from, msg, '❌ Usage: .autoreply msg <your message>');
     db.setBotSetting('autoReplyMsg', newMsg);
-    return send(sock, from, msg, `✅ *Auto Reply message updated!*\n\n💬 "${newMsg}"`);
+    return send(sock, from, msg, `✅ *Auto Reply message updated!*\n💬 "${newMsg}"`);
   }
 
   const validModes = ['all', 'dm', 'group'];
@@ -518,9 +518,9 @@ async function autoreply(ctx) {
     db.setBotSetting('autoReplyMode', mode);
     const replyMsg = db.getBotSetting('autoReplyMsg');
     return send(sock, from, msg,
-      `✅ *Auto Reply: ON*\n\n` +
+      `✅ *Auto Reply: ON*\n` +
       `📡 Mode: *${mode.toUpperCase()}*\n` +
-      `💬 Message: "${replyMsg}"\n\n` +
+      `💬 Message: "${replyMsg}"\n` +
       `_Use .autoreply msg <text> to change the reply message_\n` +
       `_Use .autoreply off to disable_`);
   }
@@ -529,9 +529,9 @@ async function autoreply(ctx) {
   const mode = db.getBotSetting('autoReplyMode') || 'all';
   const replyMsg = db.getBotSetting('autoReplyMsg');
   return send(sock, from, msg,
-    `💬 *Auto Reply Settings*\n\n` +
+    `💬 *Auto Reply Settings*\n` +
     `*Status:* ${current ? `ON (${mode.toUpperCase()})` : 'OFF'}\n` +
-    `*Message:* "${replyMsg}"\n\n` +
+    `*Message:* "${replyMsg}"\n` +
     `*Usage:*\n` +
     `• .autoreply on — reply to all messages\n` +
     `• .autoreply all — reply to all\n` +
@@ -548,16 +548,16 @@ async function antidelete(ctx) {
   if (!['on', 'off'].includes(arg)) {
     const current = db.getBotSetting('antiDelete');
     return send(sock, from, msg,
-      `🗑️ *Anti-Delete*\n\n` +
-      `*Usage:* .antidelete on/off\n\n` +
-      `*Current:* ${current ? 'ON ✅' : 'OFF ❌'}\n\n` +
+      `🗑️ *Anti-Delete*\n` +
+      `*Usage:* .antidelete on/off\n` +
+      `*Current:* ${current ? 'ON ✅' : 'OFF ❌'}\n` +
       `_When ON, any deleted message (in groups OR DMs) is forwarded to your DM._`);
   }
   const enabled = arg === 'on';
   db.setBotSetting('antiDelete', enabled);
   await send(sock, from, msg, enabled
-    ? `🗑️ *Anti-Delete: ON ✅*\n\n_Deleted messages from ALL chats will be forwarded to your DM._`
-    : `🔴 *Anti-Delete: OFF ❌*\n\n_Deleted messages will no longer be forwarded._`);
+    ? `🗑️ *Anti-Delete: ON ✅*\n_Deleted messages from ALL chats will be forwarded to your DM._`
+    : `🔴 *Anti-Delete: OFF ❌*\n_Deleted messages will no longer be forwarded._`);
 }
 
 async function antiedit(ctx) {
@@ -567,16 +567,16 @@ async function antiedit(ctx) {
   if (!['on', 'off'].includes(arg)) {
     const current = db.getBotSetting('antiEdit');
     return send(sock, from, msg,
-      `✏️ *Anti-Edit*\n\n` +
-      `*Usage:* .antiedit on/off\n\n` +
-      `*Current:* ${current ? 'ON ✅' : 'OFF ❌'}\n\n` +
+      `✏️ *Anti-Edit*\n` +
+      `*Usage:* .antiedit on/off\n` +
+      `*Current:* ${current ? 'ON ✅' : 'OFF ❌'}\n` +
       `_When ON, any edited message (in groups OR DMs) is forwarded to your DM with the original text._`);
   }
   const enabled = arg === 'on';
   db.setBotSetting('antiEdit', enabled);
   await send(sock, from, msg, enabled
-    ? `✏️ *Anti-Edit: ON ✅*\n\n_Edited messages from ALL chats will be forwarded to your DM with the original content._`
-    : `🔴 *Anti-Edit: OFF ❌*\n\n_Edited messages will no longer be tracked._`);
+    ? `✏️ *Anti-Edit: ON ✅*\n_Edited messages from ALL chats will be forwarded to your DM with the original content._`
+    : `🔴 *Anti-Edit: OFF ❌*\n_Edited messages will no longer be tracked._`);
 }
 
 async function antideletestatus(ctx) {
@@ -586,16 +586,16 @@ async function antideletestatus(ctx) {
   if (!['on', 'off'].includes(arg)) {
     const current = db.getBotSetting('antiDeleteStatus');
     return send(sock, from, msg,
-      `🛡️ *Anti-Delete Status*\n\n` +
-      `*Usage:* .antideletestatus on/off\n\n` +
-      `*Current:* ${current ? 'ON ✅' : 'OFF ❌'}\n\n` +
+      `🛡️ *Anti-Delete Status*\n` +
+      `*Usage:* .antideletestatus on/off\n` +
+      `*Current:* ${current ? 'ON ✅' : 'OFF ❌'}\n` +
       `_When ON, if someone deletes their WhatsApp status the bot will secretly forward it to your DM._`);
   }
   const enabled = arg === 'on';
   db.setBotSetting('antiDeleteStatus', enabled);
   await send(sock, from, msg, enabled
-    ? `🛡️ *Anti-Delete Status: ON ✅*\n\n_If anyone deletes their status, I will forward it to your DM silently._`
-    : `🔴 *Anti-Delete Status: OFF ❌*\n\n_I will no longer track deleted statuses._`);
+    ? `🛡️ *Anti-Delete Status: ON ✅*\n_If anyone deletes their status, I will forward it to your DM silently._`
+    : `🔴 *Anti-Delete Status: OFF ❌*\n_I will no longer track deleted statuses._`);
 }
 
 async function autostatusreply(ctx) {
@@ -608,19 +608,19 @@ async function autostatusreply(ctx) {
     const custom = args.slice(1).join(' ').trim();
     if (!custom) return send(sock, from, msg, '❌ Usage: .autostatusreply text <message>\nExample: .autostatusreply text Facts! 💯');
     db.setBotSetting('autoStatusReplyMsg', custom);
-    return send(sock, from, msg, `✅ *Text status reply set!*\n\n📝 "${custom}"\n\n_Bot will send this when someone posts a text status_`);
+    return send(sock, from, msg, `✅ *Text status reply set!*\n📝 "${custom}"\n_Bot will send this when someone posts a text status_`);
   }
   if (arg === 'img' || arg === 'image' || arg === 'photo') {
     const custom = args.slice(1).join(' ').trim();
     if (!custom) return send(sock, from, msg, '❌ Usage: .autostatusreply img <message>\nExample: .autostatusreply img Fire pic! 😍');
     db.setBotSetting('autoStatusReplyImg', custom);
-    return send(sock, from, msg, `✅ *Image status reply set!*\n\n📸 "${custom}"\n\n_Bot will send this when someone posts an image status_`);
+    return send(sock, from, msg, `✅ *Image status reply set!*\n📸 "${custom}"\n_Bot will send this when someone posts an image status_`);
   }
   if (arg === 'video' || arg === 'vid') {
     const custom = args.slice(1).join(' ').trim();
     if (!custom) return send(sock, from, msg, '❌ Usage: .autostatusreply video <message>\nExample: .autostatusreply video Banger vid! 🎬');
     db.setBotSetting('autoStatusReplyVideo', custom);
-    return send(sock, from, msg, `✅ *Video status reply set!*\n\n🎬 "${custom}"\n\n_Bot will send this when someone posts a video status_`);
+    return send(sock, from, msg, `✅ *Video status reply set!*\n🎬 "${custom}"\n_Bot will send this when someone posts a video status_`);
   }
   if (arg === 'reset') {
     db.setBotSetting('autoStatusReplyMsg', '');
@@ -635,18 +635,18 @@ async function autostatusreply(ctx) {
     const imgMsg   = db.getBotSetting('autoStatusReplyImg')    || '_(random)_';
     const videoMsg = db.getBotSetting('autoStatusReplyVideo')  || '_(random)_';
     return send(sock, from, msg,
-      `💬 *Auto Status Reply*\n\n` +
-      `*Status:* ${current ? 'ON ✅' : 'OFF ❌'}\n\n` +
+      `💬 *Auto Status Reply*\n` +
+      `*Status:* ${current ? 'ON ✅' : 'OFF ❌'}\n` +
       `📝 *Text:* "${textMsg}"\n` +
       `📸 *Image:* "${imgMsg}"\n` +
-      `🎬 *Video:* "${videoMsg}"\n\n` +
+      `🎬 *Video:* "${videoMsg}"\n` +
       `*Commands:*\n` +
       `• .autostatusreply on — enable\n` +
       `• .autostatusreply off — disable\n` +
       `• .autostatusreply text <msg> — set text status reply\n` +
       `• .autostatusreply img <msg> — set image status reply\n` +
       `• .autostatusreply video <msg> — set video status reply\n` +
-      `• .autostatusreply reset — back to random replies\n\n` +
+      `• .autostatusreply reset — back to random replies\n` +
       `_When no custom message is set, a random reply is sent for each type_`);
   }
 
@@ -656,8 +656,8 @@ async function autostatusreply(ctx) {
   const imgMsg   = db.getBotSetting('autoStatusReplyImg')  || '(random)';
   const videoMsg = db.getBotSetting('autoStatusReplyVideo')|| '(random)';
   await send(sock, from, msg, enabled
-    ? `✅ *Auto Status Reply: ON*\n\n📝 Text: "${textMsg}"\n📸 Image: "${imgMsg}"\n🎬 Video: "${videoMsg}"\n\n_Different reply for each status type!_`
-    : `🔴 *Auto Status Reply: OFF*\n\nI will no longer reply to statuses.`);
+    ? `✅ *Auto Status Reply: ON*\n📝 Text: "${textMsg}"\n📸 Image: "${imgMsg}"\n🎬 Video: "${videoMsg}"\n_Different reply for each status type!_`
+    : `🔴 *Auto Status Reply: OFF*\nI will no longer reply to statuses.`);
 }
 
 // ── BROADCAST LIST ────────────────────────────────────────────────────────────
@@ -671,7 +671,7 @@ async function addbc(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
   if (!text) return send(sock, from, msg,
-    '📋 *Usage:* .addbc <number>\nExample: .addbc 254712345678\n\n_Add a contact to your broadcast list._');
+    '📋 *Usage:* .addbc <number>\nExample: .addbc 254712345678\n_Add a contact to your broadcast list._');
 
   const jid = normaliseJid(text);
   if (!jid) return send(sock, from, msg, '❌ Invalid number.');
@@ -703,11 +703,11 @@ async function listbc(ctx) {
   const list = db.getBroadcastList();
   if (list.length === 0) {
     return send(sock, from, msg,
-      '📋 *Broadcast List is empty.*\n\nAdd contacts with *.addbc <number>*');
+      '📋 *Broadcast List is empty.*\nAdd contacts with *.addbc <number>*');
   }
   const lines = list.map((jid, i) => `  ${i + 1}. +${jid.split('@')[0]}`).join('\n');
   await send(sock, from, msg,
-    `📋 *Broadcast List* (${list.length} contacts)\n\n${lines}\n\n_Use .broadcast <message> to send_`);
+    `📋 *Broadcast List* (${list.length} contacts)\n${lines}\n_Use .broadcast <message> to send_`);
 }
 
 async function clearbc(ctx) {
@@ -728,7 +728,7 @@ async function broadcast(ctx) {
   const list = db.getBroadcastList();
   if (list.length === 0) {
     return send(sock, from, msg,
-      '📋 *Broadcast list is empty!*\n\nAdd contacts first:\n*.addbc <number>*');
+      '📋 *Broadcast list is empty!*\nAdd contacts first:\n*.addbc <number>*');
   }
 
   const quoted = msg.message?.extendedTextMessage?.contextInfo;
@@ -737,8 +737,8 @@ async function broadcast(ctx) {
 
   if (!message && !hasMedia) {
     return send(sock, from, msg,
-      `📢 *Usage:* .broadcast <your message>\n\n` +
-      `📋 You have *${list.length}* contact(s) in your list.\n\n` +
+      `📢 *Usage:* .broadcast <your message>\n` +
+      `📋 You have *${list.length}* contact(s) in your list.\n` +
       `_Tip: You can also reply to an image/video with .broadcast <caption> to broadcast media._`);
   }
 
@@ -791,7 +791,7 @@ async function broadcast(ctx) {
   }
 
   await send(sock, from, msg,
-    `✅ *Broadcast complete!*\n\n` +
+    `✅ *Broadcast complete!*\n` +
     `📤 Sent: *${sent}*\n` +
     `❌ Failed: *${failed}*\n` +
     `📋 Total: *${list.length}*`);
@@ -806,11 +806,11 @@ async function dead(ctx) {
     const current = db.getBotSetting('deadMode') ? 'ON 💀' : 'OFF ✅';
     const customMsg = db.getBotSetting('deadMsg') || '_(default message)_';
     return send(sock, from, msg,
-      `💀 *Bot Dead Mode*\n\nStatus: *${current}*\nMessage: ${customMsg}\n\n` +
+      `💀 *Bot Dead Mode*\nStatus: *${current}*\nMessage: ${customMsg}\n` +
       `*Usage:*\n` +
       `• *.dead on* — enable dead mode\n` +
       `• *.dead on <custom msg>* — enable with custom reply\n` +
-      `• *.dead off* — disable dead mode\n\n` +
+      `• *.dead off* — disable dead mode\n` +
       `_When ON, all non-owner messages get the dead notice and commands are ignored._`
     );
   }
@@ -826,7 +826,7 @@ async function dead(ctx) {
   db.setBotSetting('deadMode', 1);
   const preview = customMsg || `💀 Bot is currently dead / offline.\n_Please try again later or contact the owner._`;
   await send(sock, from, msg,
-    `💀 *Dead mode enabled!*\n\nReply to all messages:\n_"${preview}"_\n\n` +
+    `💀 *Dead mode enabled!*\nReply to all messages:\n_"${preview}"_\n` +
     `_Send .dead off to bring the bot back online._`
   );
 }
@@ -838,9 +838,9 @@ async function away(ctx) {
   const sub = (args[0] || '').toLowerCase();
   if (!sub || (sub !== 'on' && sub !== 'off')) {
     return send(sock, from, msg,
-      `🌙 *Away Mode* — ${sessionState.name}\n\n` +
+      `🌙 *Away Mode* — ${sessionState.name}\n` +
       `Status: ${sessionState.awayMode ? '✅ ON' : '❌ OFF'}\n` +
-      `Message: _${sessionState.awayMsg}_\n\n` +
+      `Message: _${sessionState.awayMsg}_\n` +
       `*Usage:*\n` +
       `• .away on — enable with default message\n` +
       `• .away on <custom message> — set custom away message\n` +
@@ -866,7 +866,7 @@ async function away(ctx) {
   sessionState.awayReplied.clear();
 
   return send(sock, from, msg,
-    `🌙 Away mode *enabled* for *${sessionState.name}*!\n\n` +
+    `🌙 Away mode *enabled* for *${sessionState.name}*!\n` +
     `Anyone who DMs you will be told:\n_"${sessionState.awayMsg}"_`
   );
 }
@@ -890,14 +890,14 @@ async function dmgroup(ctx) {
 
   const customMsg = text?.trim();
   const defaultMsg =
-    `👋 Hey! Please save my number to your contacts so you can see my *WhatsApp status* updates 🙏\n\n` +
+    `👋 Hey! Please save my number to your contacts so you can see my *WhatsApp status* updates 🙏\n` +
     `_Save and you'll never miss a status!_ ✨`;
   const message = customMsg || defaultMsg;
 
   await send(sock, from, msg,
-    `📤 *Group DM Started*\n\n` +
+    `📤 *Group DM Started*\n` +
     `👥 Members: *${members.length}*\n` +
-    `⏱️ Estimated time: ~${members.length} min\n\n` +
+    `⏱️ Estimated time: ~${members.length} min\n` +
     `_Sending one per minute to stay safe and natural..._`);
 
   let sent = 0;
@@ -924,10 +924,10 @@ async function dmgroup(ctx) {
   }
 
   await send(sock, from, msg,
-    `✅ *Group DM Complete!*\n\n` +
+    `✅ *Group DM Complete!*\n` +
     `👥 Group: *${metadata.subject}*\n` +
     `📤 Sent: *${sent}*\n` +
-    `❌ Failed: *${failed}*\n\n` +
+    `❌ Failed: *${failed}*\n` +
     `_Everyone has been notified to save your number!_ 🔥`);
 }
 
@@ -939,23 +939,23 @@ async function mode(ctx) {
     const current = db.getBotSetting('botMode') || 'public';
     const badge = current === 'private' ? '🔒 PRIVATE' : '🌐 PUBLIC';
     return send(sock, from, msg,
-      `🤖 *Bot Mode*\n\n` +
-      `*Current:* ${badge}\n\n` +
+      `🤖 *Bot Mode*\n` +
+      `*Current:* ${badge}\n` +
       `🌐 *Public* — anyone can use bot commands\n` +
-      `🔒 *Private* — only the owner can use commands\n\n` +
+      `🔒 *Private* — only the owner can use commands\n` +
       `*Usage:*\n• .mode public\n• .mode private`);
   }
   db.setBotSetting('botMode', arg);
   if (arg === 'private') {
     await send(sock, from, msg,
-      `🔒 *Bot Mode: PRIVATE*\n\n` +
+      `🔒 *Bot Mode: PRIVATE*\n` +
       `Only you (the owner) can now use bot commands.\n` +
-      `Anyone else who tries will see:\n_"🔒 Bot is in private mode."_\n\n` +
+      `Anyone else who tries will see:\n_"🔒 Bot is in private mode."_\n` +
       `Use *.mode public* to open it back up.`);
   } else {
     await send(sock, from, msg,
-      `🌐 *Bot Mode: PUBLIC*\n\n` +
-      `Everyone can now use bot commands.\n\n` +
+      `🌐 *Bot Mode: PUBLIC*\n` +
+      `Everyone can now use bot commands.\n` +
       `Use *.mode private* to restrict to owner only.`);
   }
 }
@@ -967,11 +967,11 @@ async function statusstats(ctx) {
   const entries = Object.entries(stats);
   if (!entries.length) {
     return send(sock, from, msg,
-      `📊 *Status React Analytics*\n\n_No data yet. Enable auto react status and reactions will be tracked here!_\n\n💡 Tip: .autoreactstatus random`);
+      `📊 *Status React Analytics*\n_No data yet. Enable auto react status and reactions will be tracked here!_\n💡 Tip: .autoreactstatus random`);
   }
   const sorted = entries.sort((a, b) => b[1].total - a[1].total);
   const medals = ['🥇', '🥈', '🥉'];
-  let text = `📊 *Status React Analytics*\n${'─'.repeat(28)}\n\n`;
+  let text = `📊 *Status React Analytics*\n${'─'.repeat(28)}\n`;
   sorted.slice(0, 10).forEach(([jid, data], i) => {
     const num = jid.split('@')[0];
     const medal = medals[i] || `${i + 1}.`;
@@ -986,10 +986,10 @@ async function statusstats(ctx) {
     if (data.image) breakdown.push(`📸 ${data.image}`);
     if (data.video) breakdown.push(`🎬 ${data.video}`);
     if (breakdown.length) text += `   ${breakdown.join('  ')}\n`;
-    text += `   🕐 Last: ${lastSeen}\n\n`;
+    text += `   🕐 Last: ${lastSeen}\n`;
   });
-  if (sorted.length > 10) text += `_...and ${sorted.length - 10} more contacts_\n\n`;
-  text += `*Total contacts tracked:* ${sorted.length}\n*Total reacts sent:* ${sorted.reduce((s,[,d]) => s + d.total, 0)}\n\n_Use .clearstatusstats to reset_`;
+  if (sorted.length > 10) text += `_...and ${sorted.length - 10} more contacts_\n`;
+  text += `*Total contacts tracked:* ${sorted.length}\n*Total reacts sent:* ${sorted.reduce((s,[,d]) => s + d.total, 0)}\n_Use .clearstatusstats to reset_`;
   await send(sock, from, msg, text);
 }
 
@@ -997,7 +997,7 @@ async function clearstatusstats(ctx) {
   const { sock, from, msg } = ctx;
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
   db.clearStatusAnalytics();
-  await send(sock, from, msg, '🗑️ *Status react analytics cleared!*\n\n_Tracking starts fresh from now._');
+  await send(sock, from, msg, '🗑️ *Status react analytics cleared!*\n_Tracking starts fresh from now._');
 }
 
 // ─── DISK USAGE ──────────────────────────────────────────────────────────────
@@ -1050,14 +1050,14 @@ async function online(ctx) {
   if (val === 'on') {
     db.setBotSetting('alwaysOnline', true);
     await sock.sendPresenceUpdate('available').catch(() => {});
-    await send(sock, from, msg, '✅ *Always Online: ON*\n\nBot will appear online at all times.');
+    await send(sock, from, msg, '✅ *Always Online: ON*\nBot will appear online at all times.');
   } else if (val === 'off') {
     db.setBotSetting('alwaysOnline', false);
     await sock.sendPresenceUpdate('unavailable').catch(() => {});
-    await send(sock, from, msg, '🔴 *Always Online: OFF*\n\nBot will show offline when idle.');
+    await send(sock, from, msg, '🔴 *Always Online: OFF*\nBot will show offline when idle.');
   } else {
     const current = db.getBotSetting('alwaysOnline') ? 'ON ✅' : 'OFF ❌';
-    await send(sock, from, msg, `💤 *Always Online*\n\nCurrent: *${current}*\n\nUsage: .online on/off`);
+    await send(sock, from, msg, `💤 *Always Online*\nCurrent: *${current}*\nUsage: .online on/off`);
   }
 }
 
@@ -1067,7 +1067,7 @@ async function lastseen(ctx) {
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
   const val = args[0]?.toLowerCase();
   const options = { all: 'all', contacts: 'contacts', 'contact_blacklist': 'contact_blacklist', none: 'none' };
-  if (!options[val]) return send(sock, from, msg, '👁️ *Last Seen Privacy*\n\nUsage: .lastseen <value>\nOptions:\n• `all` — everyone\n• `contacts` — contacts only\n• `none` — no one\n\nExample: .lastseen none');
+  if (!options[val]) return send(sock, from, msg, '👁️ *Last Seen Privacy*\nUsage: .lastseen <value>\nOptions:\n• `all` — everyone\n• `contacts` — contacts only\n• `none` — no one\nExample: .lastseen none');
   try {
     await sock.updateLastSeenPrivacy(options[val]);
     await send(sock, from, msg, `✅ *Last Seen:* ${val}`);
@@ -1078,7 +1078,7 @@ async function ppprivacy(ctx) {
   const { sock, from, msg, args } = ctx;
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
   const val = args[0]?.toLowerCase();
-  if (!['all','contacts','none'].includes(val)) return send(sock, from, msg, '🖼️ *Profile Photo Privacy*\n\nUsage: .ppprivacy <all/contacts/none>');
+  if (!['all','contacts','none'].includes(val)) return send(sock, from, msg, '🖼️ *Profile Photo Privacy*\nUsage: .ppprivacy <all/contacts/none>');
   try {
     await sock.updateProfilePicturePrivacy(val);
     await send(sock, from, msg, `✅ *Profile Photo Privacy:* ${val}`);
@@ -1089,7 +1089,7 @@ async function readreceipts(ctx) {
   const { sock, from, msg, args } = ctx;
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
   const val = args[0]?.toLowerCase();
-  if (!['on','off'].includes(val)) return send(sock, from, msg, '👁️ *Read Receipts*\n\nUsage: .readreceipts on/off\n\nOFF = others won\'t see when you read their messages (blue ticks hidden).');
+  if (!['on','off'].includes(val)) return send(sock, from, msg, '👁️ *Read Receipts*\nUsage: .readreceipts on/off\nOFF = others won\'t see when you read their messages (blue ticks hidden).');
   try {
     await sock.updateReadReceiptsPrivacy(val === 'on' ? 'all' : 'none');
     await send(sock, from, msg, `✅ *Read Receipts:* ${val.toUpperCase()}`);
@@ -1101,7 +1101,7 @@ async function gcaddprivacy(ctx) {
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
   const val = args[0]?.toLowerCase();
   if (!['all','contacts','contact_blacklist','none'].includes(val))
-    return send(sock, from, msg, '👥 *Group Add Privacy*\n\nWho can add bot to groups?\nUsage: .gcaddprivacy <all/contacts/none>');
+    return send(sock, from, msg, '👥 *Group Add Privacy*\nWho can add bot to groups?\nUsage: .gcaddprivacy <all/contacts/none>');
   try {
     await sock.updateGroupsAddPrivacy(val);
     await send(sock, from, msg, `✅ *Group Add Privacy:* ${val}`);
@@ -1114,7 +1114,7 @@ async function toviewonce(ctx) {
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
   const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
   if (!quoted?.imageMessage && !quoted?.videoMessage)
-    return send(sock, from, msg, '👁️ *To View Once*\n\nReply to an image or video with `.toviewonce`\nSends it as a view-once message.');
+    return send(sock, from, msg, '👁️ *To View Once*\nReply to an image or video with `.toviewonce`\nSends it as a view-once message.');
   await send(sock, from, msg, '🔄 Converting to view once...');
   try {
     const qCtx = msg.message.extendedTextMessage.contextInfo;
@@ -1145,7 +1145,7 @@ async function vv2(ctx) {
 
   if (!quotedMsg || !stanzaId) {
     return send(sock, from, msg,
-      '👁️ *View Once Opener (VV2)*\n\nReply to a view-once message with `.vv2`\nThe bot will resend it as a normal message.\n\n_Works on photos, videos and audio._');
+      '👁️ *View Once Opener (VV2)*\nReply to a view-once message with `.vv2`\nThe bot will resend it as a normal message.\n_Works on photos, videos and audio._');
   }
 
   // ── 1. Try the view-once cache first (fastest, most reliable) ────────────
@@ -1202,7 +1202,7 @@ async function vv2(ctx) {
       await sock.sendMessage(from, { audio: buffer, mimetype: mediaData?.mimetype || 'audio/mp4', ptt: mediaData?.ptt || false }, { quoted: msg });
 
   } catch (err) {
-    await send(sock, from, msg, `❌ Could not open view-once: ${err.message}\n\n_Tip: The media may have expired. Ask them to resend it._`);
+    await send(sock, from, msg, `❌ Could not open view-once: ${err.message}\n_Tip: The media may have expired. Ask them to resend it._`);
   }
 }
 
@@ -1231,7 +1231,7 @@ async function listblocked(ctx) {
     const blocklist = await sock.fetchBlocklist();
     if (!blocklist?.length) return send(sock, from, msg, '✅ No blocked contacts.');
     const lines = blocklist.map((j, i) => `${i + 1}. +${j.split('@')[0]}`).join('\n');
-    await send(sock, from, msg, `🚫 *Blocked Contacts (${blocklist.length})*\n\n${lines}`);
+    await send(sock, from, msg, `🚫 *Blocked Contacts (${blocklist.length})*\n${lines}`);
   } catch (err) { await send(sock, from, msg, `❌ Failed: ${err.message}`); }
 }
 
@@ -1243,7 +1243,7 @@ async function groupid(ctx) {
   try {
     const metadata = await sock.groupMetadata(from);
     await send(sock, from, msg,
-      `🆔 *Group ID*\n\n📌 *Name:* ${metadata.subject}\n🔑 *JID:* ${from}\n👥 *Members:* ${metadata.participants.length}`
+      `🆔 *Group ID*\n📌 *Name:* ${metadata.subject}\n🔑 *JID:* ${from}\n👥 *Members:* ${metadata.participants.length}`
     );
   } catch (err) { await send(sock, from, msg, `❌ Failed: ${err.message}`); }
 }
@@ -1265,7 +1265,7 @@ async function deljunk(ctx) {
       }
     }
     await send(sock, from, msg,
-      `🗑️ *Junk Cleaned*\n\n` +
+      `🗑️ *Junk Cleaned*\n` +
       `📁 Files deleted: *${deleted}*\n` +
       `💾 Space freed: *${(freed / 1024).toFixed(1)} KB*`
     );
@@ -1281,9 +1281,9 @@ async function update(ctx) {
     const { execSync } = require('child_process');
     const current = require('../../package.json').version || '2.0.0';
     await send(sock, from, msg,
-      `📦 *Firebox Bot Update Check*\n\n` +
+      `📦 *Firebox Bot Update Check*\n` +
       `🏷️ *Current Version:* v${current}\n` +
-      `✅ *Status:* Up to date\n\n` +
+      `✅ *Status:* Up to date\n` +
       `_To update manually: git pull && npm install_\n` +
       `_Then use .restart to apply changes._`
     );
@@ -1295,7 +1295,7 @@ async function setprofilepic(ctx) {
   const { sock, from, msg } = ctx;
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
   const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-  if (!quoted?.imageMessage) return send(sock, from, msg, '🖼️ *Set Profile Photo*\n\nReply to an image with `.setprofilepic`');
+  if (!quoted?.imageMessage) return send(sock, from, msg, '🖼️ *Set Profile Photo*\nReply to an image with `.setprofilepic`');
   try {
     const qCtx = msg.message.extendedTextMessage.contextInfo;
     const fakeMsg = { key: { remoteJid: from, id: qCtx.stanzaId, fromMe: false, participant: qCtx.participant }, message: quoted };
@@ -1314,7 +1314,7 @@ async function aza(ctx) {
   const current = db.getBotSetting('azaEnabled');
   const msg2 = db.getBotSetting('azaMsg') || '🚀 Auto reply is active. The owner is away.';
   await send(sock, from, msg,
-    `🤖 *AZA (Auto Away)*\n\n*Status:* ${current ? '✅ ON' : '❌ OFF'}\n*Message:* "${msg2}"\n\n` +
+    `🤖 *AZA (Auto Away)*\n*Status:* ${current ? '✅ ON' : '❌ OFF'}\n*Message:* "${msg2}"\n` +
     `Commands:\n• .setaza <message> — set auto reply message\n• .aza on/off — toggle AZA\n• .resetaza — reset to default`
   );
 }
@@ -1332,7 +1332,7 @@ async function setaza(ctx) {
   if (!text) return send(sock, from, msg, '❌ Usage: .setaza <auto reply message>');
   db.setBotSetting('azaMsg', text);
   db.setBotSetting('azaEnabled', true);
-  await send(sock, from, msg, `✅ *AZA message set:*\n_"${text}"_\n\nAZA is now *ON*.`);
+  await send(sock, from, msg, `✅ *AZA message set:*\n_"${text}"_\nAZA is now *ON*.`);
 }
 
 async function resetaza(ctx) {
@@ -1350,7 +1350,7 @@ async function autosavestatus(ctx) {
   const val = args[0]?.toLowerCase();
   if (!['on','off'].includes(val)) {
     const current = db.getBotSetting('autoSaveStatus');
-    return send(sock, from, msg, `💾 *Auto Save Status*\n\nSaves all contacts' statuses automatically.\n\nCurrent: *${current ? 'ON ✅' : 'OFF ❌'}*\nUsage: .autosavestatus on/off`);
+    return send(sock, from, msg, `💾 *Auto Save Status*\nSaves all contacts' statuses automatically.\nCurrent: *${current ? 'ON ✅' : 'OFF ❌'}*\nUsage: .autosavestatus on/off`);
   }
   db.setBotSetting('autoSaveStatus', val === 'on');
   await send(sock, from, msg, val === 'on' ? '✅ *Auto Save Status: ON*\nAll statuses will be saved to your device.' : '🔴 *Auto Save Status: OFF*');
@@ -1402,7 +1402,7 @@ async function addsudo(ctx) {
   const list = db.getBotSetting('sudoUsers') || [];
   if (!list.includes(target)) list.push(target);
   db.setBotSetting('sudoUsers', list);
-  await send(sock, from, msg, `✅ *@${target.split('@')[0]}* added to sudo users!\n\nSudo users have owner-level access to bot commands.`);
+  await send(sock, from, msg, `✅ *@${target.split('@')[0]}* added to sudo users!\nSudo users have owner-level access to bot commands.`);
 }
 
 async function delsudo(ctx) {
@@ -1422,7 +1422,7 @@ async function listsudo(ctx) {
   const list = db.getBotSetting('sudoUsers') || [];
   if (!list.length) return send(sock, from, msg, '📋 No sudo users configured. Use .addsudo to add one.');
   const lines = list.map((u, i) => `${i + 1}. @${u.split('@')[0]}`).join('\n');
-  await send(sock, from, msg, `👑 *Sudo Users (${list.length})*\n\n${lines}`, { mentions: list });
+  await send(sock, from, msg, `👑 *Sudo Users (${list.length})*\n${lines}`, { mentions: list });
 }
 
 // ─── IGNORE LIST ─────────────────────────────────────────────────────────────
@@ -1435,7 +1435,7 @@ async function addignorelist(ctx) {
   const list = db.getBotSetting('ignoreList') || [];
   if (!list.includes(target)) list.push(target);
   db.setBotSetting('ignoreList', list);
-  await send(sock, from, msg, `✅ *@${target.split('@')[0]}* added to ignore list.\n\nBot will ignore all their messages/commands.`);
+  await send(sock, from, msg, `✅ *@${target.split('@')[0]}* added to ignore list.\nBot will ignore all their messages/commands.`);
 }
 
 async function delignorelist(ctx) {
@@ -1455,14 +1455,14 @@ async function listignorelist(ctx) {
   const list = db.getBotSetting('ignoreList') || [];
   if (!list.length) return send(sock, from, msg, '📋 Ignore list is empty.');
   const lines = list.map((u, i) => `${i + 1}. @${u.split('@')[0]}`).join('\n');
-  await send(sock, from, msg, `🚫 *Ignore List (${list.length})*\n\n${lines}`, { mentions: list });
+  await send(sock, from, msg, `🚫 *Ignore List (${list.length})*\n${lines}`, { mentions: list });
 }
 
 // ─── COUNTRY CODES ───────────────────────────────────────────────────────────
 async function addcountrycode(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
-  if (!text) return send(sock, from, msg, '❌ Usage: .addcountrycode <code>\nExample: .addcountrycode 254 (Kenya)\n\nOnly numbers starting with allowed codes can join groups when antiforeign is ON.');
+  if (!text) return send(sock, from, msg, '❌ Usage: .addcountrycode <code>\nExample: .addcountrycode 254 (Kenya)\nOnly numbers starting with allowed codes can join groups when antiforeign is ON.');
   const code = text.replace(/[^0-9]/g, '');
   const list = db.getBotSetting('allowedCountryCodes') || [];
   if (!list.includes(code)) list.push(code);
@@ -1484,15 +1484,15 @@ async function listcountrycode(ctx) {
   const { sock, from, msg } = ctx;
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
   const list = db.getBotSetting('allowedCountryCodes') || [];
-  if (!list.length) return send(sock, from, msg, '📋 No country codes whitelisted. All countries allowed.\n\nUse .addcountrycode <code> to restrict.');
-  await send(sock, from, msg, `📋 *Allowed Country Codes (${list.length})*\n\n${list.map((c, i) => `${i + 1}. +${c}`).join('\n')}`);
+  if (!list.length) return send(sock, from, msg, '📋 No country codes whitelisted. All countries allowed.\nUse .addcountrycode <code> to restrict.');
+  await send(sock, from, msg, `📋 *Allowed Country Codes (${list.length})*\n${list.map((c, i) => `${i + 1}. +${c}`).join('\n')}`);
 }
 
 // ─── GLOBAL BAD WORDS ────────────────────────────────────────────────────────
 async function addbadword(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
-  if (!text) return send(sock, from, msg, '❌ Usage: .addbadword <word>\n\n_Adds a global bad word that triggers action in ALL groups._');
+  if (!text) return send(sock, from, msg, '❌ Usage: .addbadword <word>\n_Adds a global bad word that triggers action in ALL groups._');
   const list = db.getBotSetting('globalBadWords') || [];
   const word = text.toLowerCase().trim();
   if (!list.includes(word)) list.push(word);
@@ -1514,7 +1514,7 @@ async function listbadword(ctx) {
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
   const list = db.getBotSetting('globalBadWords') || [];
   if (!list.length) return send(sock, from, msg, '📋 No global bad words configured.');
-  await send(sock, from, msg, `🚫 *Global Bad Words (${list.length})*\n\n${list.map((w, i) => `${i + 1}. ${w}`).join('\n')}`);
+  await send(sock, from, msg, `🚫 *Global Bad Words (${list.length})*\n${list.map((w, i) => `${i + 1}. ${w}`).join('\n')}`);
 }
 
 // ─── SETTINGS COMMANDS ───────────────────────────────────────────────────────
@@ -1525,7 +1525,7 @@ function mkToggle(key, label) {
     const val = args[0]?.toLowerCase();
     if (!['on','off'].includes(val)) {
       const current = db.getBotSetting(key);
-      return send(sock, from, msg, `⚙️ *${label}*\n\nCurrent: *${current ? 'ON ✅' : 'OFF ❌'}*\nUsage: .${ctx.command} on/off`);
+      return send(sock, from, msg, `⚙️ *${label}*\nCurrent: *${current ? 'ON ✅' : 'OFF ❌'}*\nUsage: .${ctx.command} on/off`);
     }
     db.setBotSetting(key, val === 'on');
     await send(sock, from, msg, val === 'on' ? `✅ *${label}: ON*` : `🔴 *${label}: OFF*`);
@@ -1547,7 +1547,7 @@ const statusdelay      = async function(ctx) {
   const { sock, from, msg, args } = ctx;
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
   const delay = parseInt(args[0]);
-  if (isNaN(delay) || delay < 0) return send(sock, from, msg, `⏱️ *Status Delay*\n\nCurrent: *${db.getBotSetting('statusDelay') || 1000}ms*\nUsage: .statusdelay <ms>\nExample: .statusdelay 2000`);
+  if (isNaN(delay) || delay < 0) return send(sock, from, msg, `⏱️ *Status Delay*\nCurrent: *${db.getBotSetting('statusDelay') || 1000}ms*\nUsage: .statusdelay <ms>\nExample: .statusdelay 2000`);
   db.setBotSetting('statusDelay', delay);
   await send(sock, from, msg, `✅ *Status delay set to ${delay}ms*`);
 };
@@ -1583,7 +1583,7 @@ async function setownernumber(ctx) {
 async function settimezone(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
-  if (!text) return send(sock, from, msg, `⏰ *Timezone*\n\nCurrent: *${db.getBotSetting('timezone') || 'UTC'}*\nUsage: .settimezone <timezone>\nExample: .settimezone Africa/Nairobi`);
+  if (!text) return send(sock, from, msg, `⏰ *Timezone*\nCurrent: *${db.getBotSetting('timezone') || 'UTC'}*\nUsage: .settimezone <timezone>\nExample: .settimezone Africa/Nairobi`);
   db.setBotSetting('timezone', text.trim());
   process.env.TZ = text.trim();
   await send(sock, from, msg, `✅ *Timezone set to:* ${text.trim()}`);
@@ -1634,7 +1634,7 @@ async function setfont(ctx) {
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
   const fonts = ['bold', 'italic', 'bolditalic', 'mono', 'normal', 'smallcaps'];
   if (!text || !fonts.includes(text.toLowerCase()))
-    return send(sock, from, msg, `🔤 *Set Font*\n\nUsage: .setfont <style>\nOptions: ${fonts.join(', ')}\n\nCurrent: ${db.getBotSetting('defaultFont') || 'normal'}`);
+    return send(sock, from, msg, `🔤 *Set Font*\nUsage: .setfont <style>\nOptions: ${fonts.join(', ')}\nCurrent: ${db.getBotSetting('defaultFont') || 'normal'}`);
   db.setBotSetting('defaultFont', text.toLowerCase());
   await send(sock, from, msg, `✅ *Default font set to:* ${text.toLowerCase()}`);
 }
@@ -1647,14 +1647,14 @@ async function setmenu(ctx) {
     return send(sock, from, msg, '✅ *Custom menu cleared.* Using default menu.');
   }
   db.setBotSetting('customMenu', text);
-  await send(sock, from, msg, `✅ *Custom menu set!*\n\nPreview when using .menu:\n${text.slice(0, 200)}`);
+  await send(sock, from, msg, `✅ *Custom menu set!*\nPreview when using .menu:\n${text.slice(0, 200)}`);
 }
 
 async function setmenuimage(ctx) {
   const { sock, from, msg } = ctx;
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
   const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-  if (!quoted?.imageMessage) return send(sock, from, msg, '🖼️ *Set Menu Image*\n\nReply to an image with `.setmenuimage`\nThis image will be shown with the .menu command.');
+  if (!quoted?.imageMessage) return send(sock, from, msg, '🖼️ *Set Menu Image*\nReply to an image with `.setmenuimage`\nThis image will be shown with the .menu command.');
   try {
     const qCtx = msg.message.extendedTextMessage.contextInfo;
     const fakeMsg = { key: { remoteJid: from, id: qCtx.stanzaId, fromMe: false, participant: qCtx.participant }, message: quoted };
@@ -1671,7 +1671,7 @@ async function setwarn(ctx) {
   const { sock, from, msg, args } = ctx;
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
   const n = parseInt(args[0]);
-  if (isNaN(n) || n < 1) return send(sock, from, msg, `⚠️ *Set Warn Limit*\n\nCurrent: *${db.getBotSetting('warnLimit') || 3}* strikes\nUsage: .setwarn <number>\nExample: .setwarn 5`);
+  if (isNaN(n) || n < 1) return send(sock, from, msg, `⚠️ *Set Warn Limit*\nCurrent: *${db.getBotSetting('warnLimit') || 3}* strikes\nUsage: .setwarn <number>\nExample: .setwarn 5`);
   db.setBotSetting('warnLimit', n);
   await send(sock, from, msg, `✅ *Warn limit set to ${n} strikes.*\nMembers will be kicked after ${n} warnings.`);
 }
@@ -1684,17 +1684,17 @@ async function anticalldm(ctx) {
   if (val !== 'on' && val !== 'off') {
     const current = db.getBotSetting('anticallDm') ? 'ON ✅' : 'OFF ❌';
     return send(sock, from, msg,
-      `📵 *Anti-Call DM*\n\nCurrent status: *${current}*\n\n` +
-      `Usage: *.anticalldm on* or *.anticalldm off*\n\n` +
-      `When ON, any DM voice/video call to this bot is instantly rejected and the caller gets a warning message.\n\n` +
+      `📵 *Anti-Call DM*\nCurrent status: *${current}*\n` +
+      `Usage: *.anticalldm on* or *.anticalldm off*\n` +
+      `When ON, any DM voice/video call to this bot is instantly rejected and the caller gets a warning message.\n` +
       `Customize the message with *.setanticallmsg <text>*`
     );
   }
   db.setBotSetting('anticallDm', val === 'on' ? 1 : 0);
   await send(sock, from, msg,
     val === 'on'
-      ? `✅ *Anti-Call DM enabled!*\n\nAll incoming DM calls will now be rejected automatically.`
-      : `❌ *Anti-Call DM disabled.*\n\nDM calls will no longer be auto-rejected.`
+      ? `✅ *Anti-Call DM enabled!*\nAll incoming DM calls will now be rejected automatically.`
+      : `❌ *Anti-Call DM disabled.*\nDM calls will no longer be auto-rejected.`
   );
 }
 
@@ -1714,12 +1714,12 @@ async function delanticallmsg(ctx) {
 async function showanticallmsg(ctx) {
   const { sock, from, msg } = ctx;
   const m = db.getBotSetting('antiCallMsg') || '❌ Calls are not allowed!';
-  await send(sock, from, msg, `📞 *Anti-Call Message:*\n\n_"${m}"_`);
+  await send(sock, from, msg, `📞 *Anti-Call Message:*\n_"${m}"_`);
 }
 async function testanticallmsg(ctx) {
   const { sock, from, msg } = ctx;
   const m = db.getBotSetting('antiCallMsg') || '❌ Calls are not allowed!';
-  await send(sock, from, msg, `📞 *[TEST] Anti-Call Message:*\n\n${m}`);
+  await send(sock, from, msg, `📞 *[TEST] Anti-Call Message:*\n${m}`);
 }
 
 // ─── WELCOME / GOODBYE MANAGEMENT ────────────────────────────────────────────
@@ -1739,7 +1739,7 @@ async function showwelcome(ctx) {
   const { sock, from, msg } = ctx;
   const grp = db.getGroup(from);
   const wm = grp.welcomeMsg || '👋 Welcome {name} to *{group}*!';
-  await send(sock, from, msg, `👋 *Welcome Message:*\n\n${wm}\n\n_Status: ${grp.welcome ? '✅ ON' : '❌ OFF'}_`);
+  await send(sock, from, msg, `👋 *Welcome Message:*\n${wm}\n_Status: ${grp.welcome ? '✅ ON' : '❌ OFF'}_`);
 }
 async function testwelcome(ctx) {
   const { sock, from, msg, sender } = ctx;
@@ -1747,7 +1747,7 @@ async function testwelcome(ctx) {
   const meta = await sock.groupMetadata(from).catch(() => ({ subject: 'Test Group' }));
   const wm = (grp.welcomeMsg || '👋 Welcome {name} to *{group}*!')
     .replace('{name}', `@${sender.split('@')[0]}`).replace('{group}', meta.subject);
-  await sendFireboxCard(sock, from, msg, { title: '👋 Test Welcome', content: `*[TEST] Welcome Message:*\n\n${wm}`, mentions: [sender] });
+  await sendFireboxCard(sock, from, msg, { title: '👋 Test Welcome', content: `*[TEST] Welcome Message:*\n${wm}`, mentions: [sender] });
 }
 async function delgoodbye(ctx) {
   const { sock, from, msg } = ctx;
@@ -1758,13 +1758,13 @@ async function showgoodbye(ctx) {
   const { sock, from, msg } = ctx;
   const grp = db.getGroup(from);
   const gm = grp.goodbyeMsg || '👋 Goodbye {name}! We\'ll miss you.';
-  await send(sock, from, msg, `👋 *Goodbye Message:*\n\n${gm}`);
+  await send(sock, from, msg, `👋 *Goodbye Message:*\n${gm}`);
 }
 async function testgoodbye(ctx) {
   const { sock, from, msg, sender } = ctx;
   const grp = db.getGroup(from);
   const gm = (grp.goodbyeMsg || '👋 Goodbye {name}! We\'ll miss you.').replace('{name}', `@${sender.split('@')[0]}`);
-  await sendFireboxCard(sock, from, msg, { title: '👋 Test Goodbye', content: `*[TEST] Goodbye Message:*\n\n${gm}`, mentions: [sender] });
+  await sendFireboxCard(sock, from, msg, { title: '👋 Test Goodbye', content: `*[TEST] Goodbye Message:*\n${gm}`, mentions: [sender] });
 }
 
 // ─── GET SETTINGS / RESET ────────────────────────────────────────────────────
@@ -1777,18 +1777,18 @@ async function getsettings(ctx) {
     return `📌 ${label}: ${val || 'not set'}`;
   };
   await send(sock, from, msg,
-    `⚙️ *Bot Settings*\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n\n` +
+    `⚙️ *Bot Settings*\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
     `*Mode:* ${db.getBotSetting('botMode') || 'public'}\n` +
-    `*Prefix:* ${process.env.PREFIX || '.'}\n\n` +
+    `*Prefix:* ${process.env.PREFIX || '.'}\n` +
     `*Automation:*\n` +
     `${s('aiChatbot','AI Chatbot')}\n${s('autoViewStatus','Auto View Status')}\n` +
     `${s('autoReactStatus','Auto React Status')}\n${s('autoRead','Auto Read')}\n` +
     `${s('autoType','Auto Typing')}\n${s('autoRecord','Auto Record')}\n` +
-    `${s('alwaysOnline','Always Online')}\n${s('autoBio','Auto Bio')}\n\n` +
+    `${s('alwaysOnline','Always Online')}\n${s('autoBio','Auto Bio')}\n` +
     `*Protection:*\n` +
     `${s('antiDelete','Anti Delete')}\n${s('antiEdit','Anti Edit')}\n` +
     `${s('antiCall','Anti Call')}\n${s('antiViewOnce','Anti View Once')}\n` +
-    `${s('antiBug','Anti Bug')}\n\n` +
+    `${s('antiBug','Anti Bug')}\n` +
     `*Info:*\n` +
     `${s('botName','Bot Name','str')}\n${s('ownerName','Owner Name','str')}\n` +
     `${s('stickerAuthor','Sticker Author','str')}\n${s('watermark','Watermark','str')}\n` +
@@ -1800,7 +1800,7 @@ async function resetsetting(ctx) {
   const { sock, from, msg, args } = ctx;
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
   if (args[0]?.toLowerCase() !== 'confirm') {
-    return send(sock, from, msg, '⚠️ *Reset ALL Settings*\n\nThis will reset ALL bot settings to defaults!\n\nAre you sure? Type:\n`.resetsetting confirm`');
+    return send(sock, from, msg, '⚠️ *Reset ALL Settings*\nThis will reset ALL bot settings to defaults!\nAre you sure? Type:\n`.resetsetting confirm`');
   }
   const keysToReset = ['aiChatbot','autoViewStatus','autoReactStatus','autoRead','autoType','autoRecord','alwaysOnline','autoBio','antiDelete','antiEdit','antiCall','antiViewOnce','antiBug','autoBlock','botMode','statusDelay'];
   for (const key of keysToReset) db.setBotSetting(key, false);
@@ -1854,14 +1854,14 @@ async function setchannel(ctx) {
   if (!text) {
     const current = db.getBotSetting('channelLink');
     return send(sock, from, msg,
-      `📢 *Channel Link Command*\n\n` +
+      `📢 *Channel Link Command*\n` +
       `Usage: *.setchannel <link>*\n` +
-      `Example: .setchannel https://whatsapp.com/channel/xxxxxx\n\n` +
+      `Example: .setchannel https://whatsapp.com/channel/xxxxxx\n` +
       (current ? `Current link: ${current}` : `_No channel link set yet._`)
     );
   }
   db.setBotSetting('channelLink', text.trim());
-  await send(sock, from, msg, `✅ *Channel link saved!*\n\nUsers can now type *.channel* or *.follow* to get the link.`);
+  await send(sock, from, msg, `✅ *Channel link saved!*\nUsers can now type *.channel* or *.follow* to get the link.`);
 }
 
 async function showchannel(ctx) {
@@ -1869,5 +1869,5 @@ async function showchannel(ctx) {
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, '❌ Owner only!');
   const link = db.getBotSetting('channelLink');
   if (!link) return send(sock, from, msg, '❌ No channel link set. Use *.setchannel <link>* to set one.');
-  await send(sock, from, msg, `📢 *Current Channel Link:*\n\n${link}`);
+  await send(sock, from, msg, `📢 *Current Channel Link:*\n${link}`);
 }

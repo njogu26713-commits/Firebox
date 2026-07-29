@@ -32,9 +32,9 @@ async function bf(ctx) {
   const emoji = pct >= 80 ? '😍' : pct >= 60 ? '😊' : pct >= 40 ? '😐' : '😢';
   await send(sock, from, msg,
     `👤 *User:* @${sender.split('@')[0]}\n` +
-    `💑 *BF:* ${name}\n\n` +
+    `💑 *BF:* ${name}\n` +
     `${bar}\n` +
-    `💘 *Love:* ${pct}% ${emoji}\n\n` +
+    `💘 *Love:* ${pct}% ${emoji}\n` +
     `_${pct >= 80 ? 'Perfect match! 💍' : pct >= 60 ? 'Great couple! 💕' : pct >= 40 ? 'Could work with effort ✨' : 'Hmm... maybe not 😅'}_`,
     '💑 Boyfriend Meter');
 }
@@ -47,9 +47,9 @@ async function gf(ctx) {
   const emoji = pct >= 80 ? '😍' : pct >= 60 ? '😊' : pct >= 40 ? '😐' : '😢';
   await send(sock, from, msg,
     `👤 *User:* @${sender.split('@')[0]}\n` +
-    `💑 *GF:* ${name}\n\n` +
+    `💑 *GF:* ${name}\n` +
     `${bar}\n` +
-    `💘 *Love:* ${pct}% ${emoji}\n\n` +
+    `💘 *Love:* ${pct}% ${emoji}\n` +
     `_${pct >= 80 ? 'Perfect match! 💍' : pct >= 60 ? 'Great couple! 💕' : pct >= 40 ? 'Could work with effort ✨' : 'Hmm... maybe not 😅'}_`,
     '💑 Girlfriend Meter');
 }
@@ -64,11 +64,11 @@ async function couple(ctx) {
   const pct = randomPct();
   const bar = loveBar(pct);
   await send(sock, from, msg,
-    `👫 *Couple Compatibility*\n\n` +
+    `👫 *Couple Compatibility*\n` +
     `💙 @${sender.split('@')[0]}\n` +
-    `❤️ ${partner}\n\n` +
+    `❤️ ${partner}\n` +
     `${bar}\n` +
-    `💘 *Score:* ${pct}%\n\n` +
+    `💘 *Score:* ${pct}%\n` +
     `_${pct >= 80 ? '👑 Soulmates!' : pct >= 60 ? '💕 Great together!' : pct >= 40 ? '✨ Worth a shot!' : '💀 Disaster incoming 😂'}_`,
     '💑 Couple Meter');
 }
@@ -80,10 +80,10 @@ async function gay(ctx) {
   const pct = randomPct();
   const flags = pct >= 75 ? '🏳️‍🌈🏳️‍🌈🏳️‍🌈' : pct >= 50 ? '🏳️‍🌈🏳️‍🌈' : pct >= 25 ? '🏳️‍🌈' : '😐';
   await send(sock, from, msg,
-    `🏳️‍🌈 *Gay Meter*\n\n` +
-    `👤 *User:* ${target}\n\n` +
+    `🏳️‍🌈 *Gay Meter*\n` +
+    `👤 *User:* ${target}\n` +
     `${'🌈'.repeat(Math.round(pct / 10))}${'⬛'.repeat(10 - Math.round(pct / 10))}\n` +
-    `📊 *Score:* ${pct}% ${flags}\n\n` +
+    `📊 *Score:* ${pct}% ${flags}\n` +
     `_This is just for fun — all love is valid! 🌈_`,
     '🏳️‍🌈 Gay Meter');
 }
@@ -96,10 +96,10 @@ async function getjid(ctx) {
   const number = jid.split('@')[0];
   const type = jid.includes('g.us') ? '👥 Group' : '👤 User';
   await send(sock, from, msg,
-    `🔍 *JID Lookup*\n\n` +
+    `🔍 *JID Lookup*\n` +
     `📋 *JID:* \`${jid}\`\n` +
     `📱 *Number:* ${number}\n` +
-    `🏷️ *Type:* ${type}\n\n` +
+    `🏷️ *Type:* ${type}\n` +
     `_Tag someone or reply to a message to get their JID_`,
     '🔍 Get JID');
 }
@@ -122,9 +122,9 @@ async function device(ctx) {
   else device = 'WhatsApp App 📱';
 
   await send(sock, from, msg,
-    `📱 *Device Checker*\n\n` +
+    `📱 *Device Checker*\n` +
     `👤 *Number:* +${number}\n` +
-    `📲 *Device:* ${device}\n\n` +
+    `📲 *Device:* ${device}\n` +
     `_Note: This is an approximation based on message data_`,
     '📱 Device Info');
 }
@@ -145,15 +145,15 @@ async function movie(ctx) {
       return send(sock, from, msg, `❌ Movie not found: *${text}*\nTry a different title.`);
     }
     const content =
-      `🎬 *${d.Title}* (${d.Year})\n\n` +
+      `🎬 *${d.Title}* (${d.Year})\n` +
       `⭐ *Rating:* ${d.imdbRating}/10 (${d.imdbVotes} votes)\n` +
       `🎭 *Genre:* ${d.Genre}\n` +
       `⏱️ *Runtime:* ${d.Runtime}\n` +
       `🌍 *Language:* ${d.Language}\n` +
       `🏆 *Awards:* ${d.Awards}\n` +
       `🎥 *Director:* ${d.Director}\n` +
-      `👥 *Cast:* ${d.Actors}\n\n` +
-      `📖 *Plot:*\n${d.Plot}\n\n` +
+      `👥 *Cast:* ${d.Actors}\n` +
+      `📖 *Plot:*\n${d.Plot}\n` +
       `🔗 *IMDB:* https://www.imdb.com/title/${d.imdbID}`;
     await send(sock, from, msg, content, `🎬 ${d.Title}`);
   } catch (e) {
@@ -174,8 +174,8 @@ async function trailer(ctx) {
     if (match) {
       const videoId = match[1];
       await send(sock, from, msg,
-        `🎬 *Trailer: ${text}*\n\n` +
-        `▶️ https://www.youtube.com/watch?v=${videoId}\n\n` +
+        `🎬 *Trailer: ${text}*\n` +
+        `▶️ https://www.youtube.com/watch?v=${videoId}\n` +
         `_Open the link to watch the trailer_`,
         '🎬 Movie Trailer');
     } else {
@@ -215,7 +215,7 @@ async function readsite(ctx) {
       .trim()
       .slice(0, 800);
     await send(sock, from, msg,
-      `🌐 *${url}*\n\n${text2}…\n\n_First 800 characters of content_`,
+      `🌐 *${url}*\n${text2}…\n_First 800 characters of content_`,
       '🌐 Site Reader');
   } catch (e) {
     await send(sock, from, msg, `❌ Failed to read site: ${e.message}`);
@@ -250,11 +250,11 @@ async function goodmorning(ctx) {
   const greeting = MORNING_MSGS[Math.floor(Math.random() * MORNING_MSGS.length)];
   const hour = new Date().getHours();
   await send(sock, from, msg,
-    `☀️ *Good Morning!*\n\n` +
-    `👤 @${sender.split('@')[0]}\n\n` +
-    `${greeting}\n\n` +
+    `☀️ *Good Morning!*\n` +
+    `👤 @${sender.split('@')[0]}\n` +
+    `${greeting}\n` +
     `🕐 *Time:* ${new Date().toLocaleTimeString()}\n` +
-    `📅 *Date:* ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n\n` +
+    `📅 *Date:* ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n` +
     `_Have a wonderful day! 🌺_`,
     '☀️ Good Morning');
 }
@@ -263,11 +263,11 @@ async function goodnight(ctx) {
   const { sock, from, msg, sender } = ctx;
   const greeting = NIGHT_MSGS[Math.floor(Math.random() * NIGHT_MSGS.length)];
   await send(sock, from, msg,
-    `🌙 *Good Night!*\n\n` +
-    `👤 @${sender.split('@')[0]}\n\n` +
-    `${greeting}\n\n` +
+    `🌙 *Good Night!*\n` +
+    `👤 @${sender.split('@')[0]}\n` +
+    `${greeting}\n` +
     `🕐 *Time:* ${new Date().toLocaleTimeString()}\n` +
-    `📅 *Date:* ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n\n` +
+    `📅 *Date:* ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n` +
     `_Sleep well! 🌟_`,
     '🌙 Good Night');
 }
@@ -287,16 +287,16 @@ async function channelstatus(ctx) {
     const desc = info?.description ?? 'No description';
     const verified = info?.verification === 'VERIFIED' ? '✅ Verified' : '❌ Not Verified';
     await send(sock, from, msg,
-      `📢 *Channel Info*\n\n` +
+      `📢 *Channel Info*\n` +
       `📌 *Name:* ${name}\n` +
       `${verified}\n` +
       `👥 *Subscribers:* ${subs}\n` +
-      `📝 *Description:* ${desc}\n\n` +
+      `📝 *Description:* ${desc}\n` +
       `🔗 *Link:* ${text}`,
       '📢 Channel Status');
   } catch {
     await send(sock, from, msg,
-      `❌ *Could not fetch channel info*\n\nMake sure you sent a valid WhatsApp channel link.\n\n_Example: https://whatsapp.com/channel/..._`,
+      `❌ *Could not fetch channel info*\nMake sure you sent a valid WhatsApp channel link.\n_Example: https://whatsapp.com/channel/..._`,
       '📢 Channel Status');
   }
 }
@@ -314,7 +314,7 @@ async function hack(ctx) {
     `[*] Accessing database... ✓`,
     `[*] Extracting data... ████████████ 100%`,
     `[*] Covering tracks... ✓\n[*] Logs cleared.`,
-    `\n✅ *HACK COMPLETE!*\n\n👤 Target: ${target}\n📁 Files stolen: ${Math.floor(Math.random()*9000+1000)}\n🔐 Passwords cracked: ${Math.floor(Math.random()*20+5)}\n💳 Cards found: ${Math.floor(Math.random()*5+1)}\n\n_😂 Relax! This is just for fun!_`,
+    `\n✅ *HACK COMPLETE!*\n👤 Target: ${target}\n📁 Files stolen: ${Math.floor(Math.random()*9000+1000)}\n🔐 Passwords cracked: ${Math.floor(Math.random()*20+5)}\n💳 Cards found: ${Math.floor(Math.random()*5+1)}\n_😂 Relax! This is just for fun!_`,
   ];
 
   let sentMsg;
@@ -328,12 +328,12 @@ async function hack(ctx) {
     } else {
       try {
         await sock.sendMessage(from, {
-          text: `╔══════════════════════╗\n║  💻 *FIREBOX HACK*  ║\n╚══════════════════════╝\n\n${content}`,
+          text: `╔══════════════════════╗\n║  💻 *FIREBOX HACK*  ║\n╚══════════════════════╝\n${content}`,
           edit: sentMsg.key
         });
       } catch {
         sentMsg = await sock.sendMessage(from, {
-          text: `╔══════════════════════╗\n║  💻 *FIREBOX HACK*  ║\n╚══════════════════════╝\n\n${content}`
+          text: `╔══════════════════════╗\n║  💻 *FIREBOX HACK*  ║\n╚══════════════════════╝\n${content}`
         });
       }
     }
@@ -352,7 +352,7 @@ async function up(ctx) {
   const uptime = [d && `${d}d`, h && `${h}h`, m && `${m}m`, `${sec}s`].filter(Boolean).join(' ');
   const mem = process.memoryUsage();
   await send(sock, from, msg,
-    `✅ *Bot is Online!*\n\n` +
+    `✅ *Bot is Online!*\n` +
     `⏱️ *Uptime:* ${uptime}\n` +
     `💾 *RAM:* ${(mem.rss / 1024 / 1024).toFixed(1)} MB\n` +
     `⚡ *Status:* Running smoothly 🔥`,
@@ -379,10 +379,10 @@ async function snake(ctx) {
   const score = Math.floor(Math.random() * 50) + snakeLen * 10;
   const grid = board.map(r => r.join('')).join('\n');
   await send(sock, from, msg,
-    `${grid}\n\n` +
+    `${grid}\n` +
     `🟩 Head  🟢 Body  🍎 Food\n` +
     `📊 *Score:* ${score}\n` +
-    `📏 *Length:* ${snakeLen}\n\n` +
+    `📏 *Length:* ${snakeLen}\n` +
     `_Interactive snake coming soon!_`,
     '🐍 Snake Game');
 }
@@ -398,12 +398,12 @@ async function tictactoe(ctx) {
     `${cells[3]} ${cells[4]} ${cells[5]}\n` +
     `${cells[6]} ${cells[7]} ${cells[8]}`;
   await send(sock, from, msg,
-    `*Tic Tac Toe*\n\n` +
-    `${board}\n\n` +
+    `*Tic Tac Toe*\n` +
+    `${board}\n` +
     `*How to play:*\n` +
     `• Two players take turns\n` +
     `• ❌ vs ⭕\n` +
-    `• Get 3 in a row to win!\n\n` +
+    `• Get 3 in a row to win!\n` +
     `_Reply with a number (1-9) to make a move_\n` +
     `_Interactive mode coming soon!_`,
     '🎮 Tic Tac Toe');

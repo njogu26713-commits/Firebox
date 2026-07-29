@@ -23,7 +23,7 @@ async function sendButtons(sock, from, msg, text, buttons, sender, prefix, sessi
   const nums = ['1️⃣', '2️⃣', '3️⃣'];
   const lines = buttons.map((b, i) => `  *${i + 1}.* ${b.label}`).join('\n');
   await sock.sendMessage(from, {
-    text: `${text}\n\n💬 *Quick replies — send ${buttons.map((_, i) => i + 1).join(' or ')}:*\n\n${lines}`
+    text: `${text}\n💬 *Quick replies — send ${buttons.map((_, i) => i + 1).join(' or ')}:*\n${lines}`
   }, { quoted: msg });
   sessionState.pendingPrompts.set(sender, {
     type: 'cmd',
@@ -360,7 +360,7 @@ async function song(ctx) { return youtubeAudio(ctx); }
 
 async function image(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '🖼️ *Image Search*\n\nUsage: `.image <search term>`\nExample: `.image Nairobi skyline`');
+  if (!text) return send(sock, from, msg, '🖼️ *Image Search*\nUsage: `.image <search term>`\nExample: `.image Nairobi skyline`');
   await send(sock, from, msg, `🔍 Searching images for *${text}*...`);
   try {
     const q = encodeURIComponent(text);
@@ -374,7 +374,7 @@ async function image(ctx) {
 
 async function apk(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '📱 *APK Downloader*\n\nUsage: `.apk <app name or package>`\nExample: `.apk WhatsApp`\n\n_Searches APKPure for the latest APK._');
+  if (!text) return send(sock, from, msg, '📱 *APK Downloader*\nUsage: `.apk <app name or package>`\nExample: `.apk WhatsApp`\n_Searches APKPure for the latest APK._');
   await send(sock, from, msg, `📱 Searching APK for *${text}*...`);
   try {
     const res = await axios.get(`https://apkpure.com/search?q=${encodeURIComponent(text)}`, {
@@ -386,22 +386,22 @@ async function apk(ctx) {
     if (nameMatch) {
       const appName = nameMatch[1].trim();
       await send(sock, from, msg,
-        `📱 *APK Found: ${appName}*\n\n` +
-        `🔗 Download: https://apkpure.com/search?q=${encodeURIComponent(text)}\n\n` +
+        `📱 *APK Found: ${appName}*\n` +
+        `🔗 Download: https://apkpure.com/search?q=${encodeURIComponent(text)}\n` +
         `_Visit the link to download the latest APK._`
       );
     } else {
       await send(sock, from, msg,
-        `📱 *APK Search: ${text}*\n\n` +
-        `🔗 Search results: https://apkpure.com/search?q=${encodeURIComponent(text)}\n\n` +
+        `📱 *APK Search: ${text}*\n` +
+        `🔗 Search results: https://apkpure.com/search?q=${encodeURIComponent(text)}\n` +
         `_Visit the link to find and download the APK._`
       );
     }
   } catch (err) {
     await send(sock, from, msg,
-      `📱 *APK: ${text}*\n\n` +
+      `📱 *APK: ${text}*\n` +
       `🔗 https://apkpure.com/search?q=${encodeURIComponent(text)}\n` +
-      `🔗 https://apkmirror.com/?post_type=app_release&searchtype=app&s=${encodeURIComponent(text)}\n\n` +
+      `🔗 https://apkmirror.com/?post_type=app_release&searchtype=app&s=${encodeURIComponent(text)}\n` +
       `_Click the links to download the APK manually._`
     );
   }
@@ -411,7 +411,7 @@ async function apk(ctx) {
 
 async function mediafire(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text || !text.includes('mediafire.com')) return send(sock, from, msg, '📁 *MediaFire Downloader*\n\nUsage: `.mediafire <mediafire link>`\nExample: `.mediafire https://www.mediafire.com/file/...`');
+  if (!text || !text.includes('mediafire.com')) return send(sock, from, msg, '📁 *MediaFire Downloader*\nUsage: `.mediafire <mediafire link>`\nExample: `.mediafire https://www.mediafire.com/file/...`');
   await send(sock, from, msg, '📁 Processing MediaFire link...');
   try {
     const res = await axios.get(text, { headers: { 'User-Agent': 'Mozilla/5.0' }, timeout: 15000 });
@@ -424,14 +424,14 @@ async function mediafire(ctx) {
       const name = nameMatch?.[1]?.trim() || 'file';
       const size = sizeMatch?.[1] || 'unknown size';
       await send(sock, from, msg,
-        `📁 *MediaFire Download*\n\n` +
+        `📁 *MediaFire Download*\n` +
         `📄 *File:* ${name}\n` +
         `💾 *Size:* ${size}\n` +
-        `🔗 *Direct Link:*\n${dlUrl}\n\n` +
+        `🔗 *Direct Link:*\n${dlUrl}\n` +
         `_Click the link to download directly._`
       );
     } else {
-      await send(sock, from, msg, `❌ Could not extract download link. The file may be private or deleted.\n\n🔗 ${text}`);
+      await send(sock, from, msg, `❌ Could not extract download link. The file may be private or deleted.\n🔗 ${text}`);
     }
   } catch (err) { await send(sock, from, msg, `❌ Failed to process MediaFire link: ${err.message}`); }
 }
@@ -440,15 +440,15 @@ async function mediafire(ctx) {
 
 async function gdrive(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '📂 *Google Drive Downloader*\n\nUsage: `.gdrive <drive share link>`\nExample: `.gdrive https://drive.google.com/file/d/...`\n\n_File must be set to "Anyone with the link"._');
+  if (!text) return send(sock, from, msg, '📂 *Google Drive Downloader*\nUsage: `.gdrive <drive share link>`\nExample: `.gdrive https://drive.google.com/file/d/...`\n_File must be set to "Anyone with the link"._');
   const match = text.match(/\/d\/([a-zA-Z0-9_-]+)/);
   if (!match) return send(sock, from, msg, '❌ Invalid Google Drive link. Make sure it looks like:\nhttps://drive.google.com/file/d/FILE_ID/view');
   const fileId = match[1];
   const directUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
   await send(sock, from, msg,
-    `📂 *Google Drive File*\n\n` +
+    `📂 *Google Drive File*\n` +
     `🆔 *File ID:* \`${fileId}\`\n` +
-    `🔗 *Direct Download Link:*\n${directUrl}\n\n` +
+    `🔗 *Direct Download Link:*\n${directUrl}\n` +
     `⚠️ _For files > 100MB, Google may show a warning page — click "Download anyway"._`
   );
 }
@@ -457,7 +457,7 @@ async function gdrive(ctx) {
 
 async function gitclone(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '🔗 *Git Clone*\n\nUsage: `.gitclone <github repo url>`\nExample: `.gitclone https://github.com/user/repo`\n\nGets repository info and clone command.');
+  if (!text) return send(sock, from, msg, '🔗 *Git Clone*\nUsage: `.gitclone <github repo url>`\nExample: `.gitclone https://github.com/user/repo`\nGets repository info and clone command.');
   let url = text.trim();
   if (!url.startsWith('http')) url = `https://github.com/${url}`;
   const match = url.match(/github\.com\/([^\/]+)\/([^\/\s]+)/);
@@ -473,20 +473,20 @@ async function gitclone(ctx) {
     const reply =
       `🔗 *${d.full_name}*\n` +
       `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
-      `📝 ${d.description || 'No description'}\n\n` +
+      `📝 ${d.description || 'No description'}\n` +
       `⭐ *Stars:* ${d.stargazers_count?.toLocaleString()}\n` +
       `🍴 *Forks:* ${d.forks_count?.toLocaleString()}\n` +
       `👁️ *Watchers:* ${d.watchers_count?.toLocaleString()}\n` +
       `🌿 *Default Branch:* ${d.default_branch}\n` +
       `💻 *Language:* ${d.language || 'N/A'}\n` +
-      `📦 *Size:* ${(d.size / 1024).toFixed(1)} MB\n\n` +
+      `📦 *Size:* ${(d.size / 1024).toFixed(1)} MB\n` +
       `*Clone Commands:*\n` +
       `\`git clone ${d.clone_url}\`\n` +
       `\`git clone ${d.ssh_url}\`\n` +
       `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰`;
     await send(sock, from, msg, reply);
   } catch (err) {
-    await send(sock, from, msg, `❌ Repo not found or private: *${owner}/${repo}*\n\nClone command:\n\`git clone https://github.com/${owner}/${repo}.git\``);
+    await send(sock, from, msg, `❌ Repo not found or private: *${owner}/${repo}*\nClone command:\n\`git clone https://github.com/${owner}/${repo}.git\``);
   }
 }
 
@@ -494,7 +494,7 @@ async function gitclone(ctx) {
 
 async function itunes(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '🎵 *iTunes Search*\n\nUsage: `.itunes <song/artist>`\nExample: `.itunes Blinding Lights The Weeknd`');
+  if (!text) return send(sock, from, msg, '🎵 *iTunes Search*\nUsage: `.itunes <song/artist>`\nExample: `.itunes Blinding Lights The Weeknd`');
   await send(sock, from, msg, `🎵 Searching iTunes for *${text}*...`);
   try {
     const res = await axios.get('https://itunes.apple.com/search', {
@@ -505,8 +505,8 @@ async function itunes(ctx) {
     const lines = results.map((s, i) => {
       const dur = s.trackTimeMillis ? `${Math.floor(s.trackTimeMillis / 60000)}:${String(Math.floor((s.trackTimeMillis % 60000) / 1000)).padStart(2, '0')}` : 'N/A';
       return `*${i + 1}.* 🎵 ${s.trackName}\n   👤 ${s.artistName} | 💿 ${s.collectionName || 'N/A'} | ⏱ ${dur}`;
-    }).join('\n\n');
-    await send(sock, from, msg, `🎵 *iTunes: "${text}"*\n\n${lines}\n\n_Use .song or .lyrics for more options_`);
+    }).join('\n');
+    await send(sock, from, msg, `🎵 *iTunes: "${text}"*\n${lines}\n_Use .song or .lyrics for more options_`);
   } catch (err) { await send(sock, from, msg, `❌ iTunes search failed: ${err.message}`); }
 }
 
@@ -516,9 +516,9 @@ async function telesticker(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text || !text.includes('t.me/addstickers/')) {
     return send(sock, from, msg,
-      '📦 *Telegram Sticker Pack*\n\n' +
+      '📦 *Telegram Sticker Pack*\n' +
       'Usage: `.telesticker <t.me/addstickers/pack-name>`\n' +
-      'Example: `.telesticker https://t.me/addstickers/HotCherry`\n\n' +
+      'Example: `.telesticker https://t.me/addstickers/HotCherry`\n' +
       '_Gets info about a Telegram sticker pack._'
     );
   }
@@ -534,14 +534,14 @@ async function telesticker(ctx) {
     const title = titleMatch?.[1]?.trim() || packName;
     const desc = descMatch?.[1]?.trim() || '';
     await send(sock, from, msg,
-      `📦 *Telegram Sticker Pack*\n\n` +
+      `📦 *Telegram Sticker Pack*\n` +
       `🏷️ *Name:* ${title}\n` +
       `${desc ? `📝 *Info:* ${desc}\n` : ''}` +
-      `🔗 *Link:* https://t.me/addstickers/${packName}\n\n` +
+      `🔗 *Link:* https://t.me/addstickers/${packName}\n` +
       `_Open the link in Telegram to add this sticker pack._`
     );
   } catch (err) {
-    await send(sock, from, msg, `📦 *Sticker Pack:* ${packName}\n🔗 https://t.me/addstickers/${packName}\n\n_Open this link in Telegram to add._`);
+    await send(sock, from, msg, `📦 *Sticker Pack:* ${packName}\n🔗 https://t.me/addstickers/${packName}\n_Open this link in Telegram to add._`);
   }
 }
 
@@ -552,8 +552,8 @@ async function videodoc(ctx) {
   const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
   if (!quoted?.videoMessage) {
     return send(sock, from, msg,
-      '📄 *Video as Document*\n\n' +
-      'Reply to a video message with `.videodoc`\n\n' +
+      '📄 *Video as Document*\n' +
+      'Reply to a video message with `.videodoc`\n' +
       '_Sends the video as a downloadable document file (no compression)._'
     );
   }
@@ -583,8 +583,8 @@ async function videodoc(ctx) {
 async function download(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text) return send(sock, from, msg,
-    '⬇️ *Universal Downloader*\n\n' +
-    'Usage: `.download <url>`\n\n' +
+    '⬇️ *Universal Downloader*\n' +
+    'Usage: `.download <url>`\n' +
     '*Supported platforms:*\n' +
     '• YouTube → `.song` or `.video`\n' +
     '• TikTok → `.tiktok`\n' +
@@ -606,7 +606,7 @@ async function download(ctx) {
   if (lower.includes('mediafire.com')) return mediafire(ctx);
   if (lower.includes('drive.google.com')) return gdrive(ctx);
   if (lower.includes('github.com')) return gitclone(ctx);
-  await send(sock, from, msg, `❌ Unsupported URL: ${text}\n\nFor help, use .download without a link to see supported platforms.`);
+  await send(sock, from, msg, `❌ Unsupported URL: ${text}\nFor help, use .download without a link to see supported platforms.`);
 }
 
 // ─── WALLPAPER ──────────────────────────────────────────────────────────────
@@ -628,7 +628,7 @@ async function wallpaper(ctx) {
 async function remini(ctx) {
   const { sock, from, msg } = ctx;
   const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-  if (!quoted?.imageMessage) return send(sock, from, msg, '✨ *Remini — Image Enhancer*\n\nReply to an image with `.remini` to enhance its quality.\n\n_Works best on blurry or low-resolution photos._');
+  if (!quoted?.imageMessage) return send(sock, from, msg, '✨ *Remini — Image Enhancer*\nReply to an image with `.remini` to enhance its quality.\n_Works best on blurry or low-resolution photos._');
   await send(sock, from, msg, '✨ Enhancing image quality...');
   try {
     const qCtx = msg.message.extendedTextMessage.contextInfo;
@@ -657,7 +657,7 @@ async function remini(ctx) {
       mimetype: 'image/jpeg'
     }, { quoted: msg });
   } catch (err) {
-    await send(sock, from, msg, `❌ Enhancement failed: ${err.message}\n\n_Note: Add DEEPAI_KEY to Config Vars for better results._`);
+    await send(sock, from, msg, `❌ Enhancement failed: ${err.message}\n_Note: Add DEEPAI_KEY to Config Vars for better results._`);
   }
 }
 

@@ -20,7 +20,7 @@ async function ping(ctx) {
   const ms = (performance.now() - start).toFixed(2);
   await sendFireboxCard(sock, from, msg, {
     title: '🏓 Ping',
-    content: `${f.bold('Pong!')} ⚡\n\n⚡ *Speed:* ${f.mono(ms + 'ms')}\n⏱️ *Uptime:* ${getUptime()}\n🏷️ *Version:* v2.0.0`,
+    content: `${f.bold('Pong!')} ⚡\n⚡ *Speed:* ${f.mono(ms + 'ms')}\n⏱️ *Uptime:* ${getUptime()}\n🏷️ *Version:* v2.0.0`,
   });
 }
 
@@ -36,7 +36,7 @@ async function info(ctx) {
     `📦 *Node.js:*  ${f.mono(process.version)}\n` +
     `🧠 *AI:*       ${f.italic('Google Gemini 2.0 Flash')}\n` +
     `📊 *Messages:* ${f.bold(String(sessionState.messageCount))}\n` +
-    `⚡ *Commands:* ${f.bold(String(sessionState.commandCount))}\n\n` +
+    `⚡ *Commands:* ${f.bold(String(sessionState.commandCount))}\n` +
     `_Built with ❤️ by Firebox_`;
   await sendFireboxCard(sock, from, msg, { title: '🤖 Bot Info', content });
 }
@@ -49,7 +49,7 @@ async function owner(ctx) {
     `👤 *Name:*   ${f.boldItalic(ownerName)}\n` +
     `📱 *Number:* ${f.mono('+' + ownerNumber)}\n` +
     `🤖 *Bot:*    ${f.italic('Firebox v2.0.0')}\n` +
-    `🌐 *Status:* ${f.bold('Online')} ✅\n\n` +
+    `🌐 *Status:* ${f.bold('Online')} ✅\n` +
     `_Contact owner for support_`;
   await sendFireboxCard(sock, from, msg, {
     title: '👑 Bot Owner',
@@ -64,7 +64,7 @@ async function runtime(ctx) {
   const { sock, from, msg } = ctx;
   await sendFireboxCard(sock, from, msg, {
     title: '⏱️ Bot Runtime',
-    content: `🔥 ${f.italic('Firebox')} has been running for:\n\n${f.mono(getUptime())}`,
+    content: `🔥 ${f.italic('Firebox')} has been running for:\n${f.mono(getUptime())}`,
   });
 }
 
@@ -368,12 +368,12 @@ async function menu(ctx) {
     const title = s.title.replace(/^\S+\s*/, '');
     const cmds  = s.rows.map(r => `  ┃ ${r.title}`).join('\n');
     return `┏━━━ ${icon} ${f.bold(title)}\n${cmds}\n┗━━━━━━━━━━━`;
-  }).join('\n\n');
+  }).join('\n');
 
   const header =
     `╔══════════════════════╗\n` +
     `║  🔥  ${f.bold('FIREBOX  BOT')}  🔥  ║\n` +
-    `╚══════════════════════╝\n\n` +
+    `╚══════════════════════╝\n` +
     `📌 ${f.smallCaps('Prefix')} » ${f.mono(p)}   ⏱️ ${f.smallCaps('Uptime')} » ${f.italic(getUptime())}\n` +
     `🌐 ${f.smallCaps('Mode')}   » ${f.bold(botMode.toUpperCase())}\n` +
     `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n`;
@@ -408,7 +408,7 @@ async function sendButtons(sock, from, msg, text, buttons, sender, prefix, sessi
   const lines = buttons.map((b, i) => `  *${i + 1}.* ${b.label}`).join('\n');
   await sendFireboxCard(sock, from, msg, {
     title: '📋 Select an Option',
-    content: `${text}\n\n${lines}`,
+    content: `${text}\n${lines}`,
   });
   sessionState.pendingPrompts.set(sender, {
     type: 'cmd',
@@ -601,7 +601,7 @@ async function help(ctx) {
   if (!entry) {
     await sendFireboxCard(sock, from, msg, {
       title: '❓ Help',
-      content: `❌ No help found for *${p}${query}*\n\nType *${p}menu* to see all commands.`,
+      content: `❌ No help found for *${p}${query}*\nType *${p}menu* to see all commands.`,
     });
     return;
   }
@@ -661,7 +661,7 @@ async function botstatus(ctx) {
     `🏷️ *Prefix:*   ${prefix}\n` +
     `⏱️ *Uptime:*   ${getUptime()}\n` +
     `💾 *RAM:*      ${(mem.rss / 1024 / 1024).toFixed(1)} MB\n` +
-    `📊 *Messages:* ${sessionState.messageCount}\n\n` +
+    `📊 *Messages:* ${sessionState.messageCount}\n` +
     flags.map(([k, v]) => `${k}: ${v}`).join('\n');
 
   await sendFireboxCard(sock, from, msg, { title: `🔥 ${botName} Status`, content });
@@ -674,12 +674,12 @@ async function pair(ctx) {
   const panelUrl = `https://${process.env.REPL_SLUG || 'firebox'}.replit.app/pair`;
   const content =
     `📱 *Bot Number:* +${botNum}\n` +
-    `⏱️ *Uptime:* ${getUptime()}\n\n` +
+    `⏱️ *Uptime:* ${getUptime()}\n` +
     `*To deploy on a new number:*\n` +
     `1️⃣ Open the bot's web panel\n` +
     `2️⃣ Go to */pair* page\n` +
     `3️⃣ Scan QR or enter phone number for pairing code\n` +
-    `4️⃣ Bot connects automatically!\n\n` +
+    `4️⃣ Bot connects automatically!\n` +
     `*To save session:*\n` +
     `• Click *Export Session ID* on the panel\n` +
     `• Save it to deploy anywhere instantly`;
@@ -698,7 +698,7 @@ async function repo(ctx) {
     `🏷️ *Version:*  v2.0.0\n` +
     `🤖 *Engine:*   @whiskeysockets/baileys\n` +
     `💡 *Language:* Node.js\n` +
-    `🧠 *AI:*       Google Gemini 2.0 Flash\n\n` +
+    `🧠 *AI:*       Google Gemini 2.0 Flash\n` +
     `📋 *Features:*\n` +
     `• 200+ commands across all categories\n` +
     `• AI chat, image generation, audio effects\n` +
@@ -706,7 +706,7 @@ async function repo(ctx) {
     `• Downloads: YT, TikTok, IG, FB, Twitter\n` +
     `• Ephoto360 image effects\n` +
     `• Bible & Quran verse lookup\n` +
-    `• Session export for easy deployment\n\n` +
+    `• Session export for easy deployment\n` +
     `_Powered by Firebox ❤️_`;
   await sendFireboxCard(sock, from, msg, {
     title: '📦 Firebox Bot Info',
@@ -726,7 +726,7 @@ async function channel(ctx) {
   }
   await sendFireboxCard(sock, from, msg, {
     title: '📢 Follow Our Channel!',
-    content: `👇 Tap the button below to follow!\n\n_Stay updated with the latest news and updates._`,
+    content: `👇 Tap the button below to follow!\n_Stay updated with the latest news and updates._`,
     buttons: [{ text: '📢 Join Channel', url: link }],
   });
 }

@@ -38,7 +38,7 @@ async function makeSticker(ctx) {
   const type = getContentType(target.message);
 
   if (!['imageMessage', 'videoMessage'].includes(type)) {
-    return send(sock, from, msg, '❌ Send or reply to an *image* or *video* with *.sticker*\n\nExample: Send a photo then type *.sticker*', '🎨 Make Sticker');
+    return send(sock, from, msg, '❌ Send or reply to an *image* or *video* with *.sticker*\nExample: Send a photo then type *.sticker*', '🎨 Make Sticker');
   }
 
   await send(sock, from, msg, '🎨 Creating sticker, please wait...', '🎨 Make Sticker');

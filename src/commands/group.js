@@ -190,7 +190,7 @@ async function link(ctx) {
   if (!admins) return;
   try {
     const code = await sock.groupInviteCode(from);
-    await send(sock, from, msg, `🔗 *Group Invite Link*\n\nhttps://chat.whatsapp.com/${code}`);
+    await send(sock, from, msg, `🔗 *Group Invite Link*\nhttps://chat.whatsapp.com/${code}`);
   } catch (err) {
     await send(sock, from, msg, `❌ Failed to get link: ${err.message}`);
   }
@@ -205,7 +205,7 @@ async function resetlink(ctx) {
   try {
     await sock.groupRevokeInvite(from);
     const code = await sock.groupInviteCode(from);
-    await send(sock, from, msg, `✅ *Invite link reset!*\n\nNew link: https://chat.whatsapp.com/${code}`);
+    await send(sock, from, msg, `✅ *Invite link reset!*\nNew link: https://chat.whatsapp.com/${code}`);
   } catch (err) {
     await send(sock, from, msg, `❌ Failed: ${err.message}`);
   }
@@ -223,7 +223,7 @@ async function tagall(ctx) {
   const members = metadata.participants.map(p => p.id);
   const mentions = members.map(m => `@${m.split('@')[0]}`).join(' ');
   await sock.sendMessage(from, {
-    text: `📢 *${text || 'Attention everyone!'}*\n\n${mentions}`,
+    text: `📢 *${text || 'Attention everyone!'}*\n${mentions}`,
     mentions: members
   }, { quoted: msg });
 }
@@ -251,7 +251,7 @@ async function tagadmin(ctx) {
   if (!admins.length) return send(sock, from, msg, '❌ No admins found!');
   const mentions = admins.map(a => `@${a.split('@')[0]}`).join(' ');
   await sock.sendMessage(from, {
-    text: `👮 *Admins*\n\n${mentions}${text ? '\n\n' + text : ''}`,
+    text: `👮 *Admins*\n${mentions}${text ? '\n' + text : ''}`,
     mentions: admins
   }, { quoted: msg });
 }
@@ -264,7 +264,7 @@ async function totalmembers(ctx) {
   const admins = metadata.participants.filter(p => p.admin).length;
   const regular = total - admins;
   await send(sock, from, msg,
-    `👥 *Group Members*\n\n` +
+    `👥 *Group Members*\n` +
     `📊 Total: *${total}*\n` +
     `👮 Admins: *${admins}*\n` +
     `👤 Members: *${regular}*`
@@ -320,7 +320,7 @@ async function warn(ctx) {
     }
   } else {
     await send(sock, from, msg,
-      `⚠️ *Warning ${count}/${MAX_WARNS}*\n\n👤 User: @${target.split('@')[0]}\n📝 Reason: ${reason}\n\n_${MAX_WARNS - count} warning(s) left before kick_`,
+      `⚠️ *Warning ${count}/${MAX_WARNS}*\n👤 User: @${target.split('@')[0]}\n📝 Reason: ${reason}\n_${MAX_WARNS - count} warning(s) left before kick_`,
       { mentions: [target] }
     );
   }
@@ -359,8 +359,8 @@ async function antiban(ctx) {
   if (val !== 'on' && val !== 'off') return send(sock, from, msg, '❌ Usage: .antiban on/off');
   db.setGroup(from, { antiban: val === 'on' ? 1 : 0 });
   await send(sock, from, msg, val === 'on'
-    ? '🛡️ *Anti-Ban: ON ✅*\n\n_Bot will now simulate human typing with random delays before responding in this group to reduce ban risk._'
-    : '🔴 *Anti-Ban: OFF ❌*\n\n_Bot will respond instantly in this group._');
+    ? '🛡️ *Anti-Ban: ON ✅*\n_Bot will now simulate human typing with random delays before responding in this group to reduce ban risk._'
+    : '🔴 *Anti-Ban: OFF ❌*\n_Bot will respond instantly in this group._');
 }
 
 async function antilink(ctx) {
@@ -404,7 +404,7 @@ async function setwelcome(ctx) {
   if (!admins) return;
   if (!text) return send(sock, from, msg, '❌ Usage: .setwelcome <message>\nUse {name} for member name, {group} for group name');
   db.setGroup(from, { welcomeMsg: text, welcome: 1 });
-  await send(sock, from, msg, `✅ Welcome message set!\n\nPreview:\n${text.replace('{name}', 'NewMember').replace('{group}', 'This Group')}`);
+  await send(sock, from, msg, `✅ Welcome message set!\nPreview:\n${text.replace('{name}', 'NewMember').replace('{group}', 'This Group')}`);
 }
 
 async function setgoodbye(ctx) {
@@ -459,7 +459,7 @@ async function antibadword(ctx) {
   if (val !== 'on' && val !== 'off') return send(sock, from, msg, '❌ Usage: .antibadword on/off');
   db.setGroup(from, { antibadword: val === 'on' ? 1 : 0 });
   await send(sock, from, msg, val === 'on'
-    ? '✅ *Anti-Bad Word: ON*\n\n🚫 Members who send banned words will be warned and kicked after 3 strikes.'
+    ? '✅ *Anti-Bad Word: ON*\n🚫 Members who send banned words will be warned and kicked after 3 strikes.'
     : '🔴 *Anti-Bad Word: OFF*');
 }
 
@@ -488,7 +488,7 @@ async function listwords(ctx) {
   if (!await requireGroup(ctx)) return;
   const list = db.getBadWords(from);
   if (!list.length) return send(sock, from, msg, '📋 No banned words set for this group.');
-  await send(sock, from, msg, `🚫 *Banned Words (${list.length})*\n\n${list.map((w, i) => `${i + 1}. ${w}`).join('\n')}`);
+  await send(sock, from, msg, `🚫 *Banned Words (${list.length})*\n${list.map((w, i) => `${i + 1}. ${w}`).join('\n')}`);
 }
 
 async function checkBadWord(sock, msg, from, sender, isOwner) {
@@ -612,7 +612,7 @@ function mkAntiToggle(key, label, desc) {
     const val = args[0]?.toLowerCase();
     if (val !== 'on' && val !== 'off') return send(sock, from, msg, `❌ Usage: .${key} on/off`);
     db.setGroup(from, { [key]: val === 'on' ? 1 : 0 });
-    await send(sock, from, msg, val === 'on' ? `✅ *${label}: ON* ✅\n\n${desc}` : `🔴 *${label}: OFF*`);
+    await send(sock, from, msg, val === 'on' ? `✅ *${label}: ON* ✅\n${desc}` : `🔴 *${label}: OFF*`);
   };
 }
 
@@ -638,7 +638,7 @@ async function listrequests(ctx) {
     const pending = await sock.groupRequestParticipantsList(from);
     if (!pending?.length) return send(sock, from, msg, '📋 No pending join requests.');
     const lines = pending.map((p, i) => `${i + 1}. +${p.jid?.split('@')[0]}`).join('\n');
-    await send(sock, from, msg, `📋 *Pending Join Requests (${pending.length})*\n\n${lines}\n\n_Use .approve <number> or .approveall_`);
+    await send(sock, from, msg, `📋 *Pending Join Requests (${pending.length})*\n${lines}\n_Use .approve <number> or .approveall_`);
   } catch (err) { await send(sock, from, msg, `❌ Failed: ${err.message}`); }
 }
 
@@ -743,8 +743,8 @@ async function listcode(ctx) {
   const codes = grp.savedCodes || {};
   const entries = Object.entries(codes);
   if (!entries.length) return send(sock, from, msg, '📋 No saved join codes for this group. Use .addcode <label> to save one.');
-  const lines = entries.map(([label, url], i) => `*${i + 1}.* ${label}\n   🔗 ${url}`).join('\n\n');
-  await send(sock, from, msg, `📋 *Saved Join Codes (${entries.length})*\n\n${lines}`);
+  const lines = entries.map(([label, url], i) => `*${i + 1}.* ${label}\n   🔗 ${url}`).join('\n');
+  await send(sock, from, msg, `📋 *Saved Join Codes (${entries.length})*\n${lines}`);
 }
 
 // ─── WHITELIST ───────────────────────────────────────────────────────────────
@@ -783,7 +783,7 @@ async function listallowed(ctx) {
   const list = grp.allowedUsers || [];
   if (!list.length) return send(sock, from, msg, '📋 No users in the allowed list.');
   const lines = list.map((u, i) => `${i + 1}. @${u.split('@')[0]}`).join('\n');
-  await send(sock, from, msg, `📋 *Allowed Users (${list.length})*\n\n${lines}`, { mentions: list });
+  await send(sock, from, msg, `📋 *Allowed Users (${list.length})*\n${lines}`, { mentions: list });
 }
 
 // ─── GROUP PROFILE PHOTO ─────────────────────────────────────────────────────
@@ -805,7 +805,7 @@ async function setppgroup(ctx) {
   const admins = await requireAdmin(ctx);
   if (!admins) return;
   const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-  if (!quoted?.imageMessage) return send(sock, from, msg, '🖼️ *Set Group Photo*\n\nReply to an image with `.setppgroup`');
+  if (!quoted?.imageMessage) return send(sock, from, msg, '🖼️ *Set Group Photo*\nReply to an image with `.setppgroup`');
   try {
     const qCtx = msg.message.extendedTextMessage.contextInfo;
     const fakeMsg = { key: { remoteJid: from, id: qCtx.stanzaId, fromMe: false, participant: qCtx.participant }, message: quoted };
@@ -838,7 +838,7 @@ async function listactive(ctx) {
   const grp = db.getGroup(from);
   const activeSenders = grp.activeSenders || {};
   const entries = Object.entries(activeSenders).sort((a, b) => b[1] - a[1]);
-  if (!entries.length) return send(sock, from, msg, '📊 No activity data yet. Members need to send messages first.\n\n_Data is tracked from the moment this command is used._');
+  if (!entries.length) return send(sock, from, msg, '📊 No activity data yet. Members need to send messages first.\n_Data is tracked from the moment this command is used._');
   const metadata = await sock.groupMetadata(from);
   const memberJids = new Set(metadata.participants.map(p => p.id));
   const active = entries.filter(([jid]) => memberJids.has(jid)).slice(0, 30);
@@ -848,7 +848,7 @@ async function listactive(ctx) {
     const timeStr = ago < 60 ? `${ago}m ago` : ago < 1440 ? `${Math.round(ago / 60)}h ago` : `${Math.round(ago / 1440)}d ago`;
     return `${i + 1}. @${jid.split('@')[0]} — _${timeStr}_`;
   }).join('\n');
-  await send(sock, from, msg, `📊 *Active Members (last seen)*\n\n${lines}`, { mentions: active.map(([j]) => j) });
+  await send(sock, from, msg, `📊 *Active Members (last seen)*\n${lines}`, { mentions: active.map(([j]) => j) });
 }
 
 async function listinactive(ctx) {
@@ -874,7 +874,7 @@ async function listinactive(ctx) {
     return `${i + 1}. @${p.id.split('@')[0]} — _${timeStr}_`;
   }).join('\n');
   await send(sock, from, msg,
-    `😴 *Inactive Members (>${days} days)*\n\n${lines}${inactive.length > 30 ? `\n\n_...and ${inactive.length - 30} more_` : ''}\n\n_Use .kickinactive ${days} to remove them_`,
+    `😴 *Inactive Members (>${days} days)*\n${lines}${inactive.length > 30 ? `\n_...and ${inactive.length - 30} more_` : ''}\n_Use .kickinactive ${days} to remove them_`,
     { mentions: inactive.slice(0, 30).map(p => p.id) }
   );
 }
@@ -940,7 +940,7 @@ async function userid(ctx) {
   const { sock, from, msg, sender } = ctx;
   const target = getMentioned(msg) || sender;
   const num = target.split('@')[0];
-  await send(sock, from, msg, `🆔 *User ID*\n\n👤 @${num}\n📱 *Number:* +${num}\n🔑 *JID:* ${target}`, { mentions: [target] });
+  await send(sock, from, msg, `🆔 *User ID*\n👤 @${num}\n📱 *Number:* +${num}\n🔑 *JID:* ${target}`, { mentions: [target] });
 }
 
 // ─── MEDIA TAG ───────────────────────────────────────────────────────────────
@@ -951,9 +951,9 @@ async function mediatag(ctx) {
   const admins = await requireAdmin(ctx);
   if (!admins) return;
   const val = args[0]?.toLowerCase();
-  if (val !== 'on' && val !== 'off') return send(sock, from, msg, '❌ Usage: .mediatag on/off\n\nWhen ON: sends @all tag whenever someone posts media in the group.');
+  if (val !== 'on' && val !== 'off') return send(sock, from, msg, '❌ Usage: .mediatag on/off\nWhen ON: sends @all tag whenever someone posts media in the group.');
   db.setGroup(from, { mediatag: val === 'on' ? 1 : 0 });
-  await send(sock, from, msg, val === 'on' ? '✅ *Media Tag: ON*\n\n📸 All members will be tagged whenever media is posted.' : '🔴 *Media Tag: OFF*');
+  await send(sock, from, msg, val === 'on' ? '✅ *Media Tag: ON*\n📸 All members will be tagged whenever media is posted.' : '🔴 *Media Tag: OFF*');
 }
 
 // ─── SCHEDULED OPEN/CLOSE ────────────────────────────────────────────────────
@@ -964,7 +964,7 @@ async function closetime(ctx) {
   const admins = await requireAdmin(ctx);
   if (!admins) return;
   if (!await requireBotAdmin(ctx, admins)) return;
-  if (!text) return send(sock, from, msg, '⏰ *Schedule Group Close*\n\nUsage: .closetime <delay>\nExample: .closetime 30m\n\nSupports: s/m/h/d — e.g. 1h, 30m, 2d');
+  if (!text) return send(sock, from, msg, '⏰ *Schedule Group Close*\nUsage: .closetime <delay>\nExample: .closetime 30m\nSupports: s/m/h/d — e.g. 1h, 30m, 2d');
   const parseDelay = str => { const m = str.match(/^(\d+)(s|m|h|d)$/i); if (!m) return null; return parseInt(m[1]) * { s:1000,m:60000,h:3600000,d:86400000 }[m[2].toLowerCase()]; };
   const delay = parseDelay(text.trim());
   if (!delay) return send(sock, from, msg, '❌ Invalid time format. Examples: 30m, 1h, 2d');
@@ -983,7 +983,7 @@ async function opentime(ctx) {
   const admins = await requireAdmin(ctx);
   if (!admins) return;
   if (!await requireBotAdmin(ctx, admins)) return;
-  if (!text) return send(sock, from, msg, '⏰ *Schedule Group Open*\n\nUsage: .opentime <delay>\nExample: .opentime 2h\n\nSupports: s/m/h/d');
+  if (!text) return send(sock, from, msg, '⏰ *Schedule Group Open*\nUsage: .opentime <delay>\nExample: .opentime 2h\nSupports: s/m/h/d');
   const parseDelay = str => { const m = str.match(/^(\d+)(s|m|h|d)$/i); if (!m) return null; return parseInt(m[1]) * { s:1000,m:60000,h:3600000,d:86400000 }[m[2].toLowerCase()]; };
   const delay = parseDelay(text.trim());
   if (!delay) return send(sock, from, msg, '❌ Invalid time format. Examples: 30m, 1h, 2d');
@@ -1005,10 +1005,10 @@ async function announcements(ctx) {
   if (!admins) return;
   if (!await requireBotAdmin(ctx, admins)) return;
   const val = args[0]?.toLowerCase();
-  if (val !== 'on' && val !== 'off') return send(sock, from, msg, '📢 Usage: .announcements on/off\n\nON = Only admins can message (announcement mode)\nOFF = Everyone can send messages');
+  if (val !== 'on' && val !== 'off') return send(sock, from, msg, '📢 Usage: .announcements on/off\nON = Only admins can message (announcement mode)\nOFF = Everyone can send messages');
   try {
     await sock.groupSettingUpdate(from, val === 'on' ? 'announcement' : 'not_announcement');
-    await send(sock, from, msg, val === 'on' ? '📢 *Announcements Mode: ON*\n\n🔕 Only admins can now send messages.' : '💬 *Announcements Mode: OFF*\n\n✅ All members can now send messages.');
+    await send(sock, from, msg, val === 'on' ? '📢 *Announcements Mode: ON*\n🔕 Only admins can now send messages.' : '💬 *Announcements Mode: OFF*\n✅ All members can now send messages.');
   } catch (err) { await send(sock, from, msg, `❌ Failed: ${err.message}`); }
 }
 
@@ -1052,7 +1052,7 @@ async function editsettings(ctx) {
   ];
   const lines = flags.map(([k, label]) => `${grp[k] ? '✅' : '❌'} ${label}`).join('\n');
   await send(sock, from, msg,
-    `⚙️ *Group Settings: ${(await sock.groupMetadata(from).catch(() => ({ subject: 'this group' }))).subject}*\n\n${lines}\n\n` +
+    `⚙️ *Group Settings: ${(await sock.groupMetadata(from).catch(() => ({ subject: 'this group' }))).subject}*\n${lines}\n` +
     `_Use individual commands to toggle each setting._\n` +
     `Example: \`.antilink on\` \`.antibadword off\``
   );
@@ -1068,15 +1068,15 @@ async function fetchgroups(ctx) {
     const chats = await sock.groupFetchAllParticipating();
     const groups = Object.values(chats);
     if (!groups.length) return send(sock, from, msg, '📋 Bot is not in any groups.');
-    const lines = groups.map((g, i) => `*${i + 1}.* ${g.subject}\n   👥 ${g.participants?.length || 0} members`).join('\n\n');
-    const msg2 = `📋 *All Groups (${groups.length})*\n\n${lines}`;
+    const lines = groups.map((g, i) => `*${i + 1}.* ${g.subject}\n   👥 ${g.participants?.length || 0} members`).join('\n');
+    const msg2 = `📋 *All Groups (${groups.length})*\n${lines}`;
     if (msg2.length > 3800) {
       const chunks = [];
       for (let i = 0; i < groups.length; i += 15) {
         const chunk = groups.slice(i, i + 15).map((g, j) => `*${i + j + 1}.* ${g.subject} (${g.participants?.length || 0})`).join('\n');
         chunks.push(chunk);
       }
-      for (const chunk of chunks) await sock.sendMessage(from, { text: `📋 *Groups:*\n\n${chunk}` }, { quoted: msg });
+      for (const chunk of chunks) await sock.sendMessage(from, { text: `📋 *Groups:*\n${chunk}` }, { quoted: msg });
     } else {
       await send(sock, from, msg, msg2);
     }
@@ -1086,7 +1086,7 @@ async function fetchgroups(ctx) {
 async function tosgroup(ctx) {
   const { sock, from, msg, text, isOwner } = ctx;
   if (!isOwner) return send(sock, from, msg, '❌ Owner only!');
-  if (!text) return send(sock, from, msg, '📤 *Send to All Groups*\n\nUsage: .tosgroup <message>\n\nSends the message to all groups the bot is in.');
+  if (!text) return send(sock, from, msg, '📤 *Send to All Groups*\nUsage: .tosgroup <message>\nSends the message to all groups the bot is in.');
   await send(sock, from, msg, '📤 Sending message to all groups...');
   try {
     const chats = await sock.groupFetchAllParticipating();

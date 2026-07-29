@@ -24,16 +24,7 @@ async function weather(ctx) {
     const desc = current.weatherDesc[0].value;
     const uv = current.uvIndex;
 
-    const reply = `
-🌍 *Weather — ${areaName}, ${country}*
-▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰
-🌡️ *Temperature:* ${temp}°C
-🤔 *Feels Like:* ${feels}°C
-☁️ *Condition:* ${desc}
-💧 *Humidity:* ${humidity}%
-💨 *Wind Speed:* ${wind} km/h
-☀️ *UV Index:* ${uv}
-▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰`.trim();
+    const reply = `🌍 *Weather — ${areaName}, ${country}*\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n🌡️ *Temperature:* ${temp}°C\n🤔 *Feels Like:* ${feels}°C\n☁️ *Condition:* ${desc}\n💧 *Humidity:* ${humidity}%\n💨 *Wind Speed:* ${wind} km/h\n☀️ *UV Index:* ${uv}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰`;
 
     await send(sock, from, msg, reply);
   } catch (err) {
@@ -68,7 +59,7 @@ async function lyrics(ctx) {
     const artistName = best.artistName || '';
     const duration = best.duration ? `${Math.floor(best.duration / 60)}:${String(Math.floor(best.duration % 60)).padStart(2, '0')}` : '';
 
-    const header = `🎵 *${songTitle}*${artistName ? ` — ${artistName}` : ''}${duration ? ` (${duration})` : ''}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n\n`;
+    const header = `🎵 *${songTitle}*${artistName ? ` — ${artistName}` : ''}${duration ? ` (${duration})` : ''}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n`;
     const trimmed = lyricsText.slice(0, 3500 - header.length);
     const truncated = lyricsText.length > (3500 - header.length);
 
@@ -93,13 +84,7 @@ async function define(ctx) {
 
     const synonyms = entry.meanings[0]?.definitions[0]?.synonyms?.slice(0, 5).join(', ') || 'None';
 
-    const reply = `
-📖 *${word}* ${phonetic}
-▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰
-${meanings}
-
-🔗 *Synonyms:* ${synonyms}
-▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰`.trim();
+    const reply = `📖 *${word}* ${phonetic}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n${meanings}\n🔗 *Synonyms:* ${synonyms}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰`;
 
     await send(sock, from, msg, reply);
   } catch (err) {
@@ -135,20 +120,7 @@ async function imdb(ctx) {
     const d = res.data;
     if (d.Response === 'False') return send(sock, from, msg, `❌ Movie/Show "*${text}*" not found.`);
 
-    const reply = `
-🎬 *${d.Title}* (${d.Year})
-▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰
-📋 *Type:* ${d.Type}
-🎭 *Genre:* ${d.Genre}
-⭐ *Rating:* ${d.imdbRating}/10 (${d.imdbVotes} votes)
-⏱️ *Runtime:* ${d.Runtime}
-🌍 *Language:* ${d.Language}
-🎬 *Director:* ${d.Director}
-🌟 *Cast:* ${d.Actors}
-
-📝 *Plot:*
-${d.Plot}
-▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰`.trim();
+    const reply = `🎬 *${d.Title}* (${d.Year})\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n📋 *Type:* ${d.Type}\n🎭 *Genre:* ${d.Genre}\n⭐ *Rating:* ${d.imdbRating}/10 (${d.imdbVotes} votes)\n⏱️ *Runtime:* ${d.Runtime}\n🌍 *Language:* ${d.Language}\n🎬 *Director:* ${d.Director}\n🌟 *Cast:* ${d.Actors}\n📝 *Plot:* ${d.Plot}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰`;
 
     await send(sock, from, msg, reply);
   } catch (err) {
@@ -185,16 +157,7 @@ async function songinfo(ctx) {
       ? song.artworkUrl100.replace('100x100bb', '600x600bb')
       : null;
 
-    const caption =
-`🎵 *${title}*
-▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰
-👤 *Artist:* ${artist}
-💿 *Album:* ${album}
-🎭 *Genre:* ${genre}
-📅 *Year:* ${released}
-⏱️ *Duration:* ${duration}
-▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰
-_Use .lyrics ${title} to get the lyrics_`;
+    const caption = `🎵 *${title}*\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n👤 *Artist:* ${artist}\n💿 *Album:* ${album}\n🎭 *Genre:* ${genre}\n📅 *Year:* ${released}\n⏱️ *Duration:* ${duration}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n_Use .lyrics ${title} to get the lyrics_`;
 
     if (artworkUrl) {
       try {
@@ -256,14 +219,12 @@ async function shazam(ctx) {
     if (!track) throw new Error('Song not recognized');
 
     const reply =
-      `🎵 *Song Identified!*\n` +
-      `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
+      `🎵 *Song Identified!*\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
       `🎤 *Title:* ${track.title || 'Unknown'}\n` +
       `👤 *Artist:* ${track.subtitle || 'Unknown'}\n` +
       `${track.sections?.[0]?.metadata?.[0]?.text ? `💿 *Album:* ${track.sections[0].metadata[0].text}\n` : ''}` +
       `${track.genres?.primary ? `🎭 *Genre:* ${track.genres.primary}\n` : ''}` +
-      `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
-      `_Use .lyrics ${track.title || ''} to get lyrics_`;
+      `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n_Use .lyrics ${track.title || ''} to get lyrics_`;
 
     const imgUrl = track.images?.coverart;
     if (imgUrl) {

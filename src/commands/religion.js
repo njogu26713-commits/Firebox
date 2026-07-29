@@ -46,8 +46,8 @@ async function bible(ctx) {
     const reply =
       `📖 *${reference}*\n` +
       `📜 _${translation}_\n` +
-      `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n\n` +
-      `${verseText}\n\n` +
+      `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
+      `${verseText}\n` +
       `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
       `_Type .bible random for a random verse_`;
 
@@ -118,9 +118,9 @@ async function quran(ctx) {
       const reply =
         `🕌 *${surahName}* ${surahArabic ? `(${surahArabic})` : ''}\n` +
         `📍 _Surah ${surah}, Ayah ${ayah}_\n` +
-        `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n\n` +
-        `*Arabic:*\n${arabic.text}\n\n` +
-        `*English (Asad):*\n_${english.text}_\n\n` +
+        `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
+        `*Arabic:*\n${arabic.text}\n` +
+        `*English (Asad):*\n_${english.text}_\n` +
         `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
         `_Type .quran random for a random verse_`;
 
@@ -140,9 +140,9 @@ async function quran(ctx) {
       const reply =
         `🕌 *${surahInfo}*\n` +
         `📍 _Surah ${surah} — ${totalAyahs} ayahs_\n` +
-        `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n\n` +
-        `*Arabic (First Ayah):*\n${ayahs[0]?.text || ''}\n\n` +
-        `*English Translation:*\n${preview}${totalAyahs > 5 ? `\n\n_...and ${totalAyahs - 5} more ayahs_` : ''}\n\n` +
+        `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
+        `*Arabic (First Ayah):*\n${ayahs[0]?.text || ''}\n` +
+        `*English Translation:*\n${preview}${totalAyahs > 5 ? `\n_...and ${totalAyahs - 5} more ayahs_` : ''}\n` +
         `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
         `_Use .quran ${surah}:1 to get specific ayah_`;
 

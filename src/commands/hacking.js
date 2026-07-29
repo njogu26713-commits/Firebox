@@ -42,11 +42,11 @@ async function checkpass(ctx) {
   const lines = Object.entries(checks).map(([k, v]) => `${v ? '✅' : '❌'} ${k}`).join('\n');
 
   await send(sock, from, msg,
-    `🔐 *Password Strength Checker*\n\n` +
+    `🔐 *Password Strength Checker*\n` +
     `🔑 Password: \`${'*'.repeat(p.length)}\`\n` +
     `📊 Score: [${bar}] ${percent}%\n` +
-    `💪 Strength: ${strength}\n\n` +
-    `*Checklist:*\n${lines}\n\n` +
+    `💪 Strength: ${strength}\n` +
+    `*Checklist:*\n${lines}\n` +
     `_Tip: Use a mix of upper, lower, numbers & symbols for max security._`);
 }
 
@@ -59,17 +59,17 @@ async function hash(ctx) {
 
   if (!algo || !algos.includes(algo) || !input) {
     return send(sock, from, msg,
-      `#️⃣ *Hash Generator*\n\n` +
-      `*Usage:* .hash <algorithm> <text>\n\n` +
-      `*Algorithms:*\n• md5\n• sha1\n• sha256\n• sha512\n\n` +
+      `#️⃣ *Hash Generator*\n` +
+      `*Usage:* .hash <algorithm> <text>\n` +
+      `*Algorithms:*\n• md5\n• sha1\n• sha256\n• sha512\n` +
       `*Example:* .hash sha256 hello world`);
   }
 
   const result = crypto.createHash(algo).update(input).digest('hex');
   await send(sock, from, msg,
-    `#️⃣ *Hash Generator*\n\n` +
+    `#️⃣ *Hash Generator*\n` +
     `📝 Input: \`${input}\`\n` +
-    `⚙️ Algorithm: *${algo.toUpperCase()}*\n\n` +
+    `⚙️ Algorithm: *${algo.toUpperCase()}*\n` +
     `🔐 Hash:\n\`${result}\``);
 }
 
@@ -79,8 +79,8 @@ async function b64encode(ctx) {
   if (!text) return send(sock, from, msg, '📦 *Usage:* .b64encode <text>');
   const encoded = Buffer.from(text).toString('base64');
   await send(sock, from, msg,
-    `📦 *Base64 Encode*\n\n` +
-    `📝 Input: \`${text}\`\n\n` +
+    `📦 *Base64 Encode*\n` +
+    `📝 Input: \`${text}\`\n` +
     `🔐 Encoded:\n\`${encoded}\``);
 }
 
@@ -90,8 +90,8 @@ async function b64decode(ctx) {
   try {
     const decoded = Buffer.from(text, 'base64').toString('utf8');
     await send(sock, from, msg,
-      `📦 *Base64 Decode*\n\n` +
-      `🔐 Input: \`${text}\`\n\n` +
+      `📦 *Base64 Decode*\n` +
+      `🔐 Input: \`${text}\`\n` +
       `📝 Decoded:\n\`${decoded}\``);
   } catch {
     await send(sock, from, msg, '❌ Invalid Base64 string.');
@@ -104,8 +104,8 @@ async function hexencode(ctx) {
   if (!text) return send(sock, from, msg, '🔢 *Usage:* .hexencode <text>');
   const encoded = Buffer.from(text).toString('hex');
   await send(sock, from, msg,
-    `🔢 *Hex Encode*\n\n` +
-    `📝 Input: \`${text}\`\n\n` +
+    `🔢 *Hex Encode*\n` +
+    `📝 Input: \`${text}\`\n` +
     `🔐 Hex:\n\`${encoded}\``);
 }
 
@@ -115,8 +115,8 @@ async function hexdecode(ctx) {
   try {
     const decoded = Buffer.from(text.replace(/\s/g, ''), 'hex').toString('utf8');
     await send(sock, from, msg,
-      `🔢 *Hex Decode*\n\n` +
-      `🔐 Input: \`${text}\`\n\n` +
+      `🔢 *Hex Decode*\n` +
+      `🔐 Input: \`${text}\`\n` +
       `📝 Decoded:\n\`${decoded}\``);
   } catch {
     await send(sock, from, msg, '❌ Invalid hex string.');
@@ -134,7 +134,7 @@ async function iplookup(ctx) {
     if (data.status !== 'success') return send(sock, from, msg, `❌ ${data.message || 'IP not found.'}`);
 
     await send(sock, from, msg,
-      `🌐 *IP Lookup: ${data.query}*\n\n` +
+      `🌐 *IP Lookup: ${data.query}*\n` +
       `🗺️ Country: ${data.country} ${data.countryCode ? `(${data.countryCode})` : ''}\n` +
       `🏙️ Region: ${data.regionName}\n` +
       `🌆 City: ${data.city}\n` +
@@ -172,10 +172,10 @@ async function dnslookup(ctx) {
     const txtRecords = txt.status === 'fulfilled' ? txt.value.map(r => r.join('')).slice(0, 3).join('\n  ') : 'None';
 
     await send(sock, from, msg,
-      `🔎 *DNS Lookup: ${domain}*\n\n` +
-      `📌 *A Records (IPv4):*\n  ${aRecords}\n\n` +
-      `📬 *MX Records (Mail):*\n  ${mxRecords}\n\n` +
-      `🏷️ *NS Records (Nameservers):*\n  ${nsRecords}\n\n` +
+      `🔎 *DNS Lookup: ${domain}*\n` +
+      `📌 *A Records (IPv4):*\n  ${aRecords}\n` +
+      `📬 *MX Records (Mail):*\n  ${mxRecords}\n` +
+      `🏷️ *NS Records (Nameservers):*\n  ${nsRecords}\n` +
       `📝 *TXT Records:*\n  ${txtRecords}`);
   } catch (err) {
     await send(sock, from, msg, `❌ DNS lookup failed: ${err.message}`);
@@ -192,7 +192,7 @@ async function whois(ctx) {
     const { data } = await axios.get(`https://api.whois.vu/?q=${encodeURIComponent(domain)}`, { timeout: 10000 });
     const raw = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
     const trimmed = raw.length > 1500 ? raw.slice(0, 1500) + '\n...(truncated)' : raw;
-    await send(sock, from, msg, `📋 *WHOIS: ${domain}*\n\n\`\`\`\n${trimmed}\n\`\`\``);
+    await send(sock, from, msg, `📋 *WHOIS: ${domain}*\n\`\`\`\n${trimmed}\n\`\`\``);
   } catch (err) {
     await send(sock, from, msg, `❌ WHOIS lookup failed: ${err.message}`);
   }
@@ -226,7 +226,7 @@ async function portinfo(ctx) {
 
   if (!args[0]) {
     const list = Object.entries(PORT_DB).map(([p, d]) => `• *${p}* — ${d}`).join('\n');
-    return send(sock, from, msg, `🔌 *Common Port Reference*\n\n${list}\n\n_Usage: .portinfo <port number>_`);
+    return send(sock, from, msg, `🔌 *Common Port Reference*\n${list}\n_Usage: .portinfo <port number>_`);
   }
 
   if (isNaN(port) || port < 1 || port > 65535) {
@@ -235,10 +235,10 @@ async function portinfo(ctx) {
 
   const info = PORT_DB[port];
   await send(sock, from, msg,
-    `🔌 *Port ${port} Info*\n\n` +
+    `🔌 *Port ${port} Info*\n` +
     (info
-      ? `📋 Service: ${info}\n\n_This is a well-known port often targeted in security audits._`
-      : `⚠️ Port ${port} is not in our common ports database.\n\n_It may be a custom/proprietary service. Check documentation or use a port scanner tool for more details._`));
+      ? `📋 Service: ${info}\n_This is a well-known port often targeted in security audits._`
+      : `⚠️ Port ${port} is not in our common ports database.\n_It may be a custom/proprietary service. Check documentation or use a port scanner tool for more details._`));
 }
 
 // ── CIPHER (ROT13 / Caesar) ───────────────────────────────────────────────────
@@ -250,8 +250,8 @@ async function cipher(ctx) {
 
   if (!['encode', 'decode'].includes(mode) || isNaN(shift) || !input) {
     return send(sock, from, msg,
-      `🔄 *Caesar Cipher*\n\n` +
-      `*Usage:* .cipher encode/decode <shift> <text>\n\n` +
+      `🔄 *Caesar Cipher*\n` +
+      `*Usage:* .cipher encode/decode <shift> <text>\n` +
       `*Example:*\n• .cipher encode 13 Hello World\n• .cipher decode 13 Uryyb Jbeyq`);
   }
 
@@ -262,9 +262,9 @@ async function cipher(ctx) {
   });
 
   await send(sock, from, msg,
-    `🔄 *Caesar Cipher (Shift ${shift})*\n\n` +
+    `🔄 *Caesar Cipher (Shift ${shift})*\n` +
     `📝 Input: \`${input}\`\n` +
-    `⚙️ Mode: ${mode}\n\n` +
+    `⚙️ Mode: ${mode}\n` +
     `🔐 Result:\n\`${result}\``);
 }
 
@@ -287,9 +287,9 @@ const NUMBER_TYPE_LABELS = {
 async function numlookup(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text) return send(sock, from, msg,
-    `📍 *Number Location Lookup*\n\n` +
-    `*Usage:* .numlookup <number with country code>\n\n` +
-    `*Examples:*\n• .numlookup +254712345678\n• .numlookup +447911123456\n• .numlookup +12025551234\n\n` +
+    `📍 *Number Location Lookup*\n` +
+    `*Usage:* .numlookup <number with country code>\n` +
+    `*Examples:*\n• .numlookup +254712345678\n• .numlookup +447911123456\n• .numlookup +12025551234\n` +
     `_Always include the + and country code_`);
 
   const raw = text.trim().replace(/\s+/g, '');
@@ -300,7 +300,7 @@ async function numlookup(ctx) {
     try {
       parsed = parsePhoneNumber(withPlus);
     } catch {
-      return send(sock, from, msg, `❌ Invalid phone number. Make sure to include the country code.\n\n*Example:* .numlookup +254712345678`);
+      return send(sock, from, msg, `❌ Invalid phone number. Make sure to include the country code.\n*Example:* .numlookup +254712345678`);
     }
 
     const valid = isValidPhoneNumber(withPlus);
@@ -337,15 +337,15 @@ async function numlookup(ctx) {
     } catch { }
 
     await send(sock, from, msg,
-      `📍 *Number Location Lookup*\n\n` +
+      `📍 *Number Location Lookup*\n` +
       `📞 Number: *${formatted}*\n` +
-      `${valid ? '✅ Valid number' : '⚠️ Possibly invalid number'}\n\n` +
+      `${valid ? '✅ Valid number' : '⚠️ Possibly invalid number'}\n` +
       `🌍 Country: *${country}*\n` +
       `🔢 Country Code: +${countryCallingCode}\n` +
       `📋 National Number: ${nationalNumber}\n` +
       `📡 Type: ${typeLabel}` +
       countryInfo +
-      `\n\n_Note: This shows info based on the number prefix only. Exact GPS location cannot be determined from a phone number._`);
+      `\n_Note: This shows info based on the number prefix only. Exact GPS location cannot be determined from a phone number._`);
   } catch (err) {
     await send(sock, from, msg, `❌ Lookup failed: ${err.message}`);
   }
@@ -363,8 +363,8 @@ async function scamalyze(ctx) {
 
   if (!input) {
     return send(sock, from, msg,
-      `🕵️ *Scam Analyzer*\n\n` +
-      `*Usage:*\n• .scamalyze <message or link>\n• Reply to a suspicious message with .scamalyze\n\n` +
+      `🕵️ *Scam Analyzer*\n` +
+      `*Usage:*\n• .scamalyze <message or link>\n• Reply to a suspicious message with .scamalyze\n` +
       `*Examples:*\n• .scamalyze You have won $1,000,000! Click here: bit.ly/win-now\n• .scamalyze Congratulations! Your account needs verification at paypa1.com`);
   }
 
@@ -395,7 +395,7 @@ Respond ONLY with this exact format (fill in each section):
 [e.g. Phishing / Advance Fee / Lottery Scam / Fake Giveaway / Credential Harvesting / Malware Link / Impersonation / None]`;
 
     const analysis = await openRouterPrompt(prompt);
-    await send(sock, from, msg, `🕵️ *Scam Analysis Report*\n\n${analysis}\n\n_Powered by Firebox AI_`);
+    await send(sock, from, msg, `🕵️ *Scam Analysis Report*\n${analysis}\n_Powered by Firebox AI_`);
   } catch (err) {
     await send(sock, from, msg, `❌ Analysis failed: ${err.message}`);
   }
@@ -418,17 +418,17 @@ async function sslcheck(ctx) {
     else if (grade.startsWith('C')) gradeEmoji = '🟠';
     else if (['D','E','F','T','M'].includes(grade[0])) gradeEmoji = '🔴';
 
-    if (data.status === 'DNS') return send(sock, from, msg, `🔒 *SSL Check: ${domain}*\n\n⏳ Analysis in progress, please try again in ~30 seconds.`);
+    if (data.status === 'DNS') return send(sock, from, msg, `🔒 *SSL Check: ${domain}*\n⏳ Analysis in progress, please try again in ~30 seconds.`);
     if (data.status === 'ERROR') return send(sock, from, msg, `❌ SSL check failed for *${domain}*: ${statusMsg}`);
 
     const ep = data.endpoints?.[0];
     await send(sock, from, msg,
-      `🔒 *SSL Certificate Check*\n\n` +
+      `🔒 *SSL Certificate Check*\n` +
       `🌐 Domain: *${domain}*\n` +
       `${gradeEmoji} Grade: *${grade}*\n` +
       `📊 Status: ${statusMsg}\n` +
       `🖥️ Server: ${ep?.serverName || 'N/A'}\n` +
-      `📍 IP: ${ep?.ipAddress || 'N/A'}\n\n` +
+      `📍 IP: ${ep?.ipAddress || 'N/A'}\n` +
       `_Grade A = excellent SSL config, F = critically broken_`);
   } catch (err) {
     await send(sock, from, msg, `❌ SSL check failed: ${err.message}`);
@@ -472,10 +472,10 @@ async function headers(ctx) {
     const missingLines = missing.map(([k]) => `❌ ${k}`).join('\n');
 
     await send(sock, from, msg,
-      `🛡️ *Security Headers: ${url}*\n\n` +
+      `🛡️ *Security Headers: ${url}*\n` +
       `📊 Score: [${bar}] ${score}%\n` +
-      `${rating}\n\n` +
-      (presentLines ? `*Present Headers:*\n${presentLines}\n\n` : '') +
+      `${rating}\n` +
+      (presentLines ? `*Present Headers:*\n${presentLines}\n` : '') +
       (missingLines ? `*Missing Headers:*\n${missingLines}` : ''));
   } catch (err) {
     await send(sock, from, msg, `❌ Failed to scan headers: ${err.message}`);
@@ -509,9 +509,9 @@ async function subdomains(ctx) {
 
     await send(sock, from, msg,
       `🔍 *Subdomains Found: ${domain}*\n` +
-      `📊 Showing ${unique.length} unique subdomains from SSL certificate logs\n\n` +
+      `📊 Showing ${unique.length} unique subdomains from SSL certificate logs\n` +
       unique.map((s, i) => `${i + 1}. ${s}`).join('\n') +
-      `\n\n_Source: crt.sh — certificate transparency logs_`);
+      `\n_Source: crt.sh — certificate transparency logs_`);
   } catch (err) {
     await send(sock, from, msg, `❌ Subdomain lookup failed: ${err.message}`);
   }
@@ -522,8 +522,8 @@ async function macinfo(ctx) {
   const { sock, from, msg, args } = ctx;
   const mac = args[0];
   if (!mac) return send(sock, from, msg,
-    '🖧 *Usage:* .macinfo <MAC address>\n\n' +
-    '*Examples:*\n• .macinfo 00:1A:2B:3C:4D:5E\n• .macinfo 001A2B3C4D5E\n\n' +
+    '🖧 *Usage:* .macinfo <MAC address>\n' +
+    '*Examples:*\n• .macinfo 00:1A:2B:3C:4D:5E\n• .macinfo 001A2B3C4D5E\n' +
     '_The first 6 hex digits (OUI) identify the manufacturer_');
 
   const cleaned = mac.replace(/[:\-\.]/g, '').toUpperCase();
@@ -536,15 +536,15 @@ async function macinfo(ctx) {
     });
 
     if (typeof data === 'string' && data.includes('errors')) {
-      return send(sock, from, msg, `🖧 *MAC Lookup: ${mac}*\n\n❓ Vendor not found for OUI \`${cleaned.slice(0, 6)}\`\n\n_This may be a locally administered or randomized MAC address._`);
+      return send(sock, from, msg, `🖧 *MAC Lookup: ${mac}*\n❓ Vendor not found for OUI \`${cleaned.slice(0, 6)}\`\n_This may be a locally administered or randomized MAC address._`);
     }
 
     const oui = cleaned.slice(0, 6).match(/.{2}/g).join(':');
     await send(sock, from, msg,
-      `🖧 *MAC Address Vendor Lookup*\n\n` +
+      `🖧 *MAC Address Vendor Lookup*\n` +
       `📋 MAC: \`${mac}\`\n` +
       `🔑 OUI: \`${oui}\`\n` +
-      `🏭 Vendor: *${data}*\n\n` +
+      `🏭 Vendor: *${data}*\n` +
       `_The OUI (first 3 octets) is assigned by IEEE to manufacturers._`);
   } catch (err) {
     await send(sock, from, msg, `❌ MAC lookup failed: ${err.message}`);
@@ -555,10 +555,10 @@ async function macinfo(ctx) {
 async function rot47(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text) return send(sock, from, msg,
-    '🔄 *ROT47 Cipher*\n\n' +
-    '*Usage:* .rot47 <text>\n\n' +
+    '🔄 *ROT47 Cipher*\n' +
+    '*Usage:* .rot47 <text>\n' +
     'ROT47 rotates all printable ASCII characters (33–126) by 47 positions.\n' +
-    'Encoding and decoding use the same operation.\n\n' +
+    'Encoding and decoding use the same operation.\n' +
     '*Example:* .rot47 Hello World');
 
   const result = text.split('').map(c => {
@@ -570,9 +570,9 @@ async function rot47(ctx) {
   }).join('');
 
   await send(sock, from, msg,
-    `🔄 *ROT47 Cipher*\n\n` +
-    `📝 Input:  \`${text}\`\n\n` +
-    `🔐 Output: \`${result}\`\n\n` +
+    `🔄 *ROT47 Cipher*\n` +
+    `📝 Input:  \`${text}\`\n` +
+    `🔐 Output: \`${result}\`\n` +
     `_ROT47 is symmetric — apply it again to get back the original_`);
 }
 
@@ -581,7 +581,7 @@ async function urlinfo(ctx) {
   const { sock, from, msg, args } = ctx;
   let url = args[0];
   if (!url) return send(sock, from, msg,
-    '🔗 *Usage:* .urlinfo <url>\nExample: .urlinfo bit.ly/abc123\n\n' +
+    '🔗 *Usage:* .urlinfo <url>\nExample: .urlinfo bit.ly/abc123\n' +
     '_Expands short URLs and checks where they really lead_');
   if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
 
@@ -608,19 +608,19 @@ async function urlinfo(ctx) {
 
     const final = history[history.length - 1] || { url, status: '?' };
     const steps = history.length > 1
-      ? `\n\n🔀 *Redirect Chain (${history.length - 1} hop${history.length > 2 ? 's' : ''}):*\n` +
+      ? `\n🔀 *Redirect Chain (${history.length - 1} hop${history.length > 2 ? 's' : ''}):*\n` +
         history.slice(0, -1).map((h, i) => `${i + 1}. \`${h.url.slice(0, 60)}\` → ${h.status}`).join('\n')
       : '';
 
     const suspicious = /bit\.ly|tinyurl|t\.co|goo\.gl|ow\.ly|buff\.ly|rebrand\.ly/i.test(url);
 
     await send(sock, from, msg,
-      `🔗 *URL Inspector*\n\n` +
+      `🔗 *URL Inspector*\n` +
       `📎 Original: \`${url}\`\n` +
       `🎯 Final URL: \`${final.url}\`\n` +
       `📊 Status: ${final.status}` +
       steps +
-      `\n\n${suspicious ? '⚠️ _Short URL detected — always verify the destination before clicking!_' : '✅ _Direct URL — no redirection tricks detected_'}`);
+      `\n${suspicious ? '⚠️ _Short URL detected — always verify the destination before clicking!_' : '✅ _Direct URL — no redirection tricks detected_'}`);
   } catch (err) {
     await send(sock, from, msg, `❌ URL inspection failed: ${err.message}`);
   }
@@ -630,18 +630,18 @@ async function urlinfo(ctx) {
 async function fakecall(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text) return send(sock, from, msg,
-    '📞 *Usage:* .fakecall <caller name>\n\n' +
+    '📞 *Usage:* .fakecall <caller name>\n' +
     '*Examples:*\n' +
     '• .fakecall Mum\n' +
     '• .fakecall Boss Man\n' +
-    '• .fakecall +254712345678\n\n' +
+    '• .fakecall +254712345678\n' +
     '_Simulates a realistic incoming WhatsApp call notification_ 😈');
 
   const caller = text.trim();
   const delay = ms => new Promise(r => setTimeout(r, ms));
 
   // Ringing frames
-  const ring1 = `📲 *Incoming WhatsApp call...*\n\n` +
+  const ring1 = `📲 *Incoming WhatsApp call...*\n` +
     `┌─────────────────────┐\n` +
     `│  📞  *${caller}*\n` +
     `│  WhatsApp Voice Call\n` +
@@ -649,7 +649,7 @@ async function fakecall(ctx) {
     `│  🔴 Decline   🟢 Accept\n` +
     `└─────────────────────┘`;
 
-  const ring2 = `📲 *Incoming WhatsApp call...*\n\n` +
+  const ring2 = `📲 *Incoming WhatsApp call...*\n` +
     `┌─────────────────────┐\n` +
     `│  📳  *${caller}*\n` +
     `│  WhatsApp Voice Call\n` +
@@ -658,7 +658,7 @@ async function fakecall(ctx) {
     `│  🔴 Decline   🟢 Accept\n` +
     `└─────────────────────┘`;
 
-  const ring3 = `📲 *Incoming WhatsApp call...*\n\n` +
+  const ring3 = `📲 *Incoming WhatsApp call...*\n` +
     `┌─────────────────────┐\n` +
     `│  📞  *${caller}*\n` +
     `│  WhatsApp Voice Call\n` +
@@ -668,13 +668,13 @@ async function fakecall(ctx) {
     `│  🔴 Decline   🟢 Accept\n` +
     `└─────────────────────┘`;
 
-  const missed = `📵 *Missed WhatsApp call*\n\n` +
+  const missed = `📵 *Missed WhatsApp call*\n` +
     `┌─────────────────────┐\n` +
     `│  📵  *${caller}*\n` +
     `│  WhatsApp Voice Call\n` +
     `│  ❌ Missed call\n` +
     `│  🕐 Just now\n` +
-    `└─────────────────────┘\n\n` +
+    `└─────────────────────┘\n` +
     `_Tap to call back_`;
 
   try {
@@ -721,7 +721,7 @@ const FAKE_BANKS     = ['KCB Bank','Equity Bank','Cooperative Bank','ABSA Bank',
 async function hack(ctx) {
   const { sock, from, msg, text, isGroup } = ctx;
   if (!text) return send(sock, from, msg,
-    '💀 *Usage:* .hack <phone number>\n\n*Example:* .hack +254712345678\n\n_⚠️ For entertainment purposes only_');
+    '💀 *Usage:* .hack <phone number>\n*Example:* .hack +254712345678\n_⚠️ For entertainment purposes only_');
 
   const number = text.trim().replace(/\s+/g, '');
   const displayNum = number.startsWith('+') ? number : `+${number}`;
@@ -750,13 +750,13 @@ async function hack(ctx) {
     await delay(1500);
     await sock.sendMessage(from, {
       text:
-        `💀 *HACK COMPLETE*\n\n` +
+        `💀 *HACK COMPLETE*\n` +
         `📱 Target: *${displayNum}*\n` +
         `✅ Device compromised\n` +
         `✅ Location tracked\n` +
         `✅ Messages intercepted\n` +
-        `✅ Credentials stolen\n\n` +
-        `_⚠️ This is 100% fake entertainment — no real hacking occurred. Actual hacking is illegal._\n\n` +
+        `✅ Credentials stolen\n` +
+        `_⚠️ This is 100% fake entertainment — no real hacking occurred. Actual hacking is illegal._\n` +
         `_Powered by 🔥 Firebox_`
     });
     console.log(`[HACK] Done — ${isGroup ? 'GROUP' : 'DM'} ${from}`);
@@ -770,8 +770,8 @@ async function hack(ctx) {
 async function jwtdecode(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text) return send(sock, from, msg,
-    '🔑 *JWT Decoder*\n\n' +
-    '*Usage:* .jwt <token>\n\n' +
+    '🔑 *JWT Decoder*\n' +
+    '*Usage:* .jwt <token>\n' +
     '_Decodes JWT header & payload without verifying the signature._\n' +
     '_Useful for inspecting tokens during security testing._');
 
@@ -803,10 +803,10 @@ async function jwtdecode(ctx) {
     const trimmed = payloadStr.length > 800 ? payloadStr.slice(0, 800) + '\n...(truncated)' : payloadStr;
 
     await send(sock, from, msg,
-      `🔑 *JWT Decoded*\n\n` +
-      `⚙️ *Header:*\n• Algorithm: *${header.alg || 'N/A'}*\n• Type: ${header.typ || 'N/A'}\n\n` +
-      `⏰ *Expiry:* ${expStatus}${iatStr}${subStr}${issStr}${audStr}\n\n` +
-      `📦 *Payload:*\n\`\`\`\n${trimmed}\n\`\`\`\n\n` +
+      `🔑 *JWT Decoded*\n` +
+      `⚙️ *Header:*\n• Algorithm: *${header.alg || 'N/A'}*\n• Type: ${header.typ || 'N/A'}\n` +
+      `⏰ *Expiry:* ${expStatus}${iatStr}${subStr}${issStr}${audStr}\n` +
+      `📦 *Payload:*\n\`\`\`\n${trimmed}\n\`\`\`\n` +
       `🔓 Signature: \`${parts[2].slice(0, 20)}...\` _(not verified — decode only)_`);
   } catch (err) {
     await send(sock, from, msg, `❌ Failed to decode JWT: ${err.message}`);
@@ -817,9 +817,9 @@ async function jwtdecode(ctx) {
 async function reversedns(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text) return send(sock, from, msg,
-    '🔁 *Reverse DNS Lookup*\n\n' +
-    '*Usage:* .rdns <IP address>\n\n' +
-    '*Examples:*\n• .rdns 8.8.8.8\n• .rdns 1.1.1.1\n\n' +
+    '🔁 *Reverse DNS Lookup*\n' +
+    '*Usage:* .rdns <IP address>\n' +
+    '*Examples:*\n• .rdns 8.8.8.8\n• .rdns 1.1.1.1\n' +
     '_Finds the hostname(s) registered to an IP address._');
 
   const ip = text.trim();
@@ -838,8 +838,8 @@ async function reversedns(ctx) {
       : '❌ No PTR records found (rDNS not configured)';
 
     await send(sock, from, msg,
-      `🔁 *Reverse DNS: ${ip}*\n\n` +
-      `📋 *PTR Records:*\n${hostsStr}\n\n` +
+      `🔁 *Reverse DNS: ${ip}*\n` +
+      `📋 *PTR Records:*\n${hostsStr}\n` +
       (geo
         ? `🌍 Location: ${geo.city || ''}, ${geo.country || ''}\n` +
           `🏢 ISP: ${geo.isp || 'N/A'}\n` +
@@ -857,9 +857,9 @@ async function robotstxt(ctx) {
   const { sock, from, msg, args } = ctx;
   let domain = args[0]?.replace(/^https?:\/\//, '').split('/')[0];
   if (!domain) return send(sock, from, msg,
-    '🤖 *Robots.txt Recon*\n\n' +
-    '*Usage:* .robots <domain>\n\n' +
-    '*Examples:*\n• .robots google.com\n• .robots facebook.com\n\n' +
+    '🤖 *Robots.txt Recon*\n' +
+    '*Usage:* .robots <domain>\n' +
+    '*Examples:*\n• .robots google.com\n• .robots facebook.com\n' +
     '_Reveals paths the site owner wants hidden from crawlers — often exposes admin panels, backups, or sensitive directories._');
 
   try {
@@ -871,7 +871,7 @@ async function robotstxt(ctx) {
       headers: { 'User-Agent': 'Mozilla/5.0 (SecurityAudit)' }
     });
 
-    if (status === 404) return send(sock, from, msg, `🤖 *${domain}*\n\n❌ No robots.txt found (404)\n\n_The site doesn't restrict crawlers, or the file doesn't exist._`);
+    if (status === 404) return send(sock, from, msg, `🤖 *${domain}*\n❌ No robots.txt found (404)\n_The site doesn't restrict crawlers, or the file doesn't exist._`);
 
     const text2 = typeof data === 'string' ? data : JSON.stringify(data);
     const lines  = text2.split('\n').map(l => l.trim()).filter(Boolean);
@@ -889,12 +889,12 @@ async function robotstxt(ctx) {
     const raw = text2.length > 1000 ? text2.slice(0, 1000) + '\n...(truncated)' : text2;
 
     await send(sock, from, msg,
-      `🤖 *Robots.txt Recon: ${domain}*\n\n` +
-      (interesting.length ? `🚨 *Interesting Paths Found:*\n${interesting.map(p => `⚠️ \`${p}\``).join('\n')}\n\n` : '') +
+      `🤖 *Robots.txt Recon: ${domain}*\n` +
+      (interesting.length ? `🚨 *Interesting Paths Found:*\n${interesting.map(p => `⚠️ \`${p}\``).join('\n')}\n` : '') +
       `🚫 *Disallowed (${disallowed.length}):* ${disallowed.length ? disallowed.slice(0, 10).map(p => `\`${p}\``).join(', ') + (disallowed.length > 10 ? ` +${disallowed.length - 10} more` : '') : 'None'}\n` +
       `✅ *Allowed (${allowed.length}):* ${allowed.length ? allowed.slice(0, 5).map(p => `\`${p}\``).join(', ') : 'None'}\n` +
       `🗺️ *Sitemaps:* ${sitemaps.length ? sitemaps.join(', ') : 'None'}\n` +
-      `🤖 *User-Agents targeted:* ${[...new Set(agents)].join(', ') || 'None'}\n\n` +
+      `🤖 *User-Agents targeted:* ${[...new Set(agents)].join(', ') || 'None'}\n` +
       `📄 *Raw Content:*\n\`\`\`\n${raw}\n\`\`\``);
   } catch (err) {
     await send(sock, from, msg, `❌ Failed to fetch robots.txt: ${err.message}`);
@@ -905,9 +905,9 @@ async function robotstxt(ctx) {
 async function breach(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text) return send(sock, from, msg,
-    '🔓 *Data Breach Checker*\n\n' +
-    '*Usage:* .breach <email or username>\n\n' +
-    '*Examples:*\n• .breach user@gmail.com\n• .breach johndoe\n\n' +
+    '🔓 *Data Breach Checker*\n' +
+    '*Usage:* .breach <email or username>\n' +
+    '*Examples:*\n• .breach user@gmail.com\n• .breach johndoe\n' +
     '_Checks if your credentials appeared in known data leaks._');
 
   const query = text.trim();
@@ -921,8 +921,8 @@ async function breach(ctx) {
 
     if (status === 404 || data?.Error === 'Not found') {
       return send(sock, from, msg,
-        `🔓 *Breach Check: ${query}*\n\n` +
-        `✅ *Good news!* No breaches found in our database.\n\n` +
+        `🔓 *Breach Check: ${query}*\n` +
+        `✅ *Good news!* No breaches found in our database.\n` +
         `_Note: This doesn't guarantee 100% safety — new breaches may not yet be indexed._`);
     }
 
@@ -936,12 +936,12 @@ async function breach(ctx) {
       : 'See details above';
 
     await send(sock, from, msg,
-      `🔓 *Breach Check: ${query}*\n\n` +
+      `🔓 *Breach Check: ${query}*\n` +
       `🚨 *EXPOSED in ${count} breach${count !== 1 ? 'es' : ''}!*\n` +
-      `📊 Records leaked: ~${typeof records === 'number' ? records.toLocaleString() : records}\n\n` +
-      (breachList ? `📂 *Breaches:*\n${breachList}\n\n` : '') +
-      (domains.length ? `🌐 *Domains:* ${domains.slice(0, 5).join(', ')}\n\n` : '') +
-      `💡 *What to do:*\n• Change your password immediately\n• Enable 2FA on all accounts\n• Check if same password used elsewhere\n\n` +
+      `📊 Records leaked: ~${typeof records === 'number' ? records.toLocaleString() : records}\n` +
+      (breachList ? `📂 *Breaches:*\n${breachList}\n` : '') +
+      (domains.length ? `🌐 *Domains:* ${domains.slice(0, 5).join(', ')}\n` : '') +
+      `💡 *What to do:*\n• Change your password immediately\n• Enable 2FA on all accounts\n• Check if same password used elsewhere\n` +
       `_Source: xposedornot.com — for educational/security purposes only_`);
   } catch (err) {
     await send(sock, from, msg, `❌ Breach check failed: ${err.message}`);
@@ -953,9 +953,9 @@ async function sitestatus(ctx) {
   const { sock, from, msg, args } = ctx;
   let url = args[0];
   if (!url) return send(sock, from, msg,
-    '📡 *Site Status Check*\n\n' +
-    '*Usage:* .status <url or domain>\n\n' +
-    '*Examples:*\n• .status google.com\n• .status https://api.example.com/health\n\n' +
+    '📡 *Site Status Check*\n' +
+    '*Usage:* .status <url or domain>\n' +
+    '*Examples:*\n• .status google.com\n• .status https://api.example.com/health\n' +
     '_Checks if a site/server is up, measures response time, and inspects server info._');
   if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
 
@@ -986,20 +986,20 @@ async function sitestatus(ctx) {
     const speedEmoji = ms < 300 ? '⚡ Lightning' : ms < 800 ? '✅ Fast' : ms < 2000 ? '🟡 Moderate' : '🔴 Slow';
 
     await send(sock, from, msg,
-      `📡 *Site Status: ${url}*\n\n` +
+      `📡 *Site Status: ${url}*\n` +
       `${statusEmoji} *HTTP ${code}* — ${res.statusText || httpStatusText(code)}\n` +
       `⏱️ Response: *${ms}ms* — ${speedEmoji}\n` +
       `🖥️ Server: ${server}\n` +
-      `📄 Content-Type: ${ctype}\n\n` +
+      `📄 Content-Type: ${ctype}\n` +
       `🛡️ *Security Headers:*\n` +
-      `${hsts} HSTS  ${csp} CSP  ${xfo} X-Frame-Options\n\n` +
+      `${hsts} HSTS  ${csp} CSP  ${xfo} X-Frame-Options\n` +
       `_${code < 400 ? '✅ Site is UP and reachable' : code < 500 ? '⚠️ Site returned a client error' : '❌ Site is DOWN or has server errors'}_`);
   } catch (err) {
     const reason = err.code === 'ECONNREFUSED' ? 'Connection refused — server may be down'
       : err.code === 'ENOTFOUND' ? 'DNS not found — domain does not exist or is unreachable'
       : err.code === 'ETIMEDOUT' || err.message.includes('timeout') ? 'Request timed out — server too slow or offline'
       : err.message;
-    await send(sock, from, msg, `📡 *Site Status: ${url}*\n\n🔴 *OFFLINE / Unreachable*\n\n❌ ${reason}`);
+    await send(sock, from, msg, `📡 *Site Status: ${url}*\n🔴 *OFFLINE / Unreachable*\n❌ ${reason}`);
   }
 }
 
@@ -1012,9 +1012,9 @@ function httpStatusText(code) {
 async function cvelookup(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text) return send(sock, from, msg,
-    '🛡️ *CVE Vulnerability Lookup*\n\n' +
-    '*Usage:* .cve <CVE-ID or keyword>\n\n' +
-    '*Examples:*\n• .cve CVE-2021-44228\n• .cve log4shell\n• .cve apache struts\n\n' +
+    '🛡️ *CVE Vulnerability Lookup*\n' +
+    '*Usage:* .cve <CVE-ID or keyword>\n' +
+    '*Examples:*\n• .cve CVE-2021-44228\n• .cve log4shell\n• .cve apache struts\n' +
     '_Looks up known vulnerabilities from the NIST National Vulnerability Database._');
 
   await sock.sendPresenceUpdate('composing', from).catch(() => {});
@@ -1055,9 +1055,9 @@ async function cvelookup(ctx) {
     });
 
     await send(sock, from, msg,
-      `🛡️ *CVE Lookup: ${query}*\n\n` +
-      results.join('\n\n─────────────────\n\n') +
-      `\n\n_Source: NIST NVD — nvd.nist.gov_`);
+      `🛡️ *CVE Lookup: ${query}*\n` +
+      results.join('\n─────────────────\n') +
+      `\n_Source: NIST NVD — nvd.nist.gov_`);
   } catch (err) {
     await send(sock, from, msg, `❌ CVE lookup failed: ${err.message}`);
   }
@@ -1067,9 +1067,9 @@ async function cvelookup(ctx) {
 async function userscan(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text || text.includes(' ')) return send(sock, from, msg,
-    '🔍 *Username Scanner*\n\n' +
-    '*Usage:* .userscan <username>\n\n' +
-    '*Examples:*\n• .userscan johndoe\n• .userscan hacker_x\n\n' +
+    '🔍 *Username Scanner*\n' +
+    '*Usage:* .userscan <username>\n' +
+    '*Examples:*\n• .userscan johndoe\n• .userscan hacker_x\n' +
     '_Checks if the username exists on major platforms — useful for OSINT._');
 
   const username = text.trim().replace(/[^a-zA-Z0-9._-]/g, '');
@@ -1120,10 +1120,10 @@ async function userscan(ctx) {
   const notFoundStr = notFound.map(n => `❌ ${n}`).join('\n') || '_All found_';
 
   await send(sock, from, msg,
-    `🔍 *Username Scanner: @${username}*\n\n` +
-    `📊 Found on *${found.length}/${platforms.length}* platforms\n\n` +
-    `*✅ Exists on:*\n${foundStr}\n\n` +
-    `*❌ Not found on:*\n${notFoundStr}\n\n` +
+    `🔍 *Username Scanner: @${username}*\n` +
+    `📊 Found on *${found.length}/${platforms.length}* platforms\n` +
+    `*✅ Exists on:*\n${foundStr}\n` +
+    `*❌ Not found on:*\n${notFoundStr}\n` +
     `_Note: Some platforms block bots — results may not be 100% accurate._`);
 }
 

@@ -48,7 +48,7 @@ async function tinyurl(ctx) {
   if (!text) return send(sock, from, msg, '🔗 Usage: .tinyurl <URL>\nExample: .tinyurl https://very-long-url.com/path');
   try {
     const res = await axios.get(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(text)}`, { timeout: 10000 });
-    await send(sock, from, msg, `🔗 *URL Shortened*\n\n📎 Original: ${text}\n✅ Short: ${res.data}`);
+    await send(sock, from, msg, `🔗 *URL Shortened*\n📎 Original: ${text}\n✅ Short: ${res.data}`);
   } catch (err) {
     await send(sock, from, msg, `❌ Failed to shorten URL.`);
   }
@@ -87,7 +87,7 @@ async function fancy(ctx) {
     'Upside Down': t => t.split('').reverse().map(c => ({a:'ɐ',b:'q',c:'ɔ',d:'p',e:'ǝ',f:'ɟ',g:'ƃ',h:'ɥ',i:'ᴉ',j:'ɾ',k:'ʞ',l:'l',m:'ɯ',n:'u',o:'o',p:'d',q:'b',r:'ɹ',s:'s',t:'ʇ',u:'n',v:'ʌ',w:'ʍ',x:'x',y:'ʎ',z:'z'}[c.toLowerCase()] || c)).join('')
   };
 
-  let result = `✨ *Fancy Text: "${text}"*\n\n`;
+  let result = `✨ *Fancy Text: "${text}"*\n`;
   for (const [name, fn] of Object.entries(transforms)) {
     result += `*${name}:* ${fn(text)}\n`;
   }
@@ -101,7 +101,7 @@ async function genpass(ctx) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}|;:,.<>?';
   let pass = '';
   for (let i = 0; i < len; i++) pass += chars[Math.floor(Math.random() * chars.length)];
-  await send(sock, from, msg, `🔑 *Generated Password*\n\n\`${pass}\`\n\n📏 Length: ${len} characters\n⚠️ _Do not share this password with anyone!_`);
+  await send(sock, from, msg, `🔑 *Generated Password*\n\`${pass}\`\n📏 Length: ${len} characters\n⚠️ _Do not share this password with anyone!_`);
 }
 
 async function calculate(ctx) {
@@ -113,7 +113,7 @@ async function calculate(ctx) {
     // eslint-disable-next-line no-new-func
     const result = Function(`'use strict'; return (${safe})`)();
     if (!isFinite(result)) return send(sock, from, msg, '❌ Result is not a valid number.');
-    await send(sock, from, msg, `🧮 *Calculator*\n\n📝 Expression: \`${text}\`\n✅ Result: *${result}*`);
+    await send(sock, from, msg, `🧮 *Calculator*\n📝 Expression: \`${text}\`\n✅ Result: *${result}*`);
   } catch (err) {
     await send(sock, from, msg, `❌ Invalid expression: ${err.message}`);
   }
@@ -189,13 +189,13 @@ async function time(ctx) {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
       hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
     });
-    await send(sock, from, msg, `🕐 *Current Time*\n\n🌍 Timezone: ${tz}\n📅 ${now}`);
+    await send(sock, from, msg, `🕐 *Current Time*\n🌍 Timezone: ${tz}\n📅 ${now}`);
   } catch {
     const now = new Date().toLocaleString('en-US', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
       hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
     });
-    await send(sock, from, msg, `🕐 *Current Time*\n\n📅 ${now}`);
+    await send(sock, from, msg, `🕐 *Current Time*\n📅 ${now}`);
   }
 }
 
@@ -230,7 +230,7 @@ async function tourl(ctx) {
 
   const quoted = contextInfo?.quotedMessage;
   if (!quoted) return send(sock, from, msg,
-    '🔗 *Usage:* Reply to any media (image/video/audio/document) with `.tourl`\n\n_Uploads it and sends back a public URL._'
+    '🔗 *Usage:* Reply to any media (image/video/audio/document) with `.tourl`\n_Uploads it and sends back a public URL._'
   );
 
   const mediaTypes = ['imageMessage', 'videoMessage', 'audioMessage', 'documentMessage', 'stickerMessage'];
@@ -283,10 +283,10 @@ async function tourl(ctx) {
 
     const sizeKb = (buf.length / 1024).toFixed(1);
     await send(sock, from, msg,
-      `🔗 *Media URL Generated*\n\n` +
+      `🔗 *Media URL Generated*\n` +
       `📎 *URL:* ${url}\n` +
       `📦 *Size:* ${sizeKb} KB\n` +
-      `🗂️ *Type:* ${mime}\n\n` +
+      `🗂️ *Type:* ${mime}\n` +
       `_Link valid for 7 days. Use .tinyurl to shorten it._`
     );
   } catch (err) {
@@ -308,7 +308,7 @@ async function viewonce(ctx) {
 
   if (!quotedId) {
     return sock.sendMessage(from, {
-      text: '👁️ *Usage:* Reply to a view-once photo or video with *.vv*\n\n_Make sure you are replying directly to the view-once message._'
+      text: '👁️ *Usage:* Reply to a view-once photo or video with *.vv*\n_Make sure you are replying directly to the view-once message._'
     }, { quoted: msg });
   }
 
@@ -316,7 +316,7 @@ async function viewonce(ctx) {
 
   if (!cached?.buffer) {
     return sock.sendMessage(from, {
-      text: '❌ Could not find that view-once media.\n\n_Possible reasons:_\n• The media expired (cache lasts 10 min)\n• The message was sent before the bot started\n• It is not a view-once message\n\n_Tip: Ask them to resend it so the bot can catch it._'
+      text: '❌ Could not find that view-once media.\n_Possible reasons:_\n• The media expired (cache lasts 10 min)\n• The message was sent before the bot started\n• It is not a view-once message\n_Tip: Ask them to resend it so the bot can catch it._'
     }, { quoted: msg });
   }
 
@@ -400,7 +400,7 @@ async function anon(ctx) {
   if (args.length < 2) {
     await deleteCommandMsg();
     return sock.sendMessage(senderJid, {
-      text: '🕵️ *Anonymous Message*\n\n*Usage:* .anon <number> <message>\n\n*Example:*\n.anon 254712345678 Hey, just wanted to say hi! 👋\n\n_• Number without + or spaces_\n_• Recipient sees it came from this bot, not you_\n_• Max 5 messages per hour_\n_• Use in DM for full privacy_'
+      text: '🕵️ *Anonymous Message*\n*Usage:* .anon <number> <message>\n*Example:*\n.anon 254712345678 Hey, just wanted to say hi! 👋\n_• Number without + or spaces_\n_• Recipient sees it came from this bot, not you_\n_• Max 5 messages per hour_\n_• Use in DM for full privacy_'
     });
   }
 
@@ -432,12 +432,12 @@ async function anon(ctx) {
 
     // Send anon message to recipient's DM — from the bot, no sender info
     await sock.sendMessage(targetJid, {
-      text: `🕵️ *Anonymous Message*\n\n${message}\n\n_Someone sent you this anonymously via Firebox Bot. Their identity is hidden._`
+      text: `🕵️ *Anonymous Message*\n${message}\n_Someone sent you this anonymously via Firebox Bot. Their identity is hidden._`
     });
 
     // Confirm only in sender's private DM
     await sock.sendMessage(senderJid, {
-      text: `✅ *Anonymous message sent!*\n\n📱 To: +${rawNumber}\n📝 "${message.slice(0, 60)}${message.length > 60 ? '...' : ''}"\n\n_The recipient cannot see who you are._`
+      text: `✅ *Anonymous message sent!*\n📱 To: +${rawNumber}\n📝 "${message.slice(0, 60)}${message.length > 60 ? '...' : ''}"\n_The recipient cannot see who you are._`
     });
 
     console.log(`[ANON] ${sender} → ${rawNumber}`);
@@ -487,7 +487,7 @@ async function confess(ctx) {
 
   if (!text) {
     return sock.sendMessage(senderJid, {
-      text: '🤫 *Anonymous Confession*\n\n*Usage:* .confess <your confession>\n\n*Example:*\n.confess I have a crush on someone in this group 😳\n\n_Your identity is completely hidden. Max 3 confessions per day._'
+      text: '🤫 *Anonymous Confession*\n*Usage:* .confess <your confession>\n*Example:*\n.confess I have a crush on someone in this group 😳\n_Your identity is completely hidden. Max 3 confessions per day._'
     });
   }
 
@@ -506,14 +506,14 @@ async function confess(ctx) {
   if (ownerJid !== '@s.whatsapp.net') {
     try {
       await sock.sendMessage(ownerJid, {
-        text: `📬 *New Confession Received!*\n\n🆔 ID: \`${id}\`\n\n💬 "${text}"\n\n_Use .sharecf ${id} to share it or .clearcf ${id} to delete it_`
+        text: `📬 *New Confession Received!*\n🆔 ID: \`${id}\`\n💬 "${text}"\n_Use .sharecf ${id} to share it or .clearcf ${id} to delete it_`
       });
     } catch (_) {}
   }
 
   // Confirm privately in sender's DM only
   await sock.sendMessage(senderJid, {
-    text: `✅ *Confession submitted!*\n\n🤫 Your identity is completely hidden.\n_The owner will review and may share it anonymously._`
+    text: `✅ *Confession submitted!*\n🤫 Your identity is completely hidden.\n_The owner will review and may share it anonymously._`
   });
 }
 
@@ -521,7 +521,7 @@ async function reverse(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text) return send(sock, from, msg, '🔄 Usage: .reverse <text>\nExample: .reverse Hello World');
   const rev = text.split('').reverse().join('');
-  await send(sock, from, msg, `🔄 *Reversed*\n\n📝 Original: ${text}\n✅ Result: ${rev}`);
+  await send(sock, from, msg, `🔄 *Reversed*\n📝 Original: ${text}\n✅ Result: ${rev}`);
 }
 
 async function wordcount(ctx) {
@@ -531,7 +531,7 @@ async function wordcount(ctx) {
   const chars = text.length;
   const charsNoSpace = text.replace(/\s/g, '').length;
   const sentences = (text.match(/[.!?]+/g) || []).length;
-  await send(sock, from, msg, `📊 *Word Count*\n\n📝 Words: *${words}*\n🔤 Characters: *${chars}*\n🔡 Characters (no spaces): *${charsNoSpace}*\n📄 Sentences: *${sentences}*`);
+  await send(sock, from, msg, `📊 *Word Count*\n📝 Words: *${words}*\n🔤 Characters: *${chars}*\n🔡 Characters (no spaces): *${charsNoSpace}*\n📄 Sentences: *${sentences}*`);
 }
 
 const MORSE = {
@@ -547,15 +547,15 @@ async function morse(ctx) {
   const mode = args[0]?.toLowerCase();
   const input = args.slice(1).join(' ');
   if (!mode || !input || !['encode','decode'].includes(mode))
-    return send(sock, from, msg, '📡 Usage:\n.morse encode <text>\n.morse decode <morse>\n\nExample:\n.morse encode hello\n.morse decode .... . .-.. .-.. ---');
+    return send(sock, from, msg, '📡 Usage:\n.morse encode <text>\n.morse decode <morse>\nExample:\n.morse encode hello\n.morse decode .... . .-.. .-.. ---');
   if (mode === 'encode') {
     const encoded = input.toLowerCase().split('').map(c => c === ' ' ? '/' : (MORSE[c] || c)).join(' ');
-    await send(sock, from, msg, `📡 *Morse Encode*\n\n📝 Input: ${input}\n✅ Morse: ${encoded}`);
+    await send(sock, from, msg, `📡 *Morse Encode*\n📝 Input: ${input}\n✅ Morse: ${encoded}`);
   } else {
     const decoded = input.split(' / ').map(word =>
       word.split(' ').map(sym => MORSE_REV[sym] || '?').join('')
     ).join(' ');
-    await send(sock, from, msg, `📡 *Morse Decode*\n\n📟 Input: ${input}\n✅ Result: ${decoded.toUpperCase()}`);
+    await send(sock, from, msg, `📡 *Morse Decode*\n📟 Input: ${input}\n✅ Result: ${decoded.toUpperCase()}`);
   }
 }
 
@@ -564,14 +564,14 @@ async function binary(ctx) {
   const mode = args[0]?.toLowerCase();
   const input = args.slice(1).join(' ');
   if (!mode || !input || !['encode','decode'].includes(mode))
-    return send(sock, from, msg, '💾 Usage:\n.binary encode <text>\n.binary decode <binary>\n\nExample:\n.binary encode Hi\n.binary decode 01001000 01101001');
+    return send(sock, from, msg, '💾 Usage:\n.binary encode <text>\n.binary decode <binary>\nExample:\n.binary encode Hi\n.binary decode 01001000 01101001');
   if (mode === 'encode') {
     const encoded = input.split('').map(c => c.charCodeAt(0).toString(2).padStart(8,'0')).join(' ');
-    await send(sock, from, msg, `💾 *Binary Encode*\n\n📝 Input: ${input}\n✅ Binary: ${encoded}`);
+    await send(sock, from, msg, `💾 *Binary Encode*\n📝 Input: ${input}\n✅ Binary: ${encoded}`);
   } else {
     try {
       const decoded = input.split(' ').map(b => String.fromCharCode(parseInt(b, 2))).join('');
-      await send(sock, from, msg, `💾 *Binary Decode*\n\n📟 Input: ${input}\n✅ Result: ${decoded}`);
+      await send(sock, from, msg, `💾 *Binary Decode*\n📟 Input: ${input}\n✅ Result: ${decoded}`);
     } catch {
       await send(sock, from, msg, '❌ Invalid binary string. Make sure it\'s 8-bit groups separated by spaces.');
     }
@@ -583,7 +583,7 @@ async function repeat(ctx) {
   const n = parseInt(args[0]);
   const txt = args.slice(1).join(' ');
   if (!n || !txt || n < 1 || n > 20) return send(sock, from, msg, '🔁 Usage: .repeat <1-20> <text>\nExample: .repeat 3 Hello!');
-  await send(sock, from, msg, `🔁 *Repeat x${n}*\n\n${Array(n).fill(txt).join('\n')}`);
+  await send(sock, from, msg, `🔁 *Repeat x${n}*\n${Array(n).fill(txt).join('\n')}`);
 }
 
 async function age(ctx) {
@@ -601,7 +601,7 @@ async function age(ctx) {
   if (days < 0) { months--; days += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); }
   if (months < 0) { years--; months += 12; }
   const totalDays = Math.floor((now - dob) / 86400000);
-  await send(sock, from, msg, `🎂 *Age Calculator*\n\n📅 Birthday: ${text}\n\n🎉 Age: *${years} years, ${months} months, ${days} days*\n📆 Total days lived: *${totalDays.toLocaleString()}*`);
+  await send(sock, from, msg, `🎂 *Age Calculator*\n📅 Birthday: ${text}\n🎉 Age: *${years} years, ${months} months, ${days} days*\n📆 Total days lived: *${totalDays.toLocaleString()}*`);
 }
 
 async function countdown(ctx) {
@@ -617,7 +617,7 @@ async function countdown(ctx) {
   const days = Math.floor(diff / 86400000);
   const hours = Math.floor((diff % 86400000) / 3600000);
   const minutes = Math.floor((diff % 3600000) / 60000);
-  await send(sock, from, msg, `⏳ *Countdown*\n\n📅 Target: ${text}\n\n⏱️ *${days}* days, *${hours}* hours, *${minutes}* minutes remaining`);
+  await send(sock, from, msg, `⏳ *Countdown*\n📅 Target: ${text}\n⏱️ *${days}* days, *${hours}* hours, *${minutes}* minutes remaining`);
 }
 
 async function rps(ctx) {
@@ -631,7 +631,7 @@ async function rps(ctx) {
   if (player === bot) result = '🤝 *It\'s a draw!*';
   else if ((player==='rock'&&bot==='scissors')||(player==='paper'&&bot==='rock')||(player==='scissors'&&bot==='paper')) result = '🏆 *You win!*';
   else result = '🤖 *Bot wins!*';
-  await send(sock, from, msg, `✂️ *Rock Paper Scissors*\n\n👤 You: ${emojis[player]} ${player}\n🤖 Bot: ${emojis[bot]} ${bot}\n\n${result}`);
+  await send(sock, from, msg, `✂️ *Rock Paper Scissors*\n👤 You: ${emojis[player]} ${player}\n🤖 Bot: ${emojis[bot]} ${bot}\n${result}`);
 }
 
 async function compliment(ctx) {
@@ -648,7 +648,7 @@ async function compliment(ctx) {
     "You have a brilliant mind. 🧠",
     "Anyone lucky enough to know you is truly blessed. 🙏"
   ];
-  await send(sock, from, msg, `💐 *Compliment*\n\n${list[Math.floor(Math.random()*list.length)]}`);
+  await send(sock, from, msg, `💐 *Compliment*\n${list[Math.floor(Math.random()*list.length)]}`);
 }
 
 async function roast(ctx) {
@@ -665,7 +665,7 @@ async function roast(ctx) {
     "You have your entire life to be an idiot. Why rush? 🏃",
     "I'm not saying you're dumb, but you'd struggle to pour water out of a boot with instructions on the heel. 🥾"
   ];
-  await send(sock, from, msg, `🔥 *Roast*\n\n${list[Math.floor(Math.random()*list.length)]}`);
+  await send(sock, from, msg, `🔥 *Roast*\n${list[Math.floor(Math.random()*list.length)]}`);
 }
 
 async function wyr(ctx) {
@@ -683,7 +683,7 @@ async function wyr(ctx) {
     ["speak every language", "play every instrument"]
   ];
   const [a, b] = list[Math.floor(Math.random()*list.length)];
-  await send(sock, from, msg, `🤔 *Would You Rather?*\n\n🅰️ ${a}\n\n— or —\n\n🅱️ ${b}\n\n_Reply with A or B!_`);
+  await send(sock, from, msg, `🤔 *Would You Rather?*\n🅰️ ${a}\n— or —\n🅱️ ${b}\n_Reply with A or B!_`);
 }
 
 const RIDDLES = [
@@ -702,7 +702,7 @@ const RIDDLES = [
 async function riddle(ctx) {
   const { sock, from, msg } = ctx;
   const r = RIDDLES[Math.floor(Math.random()*RIDDLES.length)];
-  await send(sock, from, msg, `🧩 *Riddle*\n\n${r.q}\n\n||Answer: ${r.a}||`);
+  await send(sock, from, msg, `🧩 *Riddle*\n${r.q}\n||Answer: ${r.a}||`);
 }
 
 const activeGuessGames = new Map();
@@ -714,7 +714,7 @@ async function numguess(ctx) {
   if (text?.toLowerCase() === 'start' || !activeGuessGames.has(key)) {
     const secret = Math.floor(Math.random() * 100) + 1;
     activeGuessGames.set(key, { secret, attempts: 0, max: 7 });
-    return send(sock, from, msg, `🎮 *Number Guessing Game*\n\nI'm thinking of a number between *1 and 100*.\nYou have *7 attempts*. Type .guess <number> to guess!\n\nExample: .guess 50`);
+    return send(sock, from, msg, `🎮 *Number Guessing Game*\nI'm thinking of a number between *1 and 100*.\nYou have *7 attempts*. Type .guess <number> to guess!\nExample: .guess 50`);
   }
 
   const game = activeGuessGames.get(key);
@@ -736,7 +736,7 @@ async function numguess(ctx) {
   }
 
   const hint = guess < game.secret ? '📈 Too low!' : '📉 Too high!';
-  await send(sock, from, msg, `${hint}\n\nAttempts left: *${left}*`);
+  await send(sock, from, msg, `${hint}\nAttempts left: *${left}*`);
 }
 
 // ── TEXT TO SPEECH ─────────────────────────────────────────────────────────────
@@ -751,10 +751,10 @@ async function tts(ctx) {
   const { sock, from, msg, args } = ctx;
   if (!args.length) return send(sock, from, msg,
     `🔊 *Usage:* .tts <text>\n` +
-    `🌐 *With language:* .tts <lang> <text>\n\n` +
+    `🌐 *With language:* .tts <lang> <text>\n` +
     `*Supported languages:*\n` +
     Object.entries(TTS_LANGS).map(([k, v]) => `• ${k} — ${v}`).join('\n') +
-    `\n\n*Examples:*\n• .tts Hello how are you\n• .tts sw Habari yako`);
+    `\n*Examples:*\n• .tts Hello how are you\n• .tts sw Habari yako`);
 
   let lang = 'en';
   let phrase = args.join(' ');
@@ -796,7 +796,7 @@ async function readImage(ctx) {
 
   if (type !== 'imageMessage') {
     return send(sock, from, msg,
-      'Reply to an image with *.read* and I\'ll extract any text from it.\n\n_Example: someone posts a screenshot → you reply with_ *.read*',
+      'Reply to an image with *.read* and I\'ll extract any text from it.\n_Example: someone posts a screenshot → you reply with_ *.read*',
       '📷 Read Image Text'
     );
   }
@@ -826,7 +826,7 @@ async function readImage(ctx) {
 
     const conf = Math.round(confidence);
     await send(sock, from, msg,
-      `📄 *Text extracted* _(${conf}% confidence)_\n\n${cleaned}`,
+      `📄 *Text extracted* _(${conf}% confidence)_\n${cleaned}`,
       '📷 Read Image Text'
     );
 
