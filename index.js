@@ -43,6 +43,14 @@ console.log('🔥 Firebox WhatsApp Bot v1.0.0');
 console.log('─────────────────────────────────');
 console.log('🌐 Dashboard: open the Preview tab to manage sessions\n');
 
-db.initialize();
-startServer();
-loadAndStartAll().catch(console.error);
+// Initialize DB (connects to MongoDB, syncs data) then start everything
+db.initialize()
+  .then(() => {
+    startServer();
+    loadAndStartAll().catch(console.error);
+  })
+  .catch(err => {
+    console.error('[DB] Initialization error — starting anyway:', err.message);
+    startServer();
+    loadAndStartAll().catch(console.error);
+  });

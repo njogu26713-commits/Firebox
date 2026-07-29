@@ -1,70 +1,157 @@
-const fs = require('fs');
-const path = require('path');
+const fs     = require('fs');
+const path   = require('path');
+const crypto = require('crypto');
 
-const crypto            = require('crypto');
-const DATA_DIR          = path.join(__dirname, '../data');
-const GROUPS_FILE       = path.join(DATA_DIR, 'groups.json');
-const USERS_FILE        = path.join(DATA_DIR, 'users.json');
-const TRIVIA_FILE       = path.join(DATA_DIR, 'trivia.json');
-const WARNS_FILE        = path.join(DATA_DIR, 'warns.json');
-const SETTINGS_FILE     = path.join(DATA_DIR, 'settings.json');
-const SCHEDULES_FILE    = path.join(DATA_DIR, 'schedules.json');
-const CONFESSIONS_FILE  = path.join(DATA_DIR, 'confessions.json');
-const BROADCAST_FILE    = path.join(DATA_DIR, 'broadcast.json');
-const STATUS_STATS_FILE = path.join(DATA_DIR, 'statusstats.json');
-const COINS_FILE        = path.join(DATA_DIR, 'coins.json');
-const TOKENS_FILE       = path.join(DATA_DIR, 'tokens.json');
+const DATA_DIR = path.join(__dirname, '../data');
 
-// ── In-memory cache — files are read from disk once, then served from memory ──
-// Cache is invalidated (set to null) whenever we write, and repopulated on next read.
-const _cache = new Map();
+// ── In-memory store (source of truth for synchronous reads) ──────────────────
+const _mem = {};
 
-function ensureDir() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-}
+// ── MongoDB state ─────────────────────────────────────────────────────────────
+let _mongoClient = null;
+let _mongoDb     = null;
 
-function readJson(file, fallback = {}) {
-  if (_cache.has(file)) return _cache.get(file);
+// ── Collection key → { file, fallback } map ──────────────────────────────────
+const STORE_KEYS = {
+  groups:      { file: path.join(DATA_DIR, 'groups.json'),      fallback: {} },
+  users:       { file: path.join(DATA_DIR, 'users.json'),       fallback: {} },
+  trivia:      { file: path.join(DATA_DIR, 'trivia.json'),      fallback: {} },
+  warns:       { file: path.join(DATA_DIR, 'warns.json'),       fallback: {} },
+  settings:    { file: path.join(DATA_DIR, 'settings.json'),    fallback: {} },
+  schedules:   { file: path.join(DATA_DIR, 'schedules.json'),   fallback: [] },
+  confessions: { file: path.join(DATA_DIR, 'confessions.json'), fallback: [] },
+  broadcast:   { file: path.join(DATA_DIR, 'broadcast.json'),   fallback: [] },
+  statusstats: { file: path.join(DATA_DIR, 'statusstats.json'), fallback: {} },
+  coins:       { file: path.join(DATA_DIR, 'coins.json'),       fallback: { balance: 20, totalSpent: 0, history: [] } },
+  tokens:      { file: path.join(DATA_DIR, 'tokens.json'),      fallback: {} },
+};
+
+// ── MongoDB helpers ───────────────────────────────────────────────────────────
+
+async function mongoConnect() {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    console.warn('[DB] MONGODB_URI not set — using JSON files only');
+    return false;
+  }
   try {
-    if (!fs.existsSync(file)) {
-      _cache.set(file, fallback);
-      return fallback;
-    }
-    const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
-    _cache.set(file, parsed);
-    return parsed;
-  } catch {
-    _cache.set(file, fallback);
-    return fallback;
+    const { MongoClient } = require('mongodb');
+    _mongoClient = new MongoClient(uri, {
+      connectTimeoutMS:          15000,
+      serverSelectionTimeoutMS:  15000,
+    });
+    await _mongoClient.connect();
+
+    // Parse the database name from the URI path, defaulting to 'firebox'
+    let dbName = 'firebox';
+    try {
+      const match = uri.match(/\/([^/?#]+)(\?|#|$)/);
+      if (match && match[1]) dbName = match[1];
+    } catch {}
+
+    _mongoDb = _mongoClient.db(dbName);
+    console.log(`[DB] MongoDB connected — database: "${dbName}"`);
+    return true;
+  } catch (err) {
+    console.error('[DB] MongoDB connection failed:', err.message);
+    return false;
   }
 }
 
-function writeJson(file, data) {
-  _cache.set(file, data);
-  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+async function mongoLoad(key) {
+  if (!_mongoDb) return null;
+  try {
+    const doc = await _mongoDb.collection('store').findOne({ _id: key });
+    return doc ? doc.data : null;
+  } catch {
+    return null;
+  }
 }
 
-function initialize() {
-  ensureDir();
-  if (!fs.existsSync(GROUPS_FILE))       writeJson(GROUPS_FILE, {});
-  if (!fs.existsSync(USERS_FILE))        writeJson(USERS_FILE, {});
-  if (!fs.existsSync(TRIVIA_FILE))       writeJson(TRIVIA_FILE, {});
-  if (!fs.existsSync(WARNS_FILE))        writeJson(WARNS_FILE, {});
-  if (!fs.existsSync(SETTINGS_FILE))     writeJson(SETTINGS_FILE, {});
-  if (!fs.existsSync(SCHEDULES_FILE))    writeJson(SCHEDULES_FILE, []);
-  if (!fs.existsSync(CONFESSIONS_FILE))  writeJson(CONFESSIONS_FILE, []);
-  if (!fs.existsSync(BROADCAST_FILE))    writeJson(BROADCAST_FILE, []);
-  if (!fs.existsSync(STATUS_STATS_FILE)) writeJson(STATUS_STATS_FILE, {});
-  if (!fs.existsSync(COINS_FILE))        writeJson(COINS_FILE, { balance: 20, totalSpent: 0, history: [] });
-  if (!fs.existsSync(TOKENS_FILE))       writeJson(TOKENS_FILE, {});
-  console.log('[DB] JSON database initialized');
+async function mongoSave(key, data) {
+  if (!_mongoDb) return;
+  try {
+    await _mongoDb.collection('store').updateOne(
+      { _id: key },
+      { $set: { data, updatedAt: new Date() } },
+      { upsert: true }
+    );
+  } catch (err) {
+    console.error(`[DB] MongoDB write error (${key}):`, err.message);
+  }
+}
+
+// ── Core read / write ─────────────────────────────────────────────────────────
+
+function readMem(key) {
+  if (_mem[key] === undefined) {
+    const { file, fallback } = STORE_KEYS[key];
+    try {
+      _mem[key] = fs.existsSync(file)
+        ? JSON.parse(fs.readFileSync(file, 'utf8'))
+        : JSON.parse(JSON.stringify(fallback));
+    } catch {
+      _mem[key] = JSON.parse(JSON.stringify(fallback));
+    }
+  }
+  return _mem[key];
+}
+
+function writeMem(key, data) {
+  _mem[key] = data;
+
+  // Keep JSON file in sync (fast, synchronous fallback)
+  try {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(STORE_KEYS[key].file, JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error(`[DB] JSON write error (${key}):`, err.message);
+  }
+
+  // Persist to MongoDB asynchronously — never blocks the caller
+  mongoSave(key, data).catch(() => {});
+}
+
+// ── initialize ────────────────────────────────────────────────────────────────
+
+async function initialize() {
+  // Ensure data directory and JSON files exist (cold-start / JSON fallback)
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  for (const key of Object.keys(STORE_KEYS)) {
+    readMem(key); // populates _mem from JSON if present
+  }
+
+  // Connect to MongoDB
+  const connected = await mongoConnect();
+  if (!connected) {
+    console.log('[DB] Running with JSON file storage');
+    return;
+  }
+
+  // Sync: for each key, prefer MongoDB data if it exists; otherwise seed MongoDB
+  // from existing JSON so data is never lost on first migration.
+  for (const key of Object.keys(STORE_KEYS)) {
+    const mongoData = await mongoLoad(key);
+    if (mongoData !== null) {
+      // MongoDB has data → use it (overwrites JSON cache)
+      _mem[key] = mongoData;
+      try {
+        fs.writeFileSync(STORE_KEYS[key].file, JSON.stringify(mongoData, null, 2));
+      } catch {}
+    } else {
+      // MongoDB is empty for this key → seed it from JSON / defaults
+      await mongoSave(key, _mem[key]);
+    }
+  }
+
+  console.log('[DB] MongoDB sync complete — all collections loaded');
 }
 
 // ── coins ─────────────────────────────────────────────────────────────────────
 const COIN_LOG_LIMIT = 50;
 
 function getCoins() {
-  const data = readJson(COINS_FILE, { balance: 20, totalSpent: 0, history: [] });
+  const data = readMem('coins');
   if (typeof data.balance !== 'number') data.balance = 20;
   if (typeof data.totalSpent !== 'number') data.totalSpent = 0;
   if (!Array.isArray(data.history)) data.history = [];
@@ -76,7 +163,7 @@ function addCoins(amount, note) {
   data.balance += amount;
   data.history.unshift({ type: 'add', amount, note: note || 'Top-up', ts: Date.now() });
   if (data.history.length > COIN_LOG_LIMIT) data.history = data.history.slice(0, COIN_LOG_LIMIT);
-  writeJson(COINS_FILE, data);
+  writeMem('coins', data);
   console.log(`[COINS] +${amount} coins added. Balance: ${data.balance}`);
   return data.balance;
 }
@@ -89,7 +176,7 @@ function spendCoins(amount, note) {
   data.totalSpent += spent;
   data.history.unshift({ type: 'spend', amount: spent, note: note || 'Command', ts: Date.now() });
   if (data.history.length > COIN_LOG_LIMIT) data.history = data.history.slice(0, COIN_LOG_LIMIT);
-  writeJson(COINS_FILE, data);
+  writeMem('coins', data);
   return data.balance;
 }
 
@@ -98,24 +185,24 @@ function setCoins(amount) {
   data.balance = Math.max(0, amount);
   data.history.unshift({ type: 'set', amount, note: 'Manual set', ts: Date.now() });
   if (data.history.length > COIN_LOG_LIMIT) data.history = data.history.slice(0, COIN_LOG_LIMIT);
-  writeJson(COINS_FILE, data);
+  writeMem('coins', data);
   return data.balance;
 }
 
 function getDailyRefill() {
   const data = getCoins();
   return {
-    enabled: data.dailyRefillEnabled !== false,
-    amount: typeof data.dailyRefillAmount === 'number' ? data.dailyRefillAmount : 100,
-    lastRefillDate: data.lastRefillDate || null
+    enabled:        data.dailyRefillEnabled !== false,
+    amount:         typeof data.dailyRefillAmount === 'number' ? data.dailyRefillAmount : 100,
+    lastRefillDate: data.lastRefillDate || null,
   };
 }
 
 function setDailyRefill(enabled, amount) {
   const data = getCoins();
   data.dailyRefillEnabled = enabled;
-  data.dailyRefillAmount = Math.max(1, Math.min(10000000, parseInt(amount) || 100));
-  writeJson(COINS_FILE, data);
+  data.dailyRefillAmount  = Math.max(1, Math.min(10000000, parseInt(amount) || 100));
+  writeMem('coins', data);
   return getDailyRefill();
 }
 
@@ -123,185 +210,195 @@ function checkAndApplyDailyRefill() {
   const data = getCoins();
   if (data.dailyRefillEnabled === false) return null;
   const amount = typeof data.dailyRefillAmount === 'number' ? data.dailyRefillAmount : 100;
-  const today = new Date().toISOString().slice(0, 10);
+  const today  = new Date().toISOString().slice(0, 10);
   if (data.lastRefillDate === today) return null;
   data.balance += amount;
   data.lastRefillDate = today;
   data.history.unshift({ type: 'refill', amount, note: `Daily auto-refill (${today})`, ts: Date.now() });
   if (data.history.length > COIN_LOG_LIMIT) data.history = data.history.slice(0, COIN_LOG_LIMIT);
-  writeJson(COINS_FILE, data);
+  writeMem('coins', data);
   console.log(`[COINS] Daily auto-refill: +${amount} coins. Balance: ${data.balance}`);
   return data.balance;
 }
 
+// ── confessions ───────────────────────────────────────────────────────────────
+
 function addConfession(confession) {
-  const list = readJson(CONFESSIONS_FILE, []);
+  const list = readMem('confessions');
   list.push(confession);
-  writeJson(CONFESSIONS_FILE, list);
+  writeMem('confessions', list);
   return confession;
 }
 
-function getConfessions() {
-  return readJson(CONFESSIONS_FILE, []);
-}
+function getConfessions() { return readMem('confessions'); }
 
 function removeConfession(id) {
-  const list = readJson(CONFESSIONS_FILE, []).filter(c => c.id !== id);
-  writeJson(CONFESSIONS_FILE, list);
+  writeMem('confessions', readMem('confessions').filter(c => c.id !== id));
 }
 
 function getConfession(id) {
-  return readJson(CONFESSIONS_FILE, []).find(c => c.id === id) || null;
+  return readMem('confessions').find(c => c.id === id) || null;
 }
+
+// ── schedules ─────────────────────────────────────────────────────────────────
 
 function addSchedule(schedule) {
-  const list = readJson(SCHEDULES_FILE, []);
+  const list = readMem('schedules');
   list.push(schedule);
-  writeJson(SCHEDULES_FILE, list);
+  writeMem('schedules', list);
 }
 
-function getSchedules() {
-  return readJson(SCHEDULES_FILE, []);
-}
+function getSchedules() { return readMem('schedules'); }
 
 function removeSchedule(id) {
-  const list = readJson(SCHEDULES_FILE, []).filter(s => s.id !== id);
-  writeJson(SCHEDULES_FILE, list);
+  writeMem('schedules', readMem('schedules').filter(s => s.id !== id));
 }
 
 function removeSchedulesBefore(timestamp) {
-  const list = readJson(SCHEDULES_FILE, []).filter(s => s.sendAt > timestamp);
-  writeJson(SCHEDULES_FILE, list);
+  const list = readMem('schedules').filter(s => s.sendAt > timestamp);
+  writeMem('schedules', list);
   return list;
 }
 
-const SETTING_DEFAULTS = { autoViewStatus: false, autoReactStatus: false, autoReactEmoji: '🔥', autoStatusReply: false, autoStatusReplyMsg: 'Nice status! 🔥', autoReply: false, autoReplyMode: 'all', autoReplyMsg: '👋 Hello! I am currently unavailable. I will get back to you soon.', aiChatbot: false, aiChatbotMode: 'dm', aiChatbotPersona: '', aiChatOpener: '', aiChatTargets: [], antiDelete: false, antiEdit: false, antiDeleteStatus: false, awayMode: false, awayMsg: '👋 Hey! I\'m currently offline/unavailable. I\'ll get back to you as soon as I\'m back. 🙏' };
+// ── settings ──────────────────────────────────────────────────────────────────
+
+const SETTING_DEFAULTS = {
+  autoViewStatus: false, autoReactStatus: false, autoReactEmoji: '🔥',
+  autoStatusReply: false, autoStatusReplyMsg: 'Nice status! 🔥',
+  autoReply: false, autoReplyMode: 'all',
+  autoReplyMsg: '👋 Hello! I am currently unavailable. I will get back to you soon.',
+  aiChatbot: false, aiChatbotMode: 'dm', aiChatbotPersona: '', aiChatOpener: '', aiChatTargets: [],
+  antiDelete: false, antiEdit: false, antiDeleteStatus: false,
+  awayMode: false,
+  awayMsg: '👋 Hey! I\'m currently offline/unavailable. I\'ll get back to you as soon as I\'m back. 🙏',
+};
 
 function getBotSetting(key) {
-  const s = readJson(SETTINGS_FILE);
+  const s = readMem('settings');
   return key in s ? s[key] : SETTING_DEFAULTS[key];
 }
 
 function setBotSetting(key, value) {
-  const s = readJson(SETTINGS_FILE);
+  const s = readMem('settings');
   s[key] = value;
-  writeJson(SETTINGS_FILE, s);
+  writeMem('settings', s);
 }
 
-// Return a snapshot of all settings at once — avoids repeated reads per message
 function getAllSettings() {
-  return { ...SETTING_DEFAULTS, ...readJson(SETTINGS_FILE) };
+  return { ...SETTING_DEFAULTS, ...readMem('settings') };
 }
+
+// ── groups ────────────────────────────────────────────────────────────────────
 
 const GROUP_DEFAULTS = {
   antilink: 0, welcome: 0, muted: 0,
   anticall: 0, antidelete: 0, antiedit: 0, antibot: 0, antiforeign: 0,
   antibadword: 0, antiban: 0,
   welcomeMsg: '', goodbyeMsg: '',
-  badwords: []
+  badwords: [],
 };
 
 function getGroup(jid) {
-  const groups = readJson(GROUPS_FILE);
+  const groups = readMem('groups');
   return { ...GROUP_DEFAULTS, jid, ...(groups[jid] || {}) };
 }
 
 function setGroup(jid, data) {
-  const groups = readJson(GROUPS_FILE);
-  groups[jid] = { ...GROUP_DEFAULTS, jid, ...(groups[jid] || {}), ...data };
-  writeJson(GROUPS_FILE, groups);
+  const groups = readMem('groups');
+  groups[jid]  = { ...GROUP_DEFAULTS, jid, ...(groups[jid] || {}), ...data };
+  writeMem('groups', groups);
 }
 
-function getAllGroups() {
-  return Object.values(readJson(GROUPS_FILE));
-}
+function getAllGroups() { return Object.values(readMem('groups')); }
+
+// ── users ─────────────────────────────────────────────────────────────────────
 
 function getUser(jid) {
-  const users = readJson(USERS_FILE);
+  const users = readMem('users');
   return users[jid] || { jid, banned: 0 };
 }
 
 function setUser(jid, data) {
-  const users = readJson(USERS_FILE);
-  users[jid] = { ...(users[jid] || { jid, banned: 0 }), ...data };
-  writeJson(USERS_FILE, users);
+  const users = readMem('users');
+  users[jid]  = { ...(users[jid] || { jid, banned: 0 }), ...data };
+  writeMem('users', users);
 }
 
-// Warns: stored per group per user — warns[groupJid][userJid] = count
+// ── warns ─────────────────────────────────────────────────────────────────────
+
 function getWarn(groupJid, userJid) {
-  const warns = readJson(WARNS_FILE);
+  const warns = readMem('warns');
   return (warns[groupJid] && warns[groupJid][userJid]) || 0;
 }
 
 function addWarn(groupJid, userJid) {
-  const warns = readJson(WARNS_FILE);
+  const warns = readMem('warns');
   if (!warns[groupJid]) warns[groupJid] = {};
   warns[groupJid][userJid] = (warns[groupJid][userJid] || 0) + 1;
-  writeJson(WARNS_FILE, warns);
+  writeMem('warns', warns);
   return warns[groupJid][userJid];
 }
 
 function resetWarn(groupJid, userJid) {
-  const warns = readJson(WARNS_FILE);
+  const warns = readMem('warns');
   if (warns[groupJid]) delete warns[groupJid][userJid];
-  writeJson(WARNS_FILE, warns);
+  writeMem('warns', warns);
 }
 
 function listWarns(groupJid) {
-  const warns = readJson(WARNS_FILE);
-  return warns[groupJid] || {};
+  return readMem('warns')[groupJid] || {};
 }
 
+// ── trivia ────────────────────────────────────────────────────────────────────
+
 function setTrivia(jid, question, answer) {
-  const trivia = readJson(TRIVIA_FILE);
-  trivia[jid] = { question, answer, expires: Date.now() + 60000 };
-  writeJson(TRIVIA_FILE, trivia);
+  const trivia  = readMem('trivia');
+  trivia[jid]   = { question, answer, expires: Date.now() + 60000 };
+  writeMem('trivia', trivia);
 }
 
 function getTrivia(jid) {
-  const trivia = readJson(TRIVIA_FILE);
-  const row = trivia[jid];
+  const trivia = readMem('trivia');
+  const row    = trivia[jid];
   if (!row) return null;
   if (row.expires < Date.now()) {
     delete trivia[jid];
-    writeJson(TRIVIA_FILE, trivia);
+    writeMem('trivia', trivia);
     return null;
   }
   return row;
 }
 
 function clearTrivia(jid) {
-  const trivia = readJson(TRIVIA_FILE);
+  const trivia = readMem('trivia');
   delete trivia[jid];
-  writeJson(TRIVIA_FILE, trivia);
+  writeMem('trivia', trivia);
 }
 
+// ── bad words ─────────────────────────────────────────────────────────────────
+
 function addBadWord(jid, word) {
-  const grp = getGroup(jid);
+  const grp  = getGroup(jid);
   const list = grp.badwords || [];
-  const w = word.toLowerCase().trim();
-  if (!list.includes(w)) {
-    list.push(w);
-    setGroup(jid, { badwords: list });
-  }
+  const w    = word.toLowerCase().trim();
+  if (!list.includes(w)) { list.push(w); setGroup(jid, { badwords: list }); }
   return list;
 }
 
 function removeBadWord(jid, word) {
-  const grp = getGroup(jid);
-  const w = word.toLowerCase().trim();
+  const grp  = getGroup(jid);
+  const w    = word.toLowerCase().trim();
   const list = (grp.badwords || []).filter(b => b !== w);
   setGroup(jid, { badwords: list });
   return list;
 }
 
-function getBadWords(jid) {
-  return getGroup(jid).badwords || [];
-}
+function getBadWords(jid) { return getGroup(jid).badwords || []; }
 
 // ── status analytics ──────────────────────────────────────────────────────────
+
 function recordStatusReact(posterJid, emoji, statusType) {
-  const stats = readJson(STATUS_STATS_FILE, {});
+  const stats = readMem('statusstats');
   if (!stats[posterJid]) stats[posterJid] = { total: 0, text: 0, image: 0, video: 0, emojis: {}, lastSeen: null };
   const entry = stats[posterJid];
   entry.total = (entry.total || 0) + 1;
@@ -309,28 +406,19 @@ function recordStatusReact(posterJid, emoji, statusType) {
   entry[typeKey] = (entry[typeKey] || 0) + 1;
   entry.emojis[emoji] = (entry.emojis[emoji] || 0) + 1;
   entry.lastSeen = Date.now();
-  writeJson(STATUS_STATS_FILE, stats);
+  writeMem('statusstats', stats);
 }
 
-function getStatusAnalytics() {
-  return readJson(STATUS_STATS_FILE, {});
-}
+function getStatusAnalytics()  { return readMem('statusstats'); }
+function clearStatusAnalytics() { writeMem('statusstats', {}); }
 
-function clearStatusAnalytics() {
-  writeJson(STATUS_STATS_FILE, {});
-}
+// ── ai chat targets ───────────────────────────────────────────────────────────
 
-// ── aichat targets ───────────────────────────────────────────────────────────
-function getAiChatTargets() {
-  return getBotSetting('aiChatTargets') || [];
-}
+function getAiChatTargets()       { return getBotSetting('aiChatTargets') || []; }
 
 function addAiChatTarget(jid) {
   const list = getAiChatTargets();
-  if (!list.includes(jid)) {
-    list.push(jid);
-    setBotSetting('aiChatTargets', list);
-  }
+  if (!list.includes(jid)) { list.push(jid); setBotSetting('aiChatTargets', list); }
   return list;
 }
 
@@ -340,83 +428,71 @@ function removeAiChatTarget(jid) {
   return list;
 }
 
-function clearAiChatTargets() {
-  setBotSetting('aiChatTargets', []);
-}
+function clearAiChatTargets() { setBotSetting('aiChatTargets', []); }
 
 // ── broadcast list ────────────────────────────────────────────────────────────
-function getBroadcastList() {
-  return readJson(BROADCAST_FILE, []);
-}
+
+function getBroadcastList() { return readMem('broadcast'); }
 
 function addToBroadcast(jid) {
   const list = getBroadcastList();
-  if (!list.includes(jid)) {
-    list.push(jid);
-    writeJson(BROADCAST_FILE, list);
-  }
+  if (!list.includes(jid)) { list.push(jid); writeMem('broadcast', list); }
   return list;
 }
 
 function removeFromBroadcast(jid) {
   const list = getBroadcastList().filter(j => j !== jid);
-  writeJson(BROADCAST_FILE, list);
+  writeMem('broadcast', list);
   return list;
 }
 
-function clearBroadcast() {
-  writeJson(BROADCAST_FILE, []);
-}
+function clearBroadcast() { writeMem('broadcast', []); }
 
 // ── activation tokens ─────────────────────────────────────────────────────────
 
 const TOKEN_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no 0/1/I/O/L
 
 function generateTokenString() {
-  // 16 random chars from TOKEN_ALPHABET, formatted XXXX-XXXX-XXXX-XXXX
   const bytes = crypto.randomBytes(16);
   let raw = '';
-  for (const byte of bytes) {
-    raw += TOKEN_ALPHABET[byte % TOKEN_ALPHABET.length];
-  }
+  for (const byte of bytes) raw += TOKEN_ALPHABET[byte % TOKEN_ALPHABET.length];
   return `${raw.slice(0,4)}-${raw.slice(4,8)}-${raw.slice(8,12)}-${raw.slice(12,16)}`;
 }
 
 function createActivationToken(phone, userId, paymentId, expiresInHours) {
-  const tokens = readJson(TOKENS_FILE, {});
-  const token = generateTokenString();
-  const now = new Date();
+  const tokens    = readMem('tokens');
+  const token     = generateTokenString();
+  const now       = new Date();
   const expiresAt = new Date(now.getTime() + (expiresInHours || 720) * 60 * 60 * 1000);
-  tokens[token] = {
+  tokens[token]   = {
     token,
     phone,
     userId:    userId    || crypto.randomUUID(),
     paymentId: paymentId || crypto.randomUUID(),
     status:    'unused',
     createdAt: now.toISOString(),
-    expiresAt: expiresAt.toISOString()
+    expiresAt: expiresAt.toISOString(),
   };
-  writeJson(TOKENS_FILE, tokens);
+  writeMem('tokens', tokens);
   return tokens[token];
 }
 
 function getActivationToken(token) {
-  const tokens = readJson(TOKENS_FILE, {});
-  return tokens[token] || null;
+  return readMem('tokens')[token] || null;
 }
 
 function markActivationTokenUsed(token) {
-  const tokens = readJson(TOKENS_FILE, {});
+  const tokens = readMem('tokens');
   if (!tokens[token]) return null;
   tokens[token].status = 'used';
   tokens[token].usedAt = new Date().toISOString();
-  writeJson(TOKENS_FILE, tokens);
+  writeMem('tokens', tokens);
   return tokens[token];
 }
 
-function getAllActivationTokens() {
-  return Object.values(readJson(TOKENS_FILE, {}));
-}
+function getAllActivationTokens() { return Object.values(readMem('tokens')); }
+
+// ── exports ───────────────────────────────────────────────────────────────────
 
 module.exports = {
   initialize,
@@ -433,5 +509,5 @@ module.exports = {
   getAiChatTargets, addAiChatTarget, removeAiChatTarget, clearAiChatTargets,
   getCoins, addCoins, spendCoins, setCoins,
   getDailyRefill, setDailyRefill, checkAndApplyDailyRefill,
-  createActivationToken, getActivationToken, markActivationTokenUsed, getAllActivationTokens
+  createActivationToken, getActivationToken, markActivationTokenUsed, getAllActivationTokens,
 };
