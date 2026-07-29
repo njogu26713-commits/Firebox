@@ -24,6 +24,7 @@ const STORE_KEYS = {
   statusstats: { file: path.join(DATA_DIR, 'statusstats.json'), fallback: {} },
   coins:       { file: path.join(DATA_DIR, 'coins.json'),       fallback: { balance: 20, totalSpent: 0, history: [] } },
   tokens:      { file: path.join(DATA_DIR, 'tokens.json'),      fallback: {} },
+  payments:    { file: path.join(DATA_DIR, 'payments.json'),    fallback: {} },
 };
 
 // ── MongoDB helpers ───────────────────────────────────────────────────────────
@@ -492,6 +493,47 @@ function markActivationTokenUsed(token) {
 
 function getAllActivationTokens() { return Object.values(readMem('tokens')); }
 
+function updateActivationToken(token, updates) {
+  const tokens = readMem('tokens');
+  if (!tokens[token]) return null;
+  Object.assign(tokens[token], updates);
+  writeMem('tokens', tokens);
+  return tokens[token];
+}
+
+// ── payments ──────────────────────────────────────────────────────────────────
+
+function createPayment(checkoutRequestId, { token, plan, phone, amount }) {
+  const payments = readMem('payments');
+  payments[checkoutRequestId] = {
+    checkoutRequestId,
+    token,
+    plan,
+    phone,
+    amount,
+    status: 'pending',     // pending | confirmed | failed | cancelled
+    mpesaReceiptNumber: null,
+    resultCode: null,
+    resultDesc: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  writeMem('payments', payments);
+  return payments[checkoutRequestId];
+}
+
+function updatePayment(checkoutRequestId, updates) {
+  const payments = readMem('payments');
+  if (!payments[checkoutRequestId]) return null;
+  Object.assign(payments[checkoutRequestId], { ...updates, updatedAt: new Date().toISOString() });
+  writeMem('payments', payments);
+  return payments[checkoutRequestId];
+}
+
+function getPayment(checkoutRequestId) {
+  return readMem('payments')[checkoutRequestId] || null;
+}
+
 // ── exports ───────────────────────────────────────────────────────────────────
 
 module.exports = {
@@ -509,5 +551,6 @@ module.exports = {
   getAiChatTargets, addAiChatTarget, removeAiChatTarget, clearAiChatTargets,
   getCoins, addCoins, spendCoins, setCoins,
   getDailyRefill, setDailyRefill, checkAndApplyDailyRefill,
-  createActivationToken, getActivationToken, markActivationTokenUsed, getAllActivationTokens,
+  createActivationToken, getActivationToken, markActivationTokenUsed, getAllActivationTokens, updateActivationToken,
+  createPayment, updatePayment, getPayment,
 };

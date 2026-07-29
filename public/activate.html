@@ -19,6 +19,7 @@
       --green:   #16a34a;
       --red:     #dc2626;
       --amber:   #d97706;
+      --mpesa:   #00a550;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -47,13 +48,13 @@
 
     /* ── LAYOUT ─────────────────────────────────────────────── */
     .container {
-      flex: 1; display: flex; align-items: center; justify-content: center;
+      flex: 1; display: flex; align-items: flex-start; justify-content: center;
       padding: 40px 24px;
     }
     .card {
       background: var(--bg2); border: 1px solid var(--border);
       border-radius: 22px; overflow: hidden;
-      width: 100%; max-width: 480px;
+      width: 100%; max-width: 520px;
       box-shadow: 0 8px 32px rgba(0,0,0,.08);
     }
 
@@ -61,13 +62,49 @@
     .card-hdr {
       padding: 28px 32px 24px;
       border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     }
     .card-hdr h2 { font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 4px; }
-    .card-hdr p  { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
+    .card-hdr p  { font-size: 0.82rem; color: #94a3b8; line-height: 1.6; }
 
     /* ── CARD BODY ───────────────────────────────────────────── */
     .card-body { padding: 28px 32px 32px; display: flex; flex-direction: column; gap: 20px; }
 
+    /* ── PROGRESS INDICATOR ──────────────────────────────────── */
+    .progress-bar {
+      display: flex; align-items: center; gap: 0;
+      padding: 16px 32px 0;
+    }
+    .prog-step {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      flex: 1; position: relative;
+    }
+    .prog-step:not(:last-child)::after {
+      content: ''; position: absolute;
+      top: 13px; left: calc(50% + 14px); right: calc(-50% + 14px);
+      height: 2px; background: var(--border2);
+      transition: background .4s;
+    }
+    .prog-step.done:not(:last-child)::after,
+    .prog-step.active:not(:last-child)::after { background: var(--blue); }
+    .prog-dot {
+      width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 700; transition: all .3s;
+      background: var(--bg3); border: 2px solid var(--border2); color: var(--muted);
+      z-index: 1;
+    }
+    .prog-step.active .prog-dot  { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .prog-step.done   .prog-dot  { background: var(--green); border-color: var(--green); color: #fff; font-size: 0.75rem; }
+    .prog-label {
+      font-size: 0.6rem; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .5px; text-align: center;
+      white-space: nowrap;
+    }
+    .prog-step.active .prog-label { color: var(--blue); }
+    .prog-step.done   .prog-label { color: var(--green); }
+
+    /* ── FIELD ───────────────────────────────────────────────── */
     .field-label {
       font-size: 0.68rem; font-weight: 700; color: var(--blue);
       letter-spacing: 1px; margin-bottom: 8px;
@@ -82,9 +119,120 @@
     }
     input[type=text]:focus { outline: none; border-color: var(--blue); }
     input[type=text].error { border-color: var(--red); }
+    input[type=text].success { border-color: var(--green); }
     input[type=text]::placeholder { font-family: 'Inter', sans-serif; letter-spacing: 0; text-transform: none; }
-
+    input[type=text]:read-only { opacity: .7; cursor: default; }
     .field-hint { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
+
+    /* ── SECTION TITLE ───────────────────────────────────────── */
+    .section-title {
+      font-size: 0.78rem; font-weight: 700; color: var(--text);
+      letter-spacing: .3px; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-title::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* ── PLANS GRID ──────────────────────────────────────────── */
+    .plans-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .plan-card {
+      border: 2px solid var(--border); border-radius: 14px;
+      padding: 16px 14px; cursor: pointer; transition: all .2s;
+      background: var(--bg); position: relative; overflow: hidden;
+    }
+    .plan-card:hover { border-color: var(--blue); background: #eff6ff; }
+    .plan-card.selected {
+      border-color: var(--blue);
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+    }
+    .plan-card.enterprise {
+      grid-column: span 2;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .plan-name {
+      font-size: 0.9rem; font-weight: 700; color: var(--text); margin-bottom: 4px;
+    }
+    .plan-price {
+      font-size: 1.3rem; font-weight: 900; color: var(--blue);
+      font-family: 'JetBrains Mono', monospace; line-height: 1;
+    }
+    .plan-price.custom { font-size: 1rem; color: var(--amber); }
+    .plan-badge {
+      display: inline-block; margin-top: 6px;
+      font-size: 0.65rem; font-weight: 700; letter-spacing: .5px;
+      padding: 3px 8px; border-radius: 99px;
+      background: rgba(59,130,246,.1); color: var(--blue);
+    }
+    .plan-card.selected .plan-name  { color: #1d4ed8; }
+    .plan-check {
+      position: absolute; top: 10px; right: 10px;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--blue); color: #fff;
+      display: none; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 900;
+    }
+    .plan-card.selected .plan-check { display: flex; }
+    .enterprise .plan-right { text-align: right; }
+    .plan-enterprise-badge {
+      font-size: 0.72rem; color: var(--amber); font-weight: 600;
+      background: rgba(217,119,6,.1); padding: 4px 10px; border-radius: 99px;
+    }
+
+    /* ── MPESA SECTION ───────────────────────────────────────── */
+    .mpesa-phone-row {
+      display: flex; gap: 10px; align-items: flex-end;
+    }
+    .mpesa-phone-row > div:first-child { flex: 1; }
+    .mpesa-phone-row input {
+      letter-spacing: 1px; font-size: 0.9rem;
+    }
+
+    .pay-btn {
+      width: 100%; padding: 15px;
+      background: var(--mpesa);
+      border: none; border-radius: 12px; cursor: pointer;
+      font-size: 1rem; font-weight: 700; color: #fff;
+      font-family: 'Inter', sans-serif;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: all .2s;
+      box-shadow: 0 4px 20px rgba(0,165,80,.3);
+    }
+    .pay-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .pay-btn:active { transform: translateY(0); }
+    .pay-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; filter: none; }
+    .mpesa-logo {
+      font-size: 1.1rem; background: #fff; color: var(--mpesa);
+      border-radius: 6px; padding: 2px 6px; font-weight: 900; font-size: 0.78rem;
+    }
+
+    /* ── PAYMENT STATUS BOX ──────────────────────────────────── */
+    .payment-status {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px 18px;
+      display: none; flex-direction: column; gap: 10px;
+    }
+    .payment-status.show { display: flex; }
+    .payment-status-row {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 0.85rem;
+    }
+    .ps-icon {
+      width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .ps-icon.waiting  { background: rgba(217,119,6,.1);  }
+    .ps-icon.success  { background: rgba(22,163,74,.1);  }
+    .ps-icon.failed   { background: rgba(220,38,38,.1);  }
+    .ps-label { font-weight: 600; color: var(--text); }
+    .ps-sub   { font-size: 0.74rem; color: var(--muted); margin-top: 1px; }
+    .ps-ref   { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+                color: var(--green); font-weight: 700; }
 
     /* ── LOADING STEPS ───────────────────────────────────────── */
     .steps-box {
@@ -93,56 +241,79 @@
       display: none; flex-direction: column; gap: 0;
     }
     .steps-box.show { display: flex; }
-
     .step-item {
       display: flex; align-items: center; gap: 12px;
-      padding: 9px 0;
-      border-bottom: 1px solid rgba(0,0,0,.06);
+      padding: 9px 0; border-bottom: 1px solid rgba(0,0,0,.06);
       transition: all .3s;
     }
     .step-item:last-child { border-bottom: none; }
-
     .step-icon {
       width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
       font-size: 0.8rem; font-weight: 700; transition: all .4s;
+      position: relative;
     }
-    .step-icon.pending  { background: var(--bg3); color: var(--muted); border: 1px solid var(--border2); }
-    .step-icon.active   { background: rgba(59,130,246,.15); color: var(--blue); border: 1px solid rgba(59,130,246,.4); }
-    .step-icon.done     { background: rgba(34,197,94,.15); color: var(--green); border: 1px solid rgba(34,197,94,.35); }
-    .step-icon.error    { background: rgba(239,68,68,.12); color: var(--red); border: 1px solid rgba(239,68,68,.3); }
-
-    .step-text {
-      font-size: 0.84rem; font-weight: 500; color: var(--muted);
-      transition: color .3s;
-    }
+    .step-icon.pending { background: var(--bg3); color: var(--muted); border: 1px solid var(--border2); }
+    .step-icon.active  { background: rgba(59,130,246,.15); color: var(--blue); border: 1px solid rgba(59,130,246,.4); }
+    .step-icon.done    { background: rgba(34,197,94,.15); color: var(--green); border: 1px solid rgba(34,197,94,.35); }
+    .step-icon.error   { background: rgba(239,68,68,.12); color: var(--red); border: 1px solid rgba(239,68,68,.3); }
+    .step-text { font-size: 0.84rem; font-weight: 500; color: var(--muted); transition: color .3s; }
     .step-text.active { color: var(--text); }
     .step-text.done   { color: var(--muted); }
     .step-text.error  { color: var(--red); }
-
-    /* spinning ring for active step */
     @keyframes spin { to { transform: rotate(360deg); } }
     .step-icon.active::before {
       content: ''; position: absolute;
       width: 28px; height: 28px; border-radius: 50%;
-      border: 2px solid transparent;
-      border-top-color: var(--blue);
+      border: 2px solid transparent; border-top-color: var(--blue);
       animation: spin .7s linear infinite;
     }
-    .step-icon { position: relative; }
 
-    /* ── CODE DISPLAY ────────────────────────────────────────── */
-    .code-box {
-      background: #eff6ff; border: 1px solid rgba(59,130,246,.3);
-      border-radius: 14px; padding: 22px; text-align: center;
-      display: none;
+    /* ── RESULT BOX ──────────────────────────────────────────── */
+    .result-box {
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+      border: 1px solid rgba(34,197,94,.3);
+      border-radius: 16px; padding: 22px; display: none;
     }
-    .code-box.show { display: block; }
-    .code-digits {
-      font-size: 2.6rem; font-weight: 900; color: var(--blue);
+    .result-box.show { display: block; }
+
+    .result-code-wrap {
+      background: #fff; border: 1px solid rgba(59,130,246,.2);
+      border-radius: 12px; padding: 18px; text-align: center; margin-bottom: 18px;
+    }
+    .result-code-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 1px;
+                         color: var(--blue); margin-bottom: 6px; text-transform: uppercase; }
+    .result-code-digits {
+      font-size: 2.4rem; font-weight: 900; color: var(--blue);
       letter-spacing: 10px; font-family: 'JetBrains Mono', monospace;
     }
-    .code-hint { font-size: 0.74rem; color: var(--muted); margin-top: 10px; line-height: 1.7; }
+    .result-code-hint { font-size: 0.72rem; color: var(--muted); margin-top: 8px; line-height: 1.6; }
+
+    .result-meta {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; margin-bottom: 16px;
+    }
+    .meta-item {
+      background: #fff; border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px;
+    }
+    .meta-label { font-size: 0.62rem; font-weight: 700; color: var(--muted);
+                  letter-spacing: .8px; text-transform: uppercase; margin-bottom: 3px; }
+    .meta-value { font-size: 0.88rem; font-weight: 700; color: var(--text); }
+    .meta-value.mono { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; }
+    .meta-value.green { color: var(--green); }
+
+    .status-active {
+      background: rgba(22,163,74,.1); border: 1px solid rgba(22,163,74,.25);
+      border-radius: 10px; padding: 10px 14px;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.84rem; font-weight: 600; color: var(--green);
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .dot-live {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+      animation: pulse 1.8s infinite; flex-shrink: 0;
+    }
 
     /* ── ERROR BOX ───────────────────────────────────────────── */
     .error-box {
@@ -165,12 +336,11 @@
     .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
     .btn-blue  { background: var(--blue); color: #fff; box-shadow: 0 4px 14px rgba(59,130,246,.3); }
     .btn-ghost { background: var(--bg3); color: var(--muted); border: 1px solid var(--border); }
-    .btn-green { background: rgba(34,197,94,.15); color: var(--green); border: 1px solid rgba(34,197,94,.3); }
+    .btn-green-solid { background: var(--green); color: #fff; box-shadow: 0 4px 14px rgba(22,163,74,.25); }
     .btn-full  { width: 100%; justify-content: center; padding: 13px; font-size: 0.95rem; border-radius: 12px; }
-
     .btn-row { display: flex; gap: 10px; }
 
-    /* ── FOOTER STATUS ───────────────────────────────────────── */
+    /* ── CARD FOOTER ─────────────────────────────────────────── */
     .card-footer {
       padding: 14px 28px; background: var(--bg3);
       border-top: 1px solid var(--border);
@@ -195,12 +365,19 @@
     .toast.success { background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.3); color: var(--green); }
     .toast.error   { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.2); color: var(--red); }
 
+    /* ── HIDDEN HELPER ───────────────────────────────────────── */
+    .hidden { display: none !important; }
+
     @media (max-width: 540px) {
       header { padding: 0 16px; }
       .brand-text span { display: none; }
       .card-hdr, .card-body { padding-left: 20px; padding-right: 20px; }
-      .code-digits { font-size: 1.9rem; letter-spacing: 6px; }
+      .progress-bar { padding: 14px 20px 0; }
+      .result-code-digits { font-size: 1.8rem; letter-spacing: 6px; }
+      .result-meta { grid-template-columns: 1fr; }
       .toast { left: 16px; right: 16px; bottom: 16px; max-width: none; }
+      .plans-grid { grid-template-columns: 1fr; }
+      .plan-card.enterprise { grid-column: span 1; }
     }
   </style>
 </head>
@@ -214,68 +391,153 @@
   <nav></nav>
 </header>
 
+<!-- Progress bar -->
+<div class="progress-bar" id="progress-bar">
+  <div class="prog-step active" id="prog-0">
+    <div class="prog-dot">1</div>
+    <span class="prog-label">Verify</span>
+  </div>
+  <div class="prog-step" id="prog-1">
+    <div class="prog-dot">2</div>
+    <span class="prog-label">Plan</span>
+  </div>
+  <div class="prog-step" id="prog-2">
+    <div class="prog-dot">3</div>
+    <span class="prog-label">Pay</span>
+  </div>
+  <div class="prog-step" id="prog-3">
+    <div class="prog-dot">4</div>
+    <span class="prog-label">Activate</span>
+  </div>
+</div>
+
 <div class="container">
   <div class="card">
 
     <div class="card-hdr">
       <h2>⚡ Activate Bot</h2>
-      <p>Enter your activation token to verify your identity and generate a WhatsApp pairing code.</p>
+      <p>Enter your activation token, choose a hosting plan, and pay via M-Pesa to get your WhatsApp pairing code.</p>
     </div>
 
     <div class="card-body">
 
-      <!-- Token input -->
-      <div id="input-section">
+      <!-- ─── STAGE 1: Token verification ─────────────────── -->
+      <div id="stage-token">
         <div class="field-label">ACTIVATION TOKEN</div>
-        <input type="text" id="token-input" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="19" autocomplete="off" spellcheck="false" />
+        <input type="text" id="token-input" placeholder="XXXX-XXXX-XXXX-XXXX"
+               maxlength="19" autocomplete="off" spellcheck="false" />
         <div class="field-hint">Paste the token you received from the Get Token page</div>
       </div>
 
-      <!-- Error box -->
-      <div class="error-box" id="error-box"></div>
-
-      <!-- Loading steps -->
-      <div class="steps-box" id="steps-box">
-        <div class="step-item" id="step-0">
-          <div class="step-icon pending" id="step-icon-0">1</div>
-          <span class="step-text" id="step-text-0">Verifying Activation Token…</span>
-        </div>
-        <div class="step-item" id="step-1">
-          <div class="step-icon pending" id="step-icon-1">2</div>
-          <span class="step-text" id="step-text-1">Retrieving Linked Phone Number…</span>
-        </div>
-        <div class="step-item" id="step-2">
-          <div class="step-icon pending" id="step-icon-2">3</div>
-          <span class="step-text" id="step-text-2">Creating Secure Session…</span>
-        </div>
-        <div class="step-item" id="step-3">
-          <div class="step-icon pending" id="step-icon-3">4</div>
-          <span class="step-text" id="step-text-3">Generating Pairing Code…</span>
-        </div>
-        <div class="step-item" id="step-4">
-          <div class="step-icon pending" id="step-icon-4">5</div>
-          <span class="step-text" id="step-text-4">Pairing Code Ready</span>
+      <!-- ─── STAGE 2: Plan selection ──────────────────────── -->
+      <div id="stage-plans" class="hidden">
+        <div class="section-title">Choose a Hosting Plan</div>
+        <div class="plans-grid" id="plans-grid">
+          <!-- Plans are injected by JS -->
         </div>
       </div>
 
-      <!-- Pairing code result -->
-      <div class="code-box" id="code-box">
-        <div class="code-digits" id="code-value">—</div>
-        <div class="code-hint">
-          Open WhatsApp → Linked Devices → Link with phone number → enter this code
+      <!-- ─── STAGE 3: M-Pesa payment ──────────────────────── -->
+      <div id="stage-payment" class="hidden">
+        <div class="section-title">Pay with M-Pesa</div>
+
+        <div style="margin-bottom: 14px;">
+          <div class="field-label">M-PESA PHONE NUMBER</div>
+          <input type="text" id="mpesa-phone" placeholder="e.g. 0712345678"
+                 maxlength="13" autocomplete="off" style="letter-spacing:1px; text-transform:none;" />
+          <div class="field-hint">The number that will receive the M-Pesa STK push prompt</div>
         </div>
-        <div class="btn-row" style="margin-top:14px; justify-content:center;">
-          <button class="btn btn-green" id="copy-code-btn" onclick="copyCode()">📋 Copy Code</button>
+
+        <button class="pay-btn" id="pay-btn" onclick="initiatePayment()">
+          <span class="mpesa-logo">M</span>
+          Pay KSh <span id="pay-amount">—</span> with M-Pesa
+        </button>
+
+        <!-- Payment status tracker -->
+        <div class="payment-status" id="payment-status">
+          <div class="payment-status-row" id="ps-row">
+            <div class="ps-icon waiting" id="ps-icon">⏳</div>
+            <div>
+              <div class="ps-label" id="ps-label">Waiting for payment…</div>
+              <div class="ps-sub" id="ps-sub">Check your phone for the M-Pesa prompt and enter your PIN</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error box (shared) -->
+      <div class="error-box" id="error-box"></div>
+
+      <!-- ─── STAGE 4: Loading animation ───────────────────── -->
+      <div class="steps-box" id="steps-box">
+        <div class="step-item">
+          <div class="step-icon pending" id="step-icon-0">1</div>
+          <span class="step-text" id="step-text-0">Verifying Activation Token…</span>
+        </div>
+        <div class="step-item">
+          <div class="step-icon pending" id="step-icon-1">2</div>
+          <span class="step-text" id="step-text-1">Payment Confirmed…</span>
+        </div>
+        <div class="step-item">
+          <div class="step-icon pending" id="step-icon-2">3</div>
+          <span class="step-text" id="step-text-2">Creating Secure Bot Session…</span>
+        </div>
+        <div class="step-item">
+          <div class="step-icon pending" id="step-icon-3">4</div>
+          <span class="step-text" id="step-text-3">Retrieving Linked WhatsApp Number…</span>
+        </div>
+        <div class="step-item">
+          <div class="step-icon pending" id="step-icon-4">5</div>
+          <span class="step-text" id="step-text-4">Generating Pairing Code…</span>
+        </div>
+      </div>
+
+      <!-- ─── STAGE 5: Result ───────────────────────────────── -->
+      <div class="result-box" id="result-box">
+        <div class="result-code-wrap">
+          <div class="result-code-label">WhatsApp Pairing Code</div>
+          <div class="result-code-digits" id="result-code">—</div>
+          <div class="result-code-hint">
+            Open WhatsApp → Linked Devices → Link with phone number → enter this code
+          </div>
+        </div>
+
+        <div class="result-meta">
+          <div class="meta-item">
+            <div class="meta-label">WhatsApp Number</div>
+            <div class="meta-value mono" id="result-phone">—</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Selected Plan</div>
+            <div class="meta-value" id="result-plan">—</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Runtime</div>
+            <div class="meta-value green" id="result-runtime">—</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Payment Ref</div>
+            <div class="meta-value mono" id="result-payref" style="font-size:.76rem;">—</div>
+          </div>
+        </div>
+
+        <div class="status-active">
+          <div class="dot-live"></div>
+          Bot Status: <strong>Active</strong>
+        </div>
+
+        <div class="btn-row" style="margin-top:14px;">
+          <button class="btn btn-green-solid" onclick="copyCode()" id="copy-btn">📋 Copy Code</button>
           <a href="/dashboard" class="btn btn-ghost">View Dashboard →</a>
         </div>
       </div>
 
-      <!-- Activate button -->
-      <button class="btn btn-blue btn-full" id="activate-btn" onclick="activate()">
-        ⚡ Verify &amp; Generate Pairing Code
+      <!-- ─── PRIMARY ACTION BUTTON ─────────────────────────── -->
+      <button class="btn btn-blue btn-full" id="primary-btn" onclick="primaryAction()">
+        ⚡ Verify Token
       </button>
 
-    </div>
+    </div><!-- /card-body -->
 
     <div class="card-footer">
       <div class="dot dot-idle" id="status-dot"></div>
@@ -288,14 +550,18 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  const STEP_LABELS = [
-    'Verifying Activation Token…',
-    'Retrieving Linked Phone Number…',
-    'Creating Secure Session…',
-    'Generating Pairing Code…',
-    'Pairing Code Ready'
-  ];
+  /* ── State ─────────────────────────────────────────────────── */
+  let state = {
+    stage: 'token',      // token | plans | payment | loading | result
+    token: '',
+    phone: '',           // phone from token
+    plans: [],
+    selectedPlan: null,
+    checkoutRequestId: null,
+    pollTimer: null,
+  };
 
+  /* ── UI helpers ─────────────────────────────────────────────── */
   function toast(msg, type) {
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -311,82 +577,350 @@
     el.textContent = text;
   }
 
-  function setStep(index, state) {
-    // state: 'pending' | 'active' | 'done' | 'error'
-    const icon = document.getElementById('step-icon-' + index);
-    const text = document.getElementById('step-text-' + index);
-    icon.className = 'step-icon ' + state;
-    text.className = 'step-text ' + (state === 'active' ? 'active' : state === 'pending' ? '' : state);
-    if (state === 'done')  { icon.textContent = '✓'; }
-    if (state === 'error') { icon.textContent = '✗'; }
-    if (state === 'pending' || state === 'active') { icon.textContent = index + 1; }
-  }
-
-  function resetSteps() {
-    for (let i = 0; i < 5; i++) setStep(i, 'pending');
-  }
-
   function showError(msg) {
     const box = document.getElementById('error-box');
-    box.textContent = '❌ ' + msg;
+    box.innerHTML = '❌ ' + msg;
     box.classList.add('show');
-    setStatus('dot-err', 'var(--red)', 'Activation failed');
-    toast(msg, 'error');
+    setStatus('dot-err', 'var(--red)', 'Error');
   }
 
   function hideError() {
     document.getElementById('error-box').classList.remove('show');
   }
 
-  // Auto-format token input as XXXX-XXXX-XXXX-XXXX
-  document.getElementById('token-input').addEventListener('input', function(e) {
+  /* ── Progress bar ───────────────────────────────────────────── */
+  const STAGE_INDEX = { token: 0, plans: 1, payment: 2, loading: 3, result: 3 };
+
+  function updateProgress(stageKey) {
+    const current = STAGE_INDEX[stageKey] ?? 0;
+    for (let i = 0; i < 4; i++) {
+      const el = document.getElementById('prog-' + i);
+      const dot = el.querySelector('.prog-dot');
+      el.className = 'prog-step';
+      if (i < current)       { el.classList.add('done');   dot.textContent = '✓'; }
+      else if (i === current) { el.classList.add('active'); dot.textContent = i + 1; }
+      else                   { dot.textContent = i + 1; }
+    }
+  }
+
+  /* ── Stage transitions ──────────────────────────────────────── */
+  function showStage(stageKey) {
+    state.stage = stageKey;
+    updateProgress(stageKey);
+
+    // Visibility
+    document.getElementById('stage-token').classList.toggle('hidden',   stageKey !== 'token');
+    document.getElementById('stage-plans').classList.toggle('hidden',   stageKey !== 'plans');
+    document.getElementById('stage-payment').classList.toggle('hidden', stageKey !== 'payment');
+    document.getElementById('steps-box').classList.toggle('show',       stageKey === 'loading');
+    document.getElementById('result-box').classList.toggle('show',      stageKey === 'result');
+
+    hideError();
+
+    // Primary button
+    const btn = document.getElementById('primary-btn');
+    if (stageKey === 'token') {
+      btn.classList.remove('hidden');
+      btn.textContent = '⚡ Verify Token';
+      btn.disabled = false;
+    } else if (stageKey === 'plans') {
+      btn.classList.remove('hidden');
+      btn.textContent = '→ Continue to Payment';
+      btn.disabled = true; // enabled when a plan is selected
+    } else {
+      btn.classList.add('hidden');
+    }
+  }
+
+  /* ── Step animation ─────────────────────────────────────────── */
+  function setStep(i, s) {
+    const icon = document.getElementById('step-icon-' + i);
+    const text = document.getElementById('step-text-' + i);
+    icon.className = 'step-icon ' + s;
+    text.className = 'step-text' + (s !== 'pending' ? ' ' + s : '');
+    if (s === 'done')  icon.textContent = '✓';
+    if (s === 'error') icon.textContent = '✗';
+    if (s === 'pending' || s === 'active') icon.textContent = i + 1;
+  }
+
+  function resetSteps() { for (let i = 0; i < 5; i++) setStep(i, 'pending'); }
+
+  /* ── Token input auto-format ────────────────────────────────── */
+  document.getElementById('token-input').addEventListener('input', function () {
     hideError();
     let raw = this.value.replace(/[^A-Z0-9]/gi, '').toUpperCase().slice(0, 16);
-    let formatted = '';
+    let fmt = '';
     for (let i = 0; i < raw.length; i++) {
-      if (i > 0 && i % 4 === 0) formatted += '-';
-      formatted += raw[i];
+      if (i > 0 && i % 4 === 0) fmt += '-';
+      fmt += raw[i];
     }
-    // Only update if different to avoid cursor jump
-    if (this.value !== formatted) {
+    if (this.value !== fmt) {
       const pos = this.selectionStart;
-      this.value = formatted;
-      // Keep cursor roughly in place
+      this.value = fmt;
       try { this.setSelectionRange(pos, pos); } catch {}
     }
   });
 
-  async function activate() {
-    const token = document.getElementById('token-input').value.trim();
+  document.getElementById('token-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') primaryAction();
+  });
+
+  /* ── Primary action dispatcher ─────────────────────────────── */
+  function primaryAction() {
+    if (state.stage === 'token')  verifyToken();
+    if (state.stage === 'plans')  proceedToPayment();
+  }
+
+  /* ── Stage 1: Verify token ──────────────────────────────────── */
+  async function verifyToken() {
+    const tokenVal = document.getElementById('token-input').value.trim();
     hideError();
 
-    if (!token) {
-      showError('Please enter your activation token');
-      return;
-    }
-    if (token.replace(/-/g, '').length < 16) {
-      showError('Token is incomplete — it should be in the format XXXX-XXXX-XXXX-XXXX');
-      return;
+    if (!tokenVal) { showError('Please enter your activation token'); return; }
+    if (tokenVal.replace(/-/g, '').length < 16) {
+      showError('Token is incomplete — format should be XXXX-XXXX-XXXX-XXXX'); return;
     }
 
-    const btn = document.getElementById('activate-btn');
+    const btn = document.getElementById('primary-btn');
     btn.disabled = true;
-    btn.textContent = '⏳ Activating…';
+    btn.textContent = '⏳ Verifying…';
+    setStatus('dot-busy', 'var(--amber)', 'Verifying token…');
 
-    // Hide previous results
-    document.getElementById('code-box').classList.remove('show');
-    document.getElementById('steps-box').classList.add('show');
+    try {
+      const res = await fetch('/api/tokens/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: tokenVal }),
+      }).then(r => r.json());
+
+      if (!res.valid) {
+        showError(res.error || 'Token verification failed');
+        btn.disabled = false;
+        btn.textContent = '⚡ Verify Token';
+        setStatus('dot-err', 'var(--red)', 'Verification failed');
+        return;
+      }
+
+      state.token = tokenVal;
+      state.phone = res.phone;
+      state.plans = res.plans;
+
+      // Mark token input as verified
+      const input = document.getElementById('token-input');
+      input.classList.add('success');
+      input.readOnly = true;
+
+      setStatus('dot-busy', 'var(--blue)', 'Token verified — choose a plan');
+      toast('✅ Token verified!', 'success');
+
+      buildPlansGrid(res.plans);
+      showStage('plans');
+
+    } catch (err) {
+      showError('Network error: ' + err.message);
+      btn.disabled = false;
+      btn.textContent = '⚡ Verify Token';
+      setStatus('dot-err', 'var(--red)', 'Network error');
+    }
+  }
+
+  /* ── Build plans grid ───────────────────────────────────────── */
+  function buildPlansGrid(plans) {
+    const grid = document.getElementById('plans-grid');
+    grid.innerHTML = '';
+    plans.forEach(plan => {
+      const card = document.createElement('div');
+      card.className = 'plan-card' + (plan.id === 'enterprise' ? ' enterprise' : '');
+      card.id = 'plan-' + plan.id;
+
+      if (plan.id === 'enterprise') {
+        card.innerHTML = `
+          <div>
+            <div class="plan-name">${plan.name}</div>
+            <div class="plan-enterprise-badge">Contact Us</div>
+          </div>
+          <div class="plan-right">
+            <div class="plan-price custom">Custom</div>
+          </div>
+        `;
+        card.addEventListener('click', () => {
+          showError('For Enterprise pricing, please contact us directly.');
+        });
+      } else {
+        const priceStr = plan.price != null ? `KSh ${plan.price}` : 'Free';
+        card.innerHTML = `
+          <div class="plan-check">✓</div>
+          <div class="plan-name">${plan.name}</div>
+          <div class="plan-price">${priceStr}</div>
+          <div class="plan-badge">${plan.badge}</div>
+        `;
+        card.addEventListener('click', () => selectPlan(plan));
+      }
+      grid.appendChild(card);
+    });
+  }
+
+  function selectPlan(plan) {
+    hideError();
+    state.selectedPlan = plan;
+    document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+    const card = document.getElementById('plan-' + plan.id);
+    if (card) card.classList.add('selected');
+
+    const btn = document.getElementById('primary-btn');
+    btn.disabled = false;
+    btn.textContent = `→ Pay KSh ${plan.price} — ${plan.name} Plan`;
+    setStatus('dot-busy', 'var(--blue)', `${plan.name} plan selected`);
+  }
+
+  /* ── Stage 2 → Stage 3: Proceed to payment ─────────────────── */
+  function proceedToPayment() {
+    if (!state.selectedPlan) { showError('Please select a plan first'); return; }
+
+    // Pre-fill M-Pesa phone with token's phone
+    const mpesaInput = document.getElementById('mpesa-phone');
+    // Format phone for display: if starts with 254, convert to 07xx
+    let displayPhone = state.phone;
+    if (displayPhone.startsWith('254')) displayPhone = '0' + displayPhone.slice(3);
+    mpesaInput.value = displayPhone;
+
+    document.getElementById('pay-amount').textContent = state.selectedPlan.price;
+    document.getElementById('payment-status').classList.remove('show');
+    showStage('payment');
+    setStatus('dot-busy', 'var(--amber)', 'Ready to pay via M-Pesa');
+  }
+
+  /* ── Stage 3: Initiate M-Pesa payment ──────────────────────── */
+  async function initiatePayment() {
+    hideError();
+    const rawPhone = document.getElementById('mpesa-phone').value.trim().replace(/\D/g, '');
+    if (!rawPhone || rawPhone.length < 9) {
+      showError('Please enter a valid M-Pesa phone number'); return;
+    }
+
+    const btn = document.getElementById('pay-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="mpesa-logo">M</span> Sending STK push…';
+    setStatus('dot-busy', 'var(--amber)', 'Initiating M-Pesa payment…');
+
+    try {
+      const res = await fetch('/api/mpesa/stk-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token:      state.token,
+          planId:     state.selectedPlan.id,
+          mpesaPhone: rawPhone,
+        }),
+      }).then(r => r.json());
+
+      if (res.error) {
+        showError(res.error);
+        btn.disabled = false;
+        btn.innerHTML = `<span class="mpesa-logo">M</span> Pay KSh ${state.selectedPlan.price} with M-Pesa`;
+        setStatus('dot-err', 'var(--red)', 'Payment initiation failed');
+        return;
+      }
+
+      state.checkoutRequestId = res.checkoutRequestId;
+
+      // Show payment status box
+      const psBox = document.getElementById('payment-status');
+      psBox.classList.add('show');
+      document.getElementById('ps-icon').textContent  = '⏳';
+      document.getElementById('ps-icon').className    = 'ps-icon waiting';
+      document.getElementById('ps-label').textContent = res.testMode
+        ? 'Test mode — auto-confirming in a few seconds…'
+        : 'Check your phone for the M-Pesa prompt';
+      document.getElementById('ps-sub').textContent   = res.testMode
+        ? 'MPESA_TEST_MODE is enabled — no real payment required'
+        : 'Enter your M-Pesa PIN to confirm the KSh ' + state.selectedPlan.price + ' payment';
+
+      setStatus('dot-busy', 'var(--amber)', 'Waiting for M-Pesa payment…');
+      toast('📱 M-Pesa prompt sent — check your phone', 'success');
+
+      // Start polling
+      pollPaymentStatus();
+
+    } catch (err) {
+      showError('Network error: ' + err.message);
+      btn.disabled = false;
+      btn.innerHTML = `<span class="mpesa-logo">M</span> Pay KSh ${state.selectedPlan.price} with M-Pesa`;
+      setStatus('dot-err', 'var(--red)', 'Network error');
+    }
+  }
+
+  /* ── Poll payment status ────────────────────────────────────── */
+  function pollPaymentStatus() {
+    let attempts = 0;
+    const MAX_ATTEMPTS = 60; // 2 min
+
+    function poll() {
+      attempts++;
+      if (attempts > MAX_ATTEMPTS) {
+        document.getElementById('ps-icon').textContent  = '⚠️';
+        document.getElementById('ps-icon').className    = 'ps-icon failed';
+        document.getElementById('ps-label').textContent = 'Payment timed out';
+        document.getElementById('ps-sub').textContent   = 'Please try again or contact support';
+        showError('Payment confirmation timed out. Please try again.');
+        const btn = document.getElementById('pay-btn');
+        btn.disabled = false;
+        btn.innerHTML = `<span class="mpesa-logo">M</span> Retry Payment`;
+        setStatus('dot-err', 'var(--red)', 'Payment timed out');
+        return;
+      }
+
+      fetch('/api/mpesa/status/' + encodeURIComponent(state.checkoutRequestId))
+        .then(r => r.json())
+        .then(data => {
+          if (data.status === 'confirmed') {
+            // Payment confirmed — proceed to activate
+            document.getElementById('ps-icon').textContent  = '✅';
+            document.getElementById('ps-icon').className    = 'ps-icon success';
+            document.getElementById('ps-label').textContent = 'Payment confirmed!';
+            document.getElementById('ps-sub').innerHTML =
+              '<span class="ps-ref">' + (data.mpesaReceiptNumber || state.checkoutRequestId) + '</span>';
+            toast('💚 Payment confirmed!', 'success');
+            activateBot(data.mpesaReceiptNumber);
+
+          } else if (data.status === 'failed') {
+            document.getElementById('ps-icon').textContent  = '❌';
+            document.getElementById('ps-icon').className    = 'ps-icon failed';
+            document.getElementById('ps-label').textContent = 'Payment failed';
+            document.getElementById('ps-sub').textContent   = data.resultDesc || 'Please try again';
+            showError('Payment failed: ' + (data.resultDesc || 'Unknown error'));
+            const btn = document.getElementById('pay-btn');
+            btn.disabled = false;
+            btn.innerHTML = `<span class="mpesa-logo">M</span> Retry Payment`;
+            setStatus('dot-err', 'var(--red)', 'Payment failed');
+
+          } else {
+            // Still pending — poll again
+            state.pollTimer = setTimeout(poll, 2000);
+          }
+        })
+        .catch(() => {
+          state.pollTimer = setTimeout(poll, 3000);
+        });
+    }
+
+    state.pollTimer = setTimeout(poll, 2000);
+  }
+
+  /* ── Stage 4 → 5: Activate bot ─────────────────────────────── */
+  async function activateBot(paymentRef) {
+    showStage('loading');
     resetSteps();
-    setStatus('dot-busy', '#f59e0b', 'Activating…');
+    setStatus('dot-busy', 'var(--amber)', 'Activating bot…');
 
-    // Animate steps while API call runs in parallel
-    const STEP_DELAY = 650; // ms per step
+    // Step animation that runs while API call proceeds
+    const STEP_DELAY = 700;
     let currentStep = 0;
 
-    function advanceStep() {
+    function advanceSteps() {
       return new Promise(resolve => {
         function next() {
-          if (currentStep < 4) {
+          if (currentStep < 5) {
             setStep(currentStep, 'active');
             currentStep++;
             setTimeout(next, STEP_DELAY);
@@ -398,45 +932,63 @@
       });
     }
 
-    // Run animation and API call in parallel
     const [, result] = await Promise.all([
-      advanceStep(),
+      advanceSteps(),
       fetch('/api/tokens/activate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token })
-      }).then(r => r.json()).catch(e => ({ error: 'Network error: ' + e.message }))
+        body: JSON.stringify({
+          token:             state.token,
+          planId:            state.selectedPlan.id,
+          checkoutRequestId: state.checkoutRequestId,
+        }),
+      }).then(r => r.json()).catch(e => ({ error: 'Network error: ' + e.message })),
     ]);
 
     if (result.code) {
-      // Mark all steps done
-      for (let i = 0; i < 4; i++) setStep(i, 'done');
-      setStep(4, 'done');
+      // All steps done
+      for (let i = 0; i < 5; i++) setStep(i, 'done');
 
-      document.getElementById('code-value').textContent = result.code;
-      document.getElementById('code-box').classList.add('show');
+      // Populate result
+      document.getElementById('result-code').textContent = result.code;
+      document.getElementById('result-phone').textContent = '+' + result.phone;
 
-      setStatus('dot-on', 'var(--green)', '✅ Pairing code ready — enter it in WhatsApp');
-      toast('✅ Pairing code generated!', 'success');
+      const planName = result.plan ? result.plan.name : state.selectedPlan.name;
+      const planBadge = result.plan ? result.plan.badge : state.selectedPlan.badge;
+      document.getElementById('result-plan').textContent = planName + (planBadge ? ' · ' + planBadge : '');
+
+      if (result.runtimeHours) {
+        const h = result.runtimeHours;
+        const days = Math.floor(h / 24);
+        document.getElementById('result-runtime').textContent = days > 0 ? `${days} days` : `${h} hours`;
+      } else {
+        document.getElementById('result-runtime').textContent = 'Custom';
+      }
+
+      document.getElementById('result-payref').textContent = result.paymentRef || '—';
+
+      showStage('result');
+      setStatus('dot-on', 'var(--green)', '✅ Bot activated — enter pairing code in WhatsApp');
+      toast('🎉 Bot activated!', 'success');
+
     } else {
-      // Mark current active step as error, rest pending
+      // Mark error on current step
       for (let i = 0; i < 5; i++) {
-        if (i < currentStep - 1) setStep(i, 'done');
+        if (i < currentStep - 1)      setStep(i, 'done');
         else if (i === currentStep - 1) setStep(i, 'error');
-        else setStep(i, 'pending');
+        else                           setStep(i, 'pending');
       }
       showError(result.error || 'Activation failed — please try again');
+      setStatus('dot-err', 'var(--red)', 'Activation failed');
     }
-
-    btn.disabled = false;
-    btn.textContent = '⚡ Verify & Generate Pairing Code';
   }
 
+  /* ── Copy pairing code ──────────────────────────────────────── */
   function copyCode() {
-    const val = document.getElementById('code-value').textContent;
+    const val = document.getElementById('result-code').textContent;
     navigator.clipboard.writeText(val)
       .then(() => {
-        const btn = document.getElementById('copy-code-btn');
+        const btn = document.getElementById('copy-btn');
         btn.textContent = '✅ Copied!';
         setTimeout(() => { btn.textContent = '📋 Copy Code'; }, 2000);
         toast('Pairing code copied!', 'success');
@@ -444,9 +996,8 @@
       .catch(() => toast('Could not copy — please copy manually', 'error'));
   }
 
-  document.getElementById('token-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') activate();
-  });
+  // Initialise
+  showStage('token');
 </script>
 </body>
 </html>

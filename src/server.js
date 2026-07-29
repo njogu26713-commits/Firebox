@@ -332,6 +332,137 @@ app.get('/api/sessions/:id/activity', (req, res) => {
   res.json({ sessionId: s.id, sessionName: s.name, number: s.number, status: s.status, activity: s.recentActivity || [] });
 });
 
+// ── Hosting plans ─────────────────────────────────────────────────────────────
+
+const PLANS = {
+  starter:    { id: 'starter',    name: 'Starter',    price: 100,  hours: 720,  badge: '720 Hours' },
+  basic:      { id: 'basic',      name: 'Basic',      price: 250,  hours: 1440, badge: '60 Days'   },
+  pro:        { id: 'pro',        name: 'Pro',        price: 500,  hours: 2160, badge: '90 Days'   },
+  enterprise: { id: 'enterprise', name: 'Enterprise', price: null, hours: null, badge: 'Custom'    },
+};
+
+// ── POST /api/tokens/verify — check token validity without activating ─────────
+
+app.post('/api/tokens/verify', (req, res) => {
+  const raw = (req.body.token || '').trim().toUpperCase();
+  if (!raw) return res.status(400).json({ error: 'Activation token is required' });
+
+  const tokenData = db.getActivationToken(raw);
+  if (!tokenData) return res.status(400).json({ error: 'Invalid activation token — please check and try again' });
+  if (tokenData.status === 'used') return res.status(400).json({ error: 'This token has already been used' });
+  if (new Date() > new Date(tokenData.expiresAt)) return res.status(400).json({ error: 'This token has expired' });
+
+  res.json({
+    valid: true,
+    phone:     tokenData.phone,
+    expiresAt: tokenData.expiresAt,
+    plans:     Object.values(PLANS),
+  });
+});
+
+// ── POST /api/mpesa/stk-push — initiate M-Pesa STK push ──────────────────────
+
+app.post('/api/mpesa/stk-push', async (req, res) => {
+  const { token, planId, mpesaPhone } = req.body;
+  if (!token || !planId) return res.status(400).json({ error: 'token and planId are required' });
+
+  const plan = PLANS[planId];
+  if (!plan) return res.status(400).json({ error: 'Invalid plan' });
+  if (!plan.price) return res.status(400).json({ error: 'Contact us to activate an Enterprise plan' });
+
+  const raw = token.trim().toUpperCase();
+  const tokenData = db.getActivationToken(raw);
+  if (!tokenData) return res.status(400).json({ error: 'Invalid activation token' });
+  if (tokenData.status === 'used') return res.status(400).json({ error: 'Token already used' });
+  if (new Date() > new Date(tokenData.expiresAt)) return res.status(400).json({ error: 'Token has expired' });
+
+  const payPhone = mpesaPhone ? mpesaPhone.replace(/\D/g, '') : tokenData.phone;
+
+  try {
+    const mpesa = require('./mpesa');
+    const callbackUrl = process.env.MPESA_CALLBACK_URL ||
+      (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}/api/mpesa/callback` : null);
+
+    if (!callbackUrl && !mpesa.isTestMode()) {
+      return res.status(500).json({ error: 'Callback URL not configured — set MPESA_CALLBACK_URL or REPLIT_DEV_DOMAIN' });
+    }
+
+    const result = await mpesa.stkPush({
+      phone:       payPhone,
+      amount:      plan.price,
+      accountRef:  raw.slice(0, 12),
+      description: `Firebox ${plan.name} Plan`,
+      callbackUrl: callbackUrl || 'https://placeholder.example.com/callback',
+    });
+
+    const checkoutId = result.CheckoutRequestID;
+    db.createPayment(checkoutId, { token: raw, plan: planId, phone: payPhone, amount: plan.price });
+
+    // In test mode, auto-confirm after a short delay (simulate payment)
+    if (mpesa.isTestMode()) {
+      setTimeout(() => {
+        db.updatePayment(checkoutId, {
+          status: 'confirmed',
+          mpesaReceiptNumber: 'TEST' + Date.now(),
+          resultCode: 0,
+          resultDesc: 'The service request is processed successfully.',
+        });
+        console.log(`[MPESA TEST] Auto-confirmed payment ${checkoutId}`);
+      }, 4000);
+    }
+
+    res.json({ checkoutRequestId: checkoutId, testMode: mpesa.isTestMode() });
+  } catch (err) {
+    console.error('[MPESA] STK push error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/mpesa/callback — receive Daraja payment callback ────────────────
+
+app.post('/api/mpesa/callback', (req, res) => {
+  try {
+    const body = req.body?.Body?.stkCallback;
+    if (!body) return res.json({ ResultCode: 0, ResultDesc: 'Accepted' });
+
+    const checkoutId = body.CheckoutRequestID;
+    const resultCode = body.ResultCode;
+    const resultDesc = body.ResultDesc;
+
+    let mpesaReceiptNumber = null;
+    if (resultCode === 0 && body.CallbackMetadata?.Item) {
+      const item = body.CallbackMetadata.Item.find(i => i.Name === 'MpesaReceiptNumber');
+      if (item) mpesaReceiptNumber = item.Value;
+    }
+
+    db.updatePayment(checkoutId, {
+      status:             resultCode === 0 ? 'confirmed' : 'failed',
+      mpesaReceiptNumber: mpesaReceiptNumber,
+      resultCode,
+      resultDesc,
+    });
+
+    console.log(`[MPESA] Callback ${checkoutId} → code=${resultCode} receipt=${mpesaReceiptNumber}`);
+    res.json({ ResultCode: 0, ResultDesc: 'Accepted' });
+  } catch (err) {
+    console.error('[MPESA] Callback error:', err.message);
+    res.json({ ResultCode: 0, ResultDesc: 'Accepted' });
+  }
+});
+
+// ── GET /api/mpesa/status/:checkoutId — poll payment status ──────────────────
+
+app.get('/api/mpesa/status/:checkoutId', (req, res) => {
+  const payment = db.getPayment(req.params.checkoutId);
+  if (!payment) return res.status(404).json({ error: 'Payment not found' });
+  res.json({
+    status:             payment.status,
+    mpesaReceiptNumber: payment.mpesaReceiptNumber,
+    resultCode:         payment.resultCode,
+    resultDesc:         payment.resultDesc,
+  });
+});
+
 // ── POST /api/tokens/generate — validate phone & create activation token ──────
 
 app.post('/api/tokens/generate', (req, res) => {
@@ -349,40 +480,67 @@ app.post('/api/tokens/generate', (req, res) => {
   }
 });
 
-// ── POST /api/tokens/activate — verify token & generate WhatsApp pairing code ─
+// ── POST /api/tokens/activate — verify payment, activate token, get pairing code
 
 app.post('/api/tokens/activate', async (req, res) => {
-  const raw = (req.body.token || '').trim().toUpperCase();
-  if (!raw) return res.status(400).json({ error: 'Activation token is required' });
+  const raw            = (req.body.token || '').trim().toUpperCase();
+  const planId         = (req.body.planId || '').trim();
+  const checkoutId     = (req.body.checkoutRequestId || '').trim();
 
-  // Step 1: token exists?
+  if (!raw)        return res.status(400).json({ error: 'Activation token is required' });
+  if (!planId)     return res.status(400).json({ error: 'Plan selection is required' });
+  if (!checkoutId) return res.status(400).json({ error: 'Payment reference is required' });
+
+  // Verify token
   const tokenData = db.getActivationToken(raw);
-  if (!tokenData) return res.status(400).json({ error: 'Invalid activation token — please check and try again' });
+  if (!tokenData) return res.status(400).json({ error: 'Invalid activation token' });
+  if (tokenData.status === 'used') return res.status(400).json({ error: 'This token has already been used' });
+  if (new Date() > new Date(tokenData.expiresAt)) return res.status(400).json({ error: 'This token has expired' });
 
-  // Step 2: not already used?
-  if (tokenData.status === 'used') {
-    return res.status(400).json({ error: 'This token has already been used' });
-  }
+  // Verify payment is confirmed
+  const payment = db.getPayment(checkoutId);
+  if (!payment) return res.status(400).json({ error: 'Payment record not found' });
+  if (payment.token !== raw) return res.status(400).json({ error: 'Payment does not match this token' });
+  if (payment.status !== 'confirmed') return res.status(400).json({ error: 'Payment not yet confirmed — please wait' });
 
-  // Step 3: not expired?
-  if (new Date() > new Date(tokenData.expiresAt)) {
-    return res.status(400).json({ error: 'This token has expired' });
-  }
+  // Resolve plan & calculate runtime
+  const plan     = PLANS[planId];
+  if (!plan) return res.status(400).json({ error: 'Invalid plan' });
+
+  const runtimeHours = plan.hours || null;
+  const expiresAt    = runtimeHours
+    ? new Date(Date.now() + runtimeHours * 3600 * 1000).toISOString()
+    : null;
 
   try {
     const { addSession, waitForPairingReady, requestPairingCode } = require('./sessionManager');
 
-    // Step 3: create session and wait until the socket has reached WA's servers
+    // Create session and wait until the socket has reached WA's servers
     const session = await addSession('Bot-' + Date.now());
     await waitForPairingReady(session.id);
 
-    // Step 4: generate pairing code for the stored phone — never from user input
+    // Generate pairing code for the stored phone — never from user input
     const code = await requestPairingCode(session.id, tokenData.phone);
 
-    // Mark token used only after successful pairing code generation
-    db.markActivationTokenUsed(raw);
+    // Persist activation details on the token
+    db.updateActivationToken(raw, {
+      status:             'used',
+      usedAt:             new Date().toISOString(),
+      plan:               planId,
+      paymentRef:         payment.mpesaReceiptNumber || checkoutId,
+      runtimeHours,
+      expiresAt,
+    });
 
-    res.json({ code, phone: tokenData.phone, sessionId: session.id });
+    res.json({
+      code,
+      phone:        tokenData.phone,
+      sessionId:    session.id,
+      plan:         { id: plan.id, name: plan.name, badge: plan.badge },
+      runtimeHours,
+      expiresAt,
+      paymentRef:   payment.mpesaReceiptNumber || checkoutId,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
