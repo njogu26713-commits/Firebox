@@ -367,7 +367,7 @@ async function menu(ctx) {
     const icon  = s.title.split(' ')[0];
     const title = s.title.replace(/^\S+\s*/, '');
     const cmds  = s.rows.map(r => `  ┃ ${r.title}`).join('\n');
-    return `┏━━━ ${icon} ${f.bold(title)}\n${cmds}\n┗━━━━━━━━━━━`;
+    return `┏━━━ ${icon} ${f.bold(title)}\n${cmds}`;
   }).join('\n');
 
   const header =
