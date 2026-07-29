@@ -460,19 +460,23 @@ function generateTokenString() {
   return `${raw.slice(0,4)}-${raw.slice(4,8)}-${raw.slice(8,12)}-${raw.slice(12,16)}`;
 }
 
-function createActivationToken(phone, userId, paymentId, expiresInHours) {
+function createActivationToken(phone, userId) {
   const tokens    = readMem('tokens');
   const token     = generateTokenString();
   const now       = new Date();
-  const expiresAt = new Date(now.getTime() + (expiresInHours || 720) * 60 * 60 * 1000);
+  // Tokens are permanent licences — expiresAt is set only after payment.
+  // Status lifecycle: inactive → active → expired / suspended
   tokens[token]   = {
     token,
     phone,
-    userId:    userId    || crypto.randomUUID(),
-    paymentId: paymentId || crypto.randomUUID(),
-    status:    'unused',
-    createdAt: now.toISOString(),
-    expiresAt: expiresAt.toISOString(),
+    userId:      userId || crypto.randomUUID(),
+    status:      'inactive',   // inactive | active | expired | suspended
+    plan:        null,
+    paymentRef:  null,
+    activatedAt: null,
+    expiresAt:   null,
+    sessionId:   null,
+    createdAt:   now.toISOString(),
   };
   writeMem('tokens', tokens);
   return tokens[token];

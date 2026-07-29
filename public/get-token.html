@@ -214,8 +214,8 @@
             <span class="value" id="token-phone">—</span>
           </div>
           <div class="token-meta-row">
-            <span class="label">Expires</span>
-            <span class="value" id="token-expires">—</span>
+            <span class="label">Status</span>
+            <span class="value">Inactive — activate below to start your licence</span>
           </div>
         </div>
         <div class="token-actions">
@@ -308,7 +308,6 @@
       if (data.token) {
         document.getElementById('token-value').textContent = data.token;
         document.getElementById('token-phone').textContent = data.phone;
-        document.getElementById('token-expires').textContent = new Date(data.expiresAt).toLocaleString();
         document.getElementById('token-box').classList.add('show');
         setStatus('dot-on', 'var(--green)', '✅ Token generated — copy it and go to Activate');
         toast('Activation token ready!', 'success');

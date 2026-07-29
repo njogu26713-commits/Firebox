@@ -341,6 +341,38 @@ const PLANS = {
   enterprise: { id: 'enterprise', name: 'Enterprise', price: null, hours: null, badge: 'Custom'    },
 };
 
+// ── Licence expiry checker — runs every 5 minutes ────────────────────────────
+// Marks active tokens as expired when their expiresAt passes, and suspends the
+// associated bot session so the user is forced to renew.
+
+setInterval(() => {
+  try {
+    const tokens = db.getAllActivationTokens();
+    const now    = Date.now();
+    for (const t of tokens) {
+      if (t.status !== 'active') continue;
+      if (!t.expiresAt) continue;
+      if (now < new Date(t.expiresAt).getTime()) continue;
+
+      // Licence has expired — mark it and suspend the session
+      console.log(`[LICENCE] Token ${t.token} expired — suspending session`);
+      db.updateActivationToken(t.token, { status: 'expired' });
+
+      if (t.sessionId) {
+        try {
+          const { removeSession } = require('./sessionManager');
+          removeSession(t.sessionId);
+          console.log(`[LICENCE] Suspended session ${t.sessionId} (licence expired)`);
+        } catch (e) {
+          console.warn(`[LICENCE] Could not remove session ${t.sessionId}:`, e.message);
+        }
+      }
+    }
+  } catch (e) {
+    console.error('[LICENCE] Expiry check error:', e.message);
+  }
+}, 5 * 60 * 1000);
+
 // ── POST /api/tokens/verify — check token validity without activating ─────────
 
 app.post('/api/tokens/verify', (req, res) => {
@@ -349,14 +381,62 @@ app.post('/api/tokens/verify', (req, res) => {
 
   const tokenData = db.getActivationToken(raw);
   if (!tokenData) return res.status(400).json({ error: 'Invalid activation token — please check and try again' });
-  if (tokenData.status === 'used') return res.status(400).json({ error: 'This token has already been used' });
-  if (new Date() > new Date(tokenData.expiresAt)) return res.status(400).json({ error: 'This token has expired' });
 
-  res.json({
-    valid: true,
-    phone:     tokenData.phone,
-    expiresAt: tokenData.expiresAt,
-    plans:     Object.values(PLANS),
+  const now = new Date();
+
+  // If active, check whether the licence has actually expired
+  if (tokenData.status === 'active' && tokenData.expiresAt && now > new Date(tokenData.expiresAt)) {
+    // Auto-expire it now
+    db.updateActivationToken(raw, { status: 'expired' });
+    if (tokenData.sessionId) {
+      try { const { removeSession } = require('./sessionManager'); removeSession(tokenData.sessionId); } catch (_) {}
+    }
+    tokenData.status = 'expired';
+  }
+
+  // Active and not expired — no payment needed, can generate pairing code directly
+  if (tokenData.status === 'active') {
+    return res.json({
+      valid:        true,
+      needsPayment: false,
+      status:       'active',
+      phone:        tokenData.phone,
+      plan:         tokenData.plan,
+      expiresAt:    tokenData.expiresAt,
+    });
+  }
+
+  // Expired licence — payment required to renew
+  if (tokenData.status === 'expired') {
+    return res.json({
+      valid:        true,
+      needsPayment: true,
+      status:       'expired',
+      phone:        tokenData.phone,
+      plans:        Object.values(PLANS),
+      message:      'Your activation token has expired. Renew your licence to continue using your bot.',
+    });
+  }
+
+  // Suspended
+  if (tokenData.status === 'suspended') {
+    return res.json({
+      valid:        true,
+      needsPayment: true,
+      status:       'suspended',
+      phone:        tokenData.phone,
+      plans:        Object.values(PLANS),
+      message:      'Your bot licence has been suspended. Please renew to continue.',
+    });
+  }
+
+  // Inactive — never been paid, show plans
+  return res.json({
+    valid:        true,
+    needsPayment: true,
+    status:       'inactive',
+    phone:        tokenData.phone,
+    plans:        Object.values(PLANS),
   });
 });
 
@@ -373,8 +453,10 @@ app.post('/api/mpesa/stk-push', async (req, res) => {
   const raw = token.trim().toUpperCase();
   const tokenData = db.getActivationToken(raw);
   if (!tokenData) return res.status(400).json({ error: 'Invalid activation token' });
-  if (tokenData.status === 'used') return res.status(400).json({ error: 'Token already used' });
-  if (new Date() > new Date(tokenData.expiresAt)) return res.status(400).json({ error: 'Token has expired' });
+  // Only allow payment for inactive, expired, or suspended tokens (not already-active ones)
+  if (tokenData.status === 'active' && tokenData.expiresAt && new Date() < new Date(tokenData.expiresAt)) {
+    return res.status(400).json({ error: 'This licence is already active — no payment needed' });
+  }
 
   const payPhone = mpesaPhone ? mpesaPhone.replace(/\D/g, '') : tokenData.phone;
 
@@ -488,39 +570,87 @@ app.post('/api/tokens/generate', (req, res) => {
     return res.status(400).json({ error: 'Invalid phone number — must be 7 to 15 digits (no spaces, dashes, or +)' });
   }
   try {
-    const tokenData = db.createActivationToken(cleaned, null, null, 720); // 30-day default
-    res.json({ token: tokenData.token, phone: cleaned, expiresAt: tokenData.expiresAt, createdAt: tokenData.createdAt });
+    const tokenData = db.createActivationToken(cleaned);
+    res.json({ token: tokenData.token, phone: cleaned, createdAt: tokenData.createdAt });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// ── POST /api/tokens/activate — verify payment, activate token, get pairing code
+// ── POST /api/tokens/activate — activate/renew licence, or reconnect active one ─
 
 app.post('/api/tokens/activate', async (req, res) => {
-  const raw            = (req.body.token || '').trim().toUpperCase();
-  const planId         = (req.body.planId || '').trim();
-  const checkoutId     = (req.body.checkoutRequestId || '').trim();
+  const raw        = (req.body.token || '').trim().toUpperCase();
+  const planId     = (req.body.planId || '').trim();
+  const checkoutId = (req.body.checkoutRequestId || '').trim();
 
-  if (!raw)        return res.status(400).json({ error: 'Activation token is required' });
+  if (!raw) return res.status(400).json({ error: 'Activation token is required' });
+
+  const tokenData = db.getActivationToken(raw);
+  if (!tokenData) return res.status(400).json({ error: 'Invalid activation token' });
+
+  const now = new Date();
+
+  // ── Path A: Token is active and not expired — reconnect (no payment needed) ──
+  const isLiveActive =
+    tokenData.status === 'active' &&
+    tokenData.expiresAt &&
+    now < new Date(tokenData.expiresAt);
+
+  if (isLiveActive) {
+    // No payment required — just generate a new pairing code for the linked number
+    try {
+      const { addSession, waitForPairingReady, requestPairingCode, sessions } = require('./sessionManager');
+
+      // Remove any stale session so we can create a fresh one for pairing
+      if (tokenData.sessionId) {
+        const oldSession = sessions.get(tokenData.sessionId);
+        if (oldSession && oldSession.status !== 'connected') {
+          try { const { removeSession } = require('./sessionManager'); removeSession(tokenData.sessionId); } catch (_) {}
+        } else if (oldSession && oldSession.status === 'connected') {
+          return res.status(400).json({ error: 'Bot is already connected. Disconnect first if you want to re-pair.' });
+        }
+      }
+
+      const session = await addSession('Bot-' + Date.now());
+      await waitForPairingReady(session.id);
+      const code = await requestPairingCode(session.id, tokenData.phone);
+
+      // Update sessionId on the token so we can suspend it on expiry
+      db.updateActivationToken(raw, { sessionId: session.id });
+
+      const plan = PLANS[tokenData.plan] || {};
+      return res.json({
+        code,
+        phone:     tokenData.phone,
+        sessionId: session.id,
+        plan:      { id: plan.id || tokenData.plan, name: plan.name || tokenData.plan, badge: plan.badge || '' },
+        expiresAt: tokenData.expiresAt,
+        paymentRef: tokenData.paymentRef || null,
+        reconnect: true,
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  // ── Path B: Inactive / expired / suspended — payment required ──────────────
   if (!planId)     return res.status(400).json({ error: 'Plan selection is required' });
   if (!checkoutId) return res.status(400).json({ error: 'Payment reference is required' });
 
-  // Verify token
-  const tokenData = db.getActivationToken(raw);
-  if (!tokenData) return res.status(400).json({ error: 'Invalid activation token' });
-  if (tokenData.status === 'used') return res.status(400).json({ error: 'This token has already been used' });
-  if (new Date() > new Date(tokenData.expiresAt)) return res.status(400).json({ error: 'This token has expired' });
-
-  // Verify payment is confirmed
+  // Verify payment is confirmed, matches this token, and has not already been consumed
   const payment = db.getPayment(checkoutId);
-  if (!payment) return res.status(400).json({ error: 'Payment record not found' });
-  if (payment.token !== raw) return res.status(400).json({ error: 'Payment does not match this token' });
+  if (!payment)                       return res.status(400).json({ error: 'Payment record not found' });
+  if (payment.token !== raw)          return res.status(400).json({ error: 'Payment does not match this token' });
   if (payment.status !== 'confirmed') return res.status(400).json({ error: 'Payment not yet confirmed — please wait' });
+  if (payment.consumedAt)             return res.status(400).json({ error: 'This payment has already been used to activate a licence' });
 
-  // Resolve plan & calculate runtime
-  const plan     = PLANS[planId];
-  if (!plan) return res.status(400).json({ error: 'Invalid plan' });
+  // Always derive the plan from the server-side payment record — never trust the client-supplied planId.
+  const resolvedPlanId = payment.plan;
+  const plan = PLANS[resolvedPlanId];
+  if (!plan)        return res.status(400).json({ error: 'Invalid plan on payment record' });
+  if (!plan.price)  return res.status(400).json({ error: 'Enterprise plans cannot be activated through this flow' });
+  if (!plan.hours)  return res.status(400).json({ error: 'Plan has no defined runtime — cannot set licence expiry' });
 
   const runtimeHours = plan.hours || null;
   const expiresAt    = runtimeHours
@@ -530,21 +660,28 @@ app.post('/api/tokens/activate', async (req, res) => {
   try {
     const { addSession, waitForPairingReady, requestPairingCode } = require('./sessionManager');
 
-    // Create session and wait until the socket has reached WA's servers
+    // Remove old session for this token if present
+    if (tokenData.sessionId) {
+      try { const { removeSession } = require('./sessionManager'); removeSession(tokenData.sessionId); } catch (_) {}
+    }
+
     const session = await addSession('Bot-' + Date.now());
     await waitForPairingReady(session.id);
 
     // Generate pairing code for the stored phone — never from user input
     const code = await requestPairingCode(session.id, tokenData.phone);
 
-    // Persist activation details on the token
+    // Mark payment as consumed (single-use enforcement) — do this atomically with token update
+    db.updatePayment(checkoutId, { consumedAt: now.toISOString() });
+
+    // Persist activation/renewal details on the token
     db.updateActivationToken(raw, {
-      status:             'used',
-      usedAt:             new Date().toISOString(),
-      plan:               planId,
-      paymentRef:         payment.mpesaReceiptNumber || checkoutId,
-      runtimeHours,
+      status:      'active',
+      plan:        resolvedPlanId,
+      paymentRef:  payment.mpesaReceiptNumber || checkoutId,
+      activatedAt: now.toISOString(),
       expiresAt,
+      sessionId:   session.id,
     });
 
     res.json({

@@ -134,6 +134,51 @@
       content: ''; flex: 1; height: 1px; background: var(--border);
     }
 
+    /* ── LICENCE INFO BOX (active token) ─────────────────────── */
+    .licence-box {
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+      border: 1px solid rgba(34,197,94,.3);
+      border-radius: 14px; padding: 20px 22px;
+      display: none; flex-direction: column; gap: 14px;
+    }
+    .licence-box.show { display: flex; }
+    .licence-badge {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.84rem; font-weight: 700; color: var(--green);
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .dot-live {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+      animation: pulse 1.8s infinite; flex-shrink: 0;
+    }
+    .licence-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .licence-item {
+      background: rgba(255,255,255,.8); border: 1px solid rgba(34,197,94,.2);
+      border-radius: 10px; padding: 10px 12px;
+    }
+    .licence-item-label { font-size: 0.62rem; font-weight: 700; color: var(--muted);
+                          letter-spacing: .8px; text-transform: uppercase; margin-bottom: 2px; }
+    .licence-item-value { font-size: 0.86rem; font-weight: 700; color: var(--text); }
+    .licence-item-value.mono { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+    .licence-item-value.green { color: var(--green); }
+    .reconnect-note {
+      background: rgba(59,130,246,.08); border: 1px solid rgba(59,130,246,.2);
+      border-radius: 10px; padding: 10px 14px;
+      font-size: 0.8rem; color: #475569; line-height: 1.6;
+    }
+
+    /* ── EXPIRED / SUSPENDED NOTICE ──────────────────────────── */
+    .notice-box {
+      background: rgba(217,119,6,.08); border: 1px solid rgba(217,119,6,.25);
+      border-radius: 12px; padding: 14px 16px;
+      font-size: 0.84rem; color: var(--amber); line-height: 1.6;
+      display: none;
+    }
+    .notice-box.show { display: block; }
+    .notice-box strong { display: block; font-size: 0.9rem; margin-bottom: 4px; }
+
     /* ── PLANS GRID ──────────────────────────────────────────── */
     .plans-grid {
       display: grid; grid-template-columns: 1fr 1fr;
@@ -154,13 +199,9 @@
       grid-column: span 2;
       display: flex; align-items: center; justify-content: space-between;
     }
-    .plan-name {
-      font-size: 0.9rem; font-weight: 700; color: var(--text); margin-bottom: 4px;
-    }
-    .plan-price {
-      font-size: 1.3rem; font-weight: 900; color: var(--blue);
-      font-family: 'JetBrains Mono', monospace; line-height: 1;
-    }
+    .plan-name { font-size: 0.9rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .plan-price { font-size: 1.3rem; font-weight: 900; color: var(--blue);
+                  font-family: 'JetBrains Mono', monospace; line-height: 1; }
     .plan-price.custom { font-size: 1rem; color: var(--amber); }
     .plan-badge {
       display: inline-block; margin-top: 6px;
@@ -168,7 +209,7 @@
       padding: 3px 8px; border-radius: 99px;
       background: rgba(59,130,246,.1); color: var(--blue);
     }
-    .plan-card.selected .plan-name  { color: #1d4ed8; }
+    .plan-card.selected .plan-name { color: #1d4ed8; }
     .plan-check {
       position: absolute; top: 10px; right: 10px;
       width: 20px; height: 20px; border-radius: 50%;
@@ -184,29 +225,22 @@
     }
 
     /* ── MPESA SECTION ───────────────────────────────────────── */
-    .mpesa-phone-row {
-      display: flex; gap: 10px; align-items: flex-end;
-    }
+    .mpesa-phone-row { display: flex; gap: 10px; align-items: flex-end; }
     .mpesa-phone-row > div:first-child { flex: 1; }
-    .mpesa-phone-row input {
-      letter-spacing: 1px; font-size: 0.9rem;
-    }
+    .mpesa-phone-row input { letter-spacing: 1px; font-size: 0.9rem; }
 
     .pay-btn {
       width: 100%; padding: 15px;
-      background: var(--mpesa);
-      border: none; border-radius: 12px; cursor: pointer;
-      font-size: 1rem; font-weight: 700; color: #fff;
-      font-family: 'Inter', sans-serif;
+      background: var(--mpesa); border: none; border-radius: 12px; cursor: pointer;
+      font-size: 1rem; font-weight: 700; color: #fff; font-family: 'Inter', sans-serif;
       display: flex; align-items: center; justify-content: center; gap: 10px;
-      transition: all .2s;
-      box-shadow: 0 4px 20px rgba(0,165,80,.3);
+      transition: all .2s; box-shadow: 0 4px 20px rgba(0,165,80,.3);
     }
     .pay-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
     .pay-btn:active { transform: translateY(0); }
     .pay-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; filter: none; }
     .mpesa-logo {
-      font-size: 1.1rem; background: #fff; color: var(--mpesa);
+      background: #fff; color: var(--mpesa);
       border-radius: 6px; padding: 2px 6px; font-weight: 900; font-size: 0.78rem;
     }
 
@@ -217,18 +251,14 @@
       display: none; flex-direction: column; gap: 10px;
     }
     .payment-status.show { display: flex; }
-    .payment-status-row {
-      display: flex; align-items: center; gap: 10px;
-      font-size: 0.85rem;
-    }
+    .payment-status-row { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; }
     .ps-icon {
       width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1rem;
+      display: flex; align-items: center; justify-content: center; font-size: 1rem;
     }
-    .ps-icon.waiting  { background: rgba(217,119,6,.1);  }
-    .ps-icon.success  { background: rgba(22,163,74,.1);  }
-    .ps-icon.failed   { background: rgba(220,38,38,.1);  }
+    .ps-icon.waiting { background: rgba(217,119,6,.1); }
+    .ps-icon.success { background: rgba(22,163,74,.1); }
+    .ps-icon.failed  { background: rgba(220,38,38,.1); }
     .ps-label { font-weight: 600; color: var(--text); }
     .ps-sub   { font-size: 0.74rem; color: var(--muted); margin-top: 1px; }
     .ps-ref   { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
@@ -250,8 +280,7 @@
     .step-icon {
       width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
-      font-size: 0.8rem; font-weight: 700; transition: all .4s;
-      position: relative;
+      font-size: 0.8rem; font-weight: 700; transition: all .4s; position: relative;
     }
     .step-icon.pending { background: var(--bg3); color: var(--muted); border: 1px solid var(--border2); }
     .step-icon.active  { background: rgba(59,130,246,.15); color: var(--blue); border: 1px solid rgba(59,130,246,.4); }
@@ -276,7 +305,6 @@
       border-radius: 16px; padding: 22px; display: none;
     }
     .result-box.show { display: block; }
-
     .result-code-wrap {
       background: #fff; border: 1px solid rgba(59,130,246,.2);
       border-radius: 12px; padding: 18px; text-align: center; margin-bottom: 18px;
@@ -288,31 +316,22 @@
       letter-spacing: 10px; font-family: 'JetBrains Mono', monospace;
     }
     .result-code-hint { font-size: 0.72rem; color: var(--muted); margin-top: 8px; line-height: 1.6; }
-
     .result-meta {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: 10px; margin-bottom: 16px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;
     }
     .meta-item {
-      background: #fff; border: 1px solid var(--border);
-      border-radius: 10px; padding: 12px 14px;
+      background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;
     }
     .meta-label { font-size: 0.62rem; font-weight: 700; color: var(--muted);
                   letter-spacing: .8px; text-transform: uppercase; margin-bottom: 3px; }
     .meta-value { font-size: 0.88rem; font-weight: 700; color: var(--text); }
     .meta-value.mono { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; }
     .meta-value.green { color: var(--green); }
-
     .status-active {
       background: rgba(22,163,74,.1); border: 1px solid rgba(22,163,74,.25);
       border-radius: 10px; padding: 10px 14px;
       display: flex; align-items: center; gap: 8px;
       font-size: 0.84rem; font-weight: 600; color: var(--green);
-    }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-    .dot-live {
-      width: 8px; height: 8px; border-radius: 50%; background: var(--green);
-      animation: pulse 1.8s infinite; flex-shrink: 0;
     }
 
     /* ── ERROR BOX ───────────────────────────────────────────── */
@@ -365,7 +384,6 @@
     .toast.success { background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.3); color: var(--green); }
     .toast.error   { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.2); color: var(--red); }
 
-    /* ── HIDDEN HELPER ───────────────────────────────────────── */
     .hidden { display: none !important; }
 
     @media (max-width: 540px) {
@@ -375,6 +393,7 @@
       .progress-bar { padding: 14px 20px 0; }
       .result-code-digits { font-size: 1.8rem; letter-spacing: 6px; }
       .result-meta { grid-template-columns: 1fr; }
+      .licence-grid { grid-template-columns: 1fr; }
       .toast { left: 16px; right: 16px; bottom: 16px; max-width: none; }
       .plans-grid { grid-template-columns: 1fr; }
       .plan-card.enterprise { grid-column: span 1; }
@@ -391,7 +410,7 @@
   <nav></nav>
 </header>
 
-<!-- Progress bar -->
+<!-- Progress bar — steps differ based on path -->
 <div class="progress-bar" id="progress-bar">
   <div class="prog-step active" id="prog-0">
     <div class="prog-dot">1</div>
@@ -399,15 +418,15 @@
   </div>
   <div class="prog-step" id="prog-1">
     <div class="prog-dot">2</div>
-    <span class="prog-label">Plan</span>
+    <span class="prog-label" id="prog-1-label">Plan</span>
   </div>
   <div class="prog-step" id="prog-2">
     <div class="prog-dot">3</div>
-    <span class="prog-label">Pay</span>
+    <span class="prog-label" id="prog-2-label">Pay</span>
   </div>
   <div class="prog-step" id="prog-3">
     <div class="prog-dot">4</div>
-    <span class="prog-label">Activate</span>
+    <span class="prog-label">Pair</span>
   </div>
 </div>
 
@@ -416,12 +435,12 @@
 
     <div class="card-hdr">
       <h2>⚡ Activate Bot</h2>
-      <p>Enter your activation token, choose a hosting plan, and pay via M-Pesa to get your WhatsApp pairing code.</p>
+      <p id="card-desc">Enter your activation token to verify your licence and get your WhatsApp pairing code.</p>
     </div>
 
     <div class="card-body">
 
-      <!-- ─── STAGE 1: Token verification ─────────────────── -->
+      <!-- ─── STAGE 1: Token entry ──────────────────────────── -->
       <div id="stage-token">
         <div class="field-label">ACTIVATION TOKEN</div>
         <input type="text" id="token-input" placeholder="XXXX-XXXX-XXXX-XXXX"
@@ -429,12 +448,44 @@
         <div class="field-hint">Paste the token you received from the Get Token page</div>
       </div>
 
-      <!-- ─── STAGE 2: Plan selection ──────────────────────── -->
+      <!-- ─── STAGE 2A: Active licence (no payment needed) ──── -->
+      <div id="stage-reconnect" class="hidden">
+        <div class="section-title">Licence Active</div>
+        <!-- Expired/suspended notice (shown when needsPayment=true) -->
+        <div class="notice-box" id="notice-box">
+          <strong>⚠️ Licence Renewal Required</strong>
+          <span id="notice-msg"></span>
+        </div>
+        <!-- Active licence details -->
+        <div class="licence-box" id="licence-box">
+          <div class="licence-badge">
+            <div class="dot-live"></div>
+            Licence Active — No Payment Required
+          </div>
+          <div class="licence-grid">
+            <div class="licence-item">
+              <div class="licence-item-label">WhatsApp Number</div>
+              <div class="licence-item-value mono" id="lc-phone">—</div>
+            </div>
+            <div class="licence-item">
+              <div class="licence-item-label">Plan</div>
+              <div class="licence-item-value" id="lc-plan">—</div>
+            </div>
+            <div class="licence-item" style="grid-column:span 2;">
+              <div class="licence-item-label">Expires</div>
+              <div class="licence-item-value green" id="lc-expires">—</div>
+            </div>
+          </div>
+          <div class="reconnect-note">
+            🔄 Your licence is still active. Click below to generate a new pairing code for the linked number — no payment needed.
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── STAGE 2B: Plan selection (needs payment) ─────── -->
       <div id="stage-plans" class="hidden">
         <div class="section-title">Choose a Hosting Plan</div>
-        <div class="plans-grid" id="plans-grid">
-          <!-- Plans are injected by JS -->
-        </div>
+        <div class="plans-grid" id="plans-grid"></div>
       </div>
 
       <!-- ─── STAGE 3: M-Pesa payment ──────────────────────── -->
@@ -453,7 +504,6 @@
           Pay KSh <span id="pay-amount">—</span> with M-Pesa
         </button>
 
-        <!-- Payment status tracker -->
         <div class="payment-status" id="payment-status">
           <div class="payment-status-row" id="ps-row">
             <div class="ps-icon waiting" id="ps-icon">⏳</div>
@@ -476,7 +526,7 @@
         </div>
         <div class="step-item">
           <div class="step-icon pending" id="step-icon-1">2</div>
-          <span class="step-text" id="step-text-1">Payment Confirmed…</span>
+          <span class="step-text" id="step-text-1">Validating Licence…</span>
         </div>
         <div class="step-item">
           <div class="step-icon pending" id="step-icon-2">3</div>
@@ -508,12 +558,12 @@
             <div class="meta-value mono" id="result-phone">—</div>
           </div>
           <div class="meta-item">
-            <div class="meta-label">Selected Plan</div>
+            <div class="meta-label">Plan</div>
             <div class="meta-value" id="result-plan">—</div>
           </div>
           <div class="meta-item">
-            <div class="meta-label">Runtime</div>
-            <div class="meta-value green" id="result-runtime">—</div>
+            <div class="meta-label">Licence Expires</div>
+            <div class="meta-value green" id="result-expires">—</div>
           </div>
           <div class="meta-item">
             <div class="meta-label">Payment Ref</div>
@@ -528,6 +578,7 @@
 
         <div class="btn-row" style="margin-top:14px;">
           <button class="btn btn-green-solid" onclick="copyCode()" id="copy-btn">📋 Copy Code</button>
+          <button class="btn btn-ghost" onclick="startOver()">🔄 New Token</button>
         </div>
       </div>
 
@@ -551,13 +602,15 @@
 <script>
   /* ── State ─────────────────────────────────────────────────── */
   let state = {
-    stage: 'token',      // token | plans | payment | loading | result
+    // stages: token | reconnect | plans | payment | loading | result
+    stage: 'token',
     token: '',
-    phone: '',           // phone from token
+    phone: '',
     plans: [],
     selectedPlan: null,
     checkoutRequestId: null,
     pollTimer: null,
+    needsPayment: false,
   };
 
   /* ── UI helpers ─────────────────────────────────────────────── */
@@ -588,12 +641,21 @@
   }
 
   /* ── Progress bar ───────────────────────────────────────────── */
-  const STAGE_INDEX = { token: 0, plans: 1, payment: 2, loading: 3, result: 3 };
+  // For payment path: 0=Verify, 1=Plan, 2=Pay, 3=Pair
+  // For reconnect path: 0=Verify, 1=Reconnect, 2=(skip), 3=Pair
+  const STAGE_INDEX = {
+    token:     0,
+    reconnect: 1,
+    plans:     1,
+    payment:   2,
+    loading:   3,
+    result:    3,
+  };
 
   function updateProgress(stageKey) {
     const current = STAGE_INDEX[stageKey] ?? 0;
     for (let i = 0; i < 4; i++) {
-      const el = document.getElementById('prog-' + i);
+      const el  = document.getElementById('prog-' + i);
       const dot = el.querySelector('.prog-dot');
       el.className = 'prog-step';
       if (i < current)       { el.classList.add('done');   dot.textContent = '✓'; }
@@ -607,25 +669,34 @@
     state.stage = stageKey;
     updateProgress(stageKey);
 
-    // Visibility
-    document.getElementById('stage-token').classList.toggle('hidden',   stageKey !== 'token');
-    document.getElementById('stage-plans').classList.toggle('hidden',   stageKey !== 'plans');
-    document.getElementById('stage-payment').classList.toggle('hidden', stageKey !== 'payment');
-    document.getElementById('steps-box').classList.toggle('show',       stageKey === 'loading');
-    document.getElementById('result-box').classList.toggle('show',      stageKey === 'result');
+    document.getElementById('stage-token').classList.toggle('hidden',     stageKey !== 'token');
+    document.getElementById('stage-reconnect').classList.toggle('hidden', stageKey !== 'reconnect');
+    document.getElementById('stage-plans').classList.toggle('hidden',     stageKey !== 'plans');
+    document.getElementById('stage-payment').classList.toggle('hidden',   stageKey !== 'payment');
+    document.getElementById('steps-box').classList.toggle('show',         stageKey === 'loading');
+    document.getElementById('result-box').classList.toggle('show',        stageKey === 'result');
 
     hideError();
 
-    // Primary button
     const btn = document.getElementById('primary-btn');
     if (stageKey === 'token') {
       btn.classList.remove('hidden');
       btn.textContent = '⚡ Verify Token';
       btn.disabled = false;
+    } else if (stageKey === 'reconnect' && !state.needsPayment) {
+      // Active licence — just need to generate pairing code
+      btn.classList.remove('hidden');
+      btn.textContent = '📱 Generate Pairing Code';
+      btn.disabled = false;
+    } else if (stageKey === 'reconnect' && state.needsPayment) {
+      // Expired/suspended — show plans next
+      btn.classList.remove('hidden');
+      btn.textContent = '→ Choose a Renewal Plan';
+      btn.disabled = false;
     } else if (stageKey === 'plans') {
       btn.classList.remove('hidden');
       btn.textContent = '→ Continue to Payment';
-      btn.disabled = true; // enabled when a plan is selected
+      btn.disabled = true; // enabled when plan selected
     } else {
       btn.classList.add('hidden');
     }
@@ -641,7 +712,6 @@
     if (s === 'error') icon.textContent = '✗';
     if (s === 'pending' || s === 'active') icon.textContent = i + 1;
   }
-
   function resetSteps() { for (let i = 0; i < 5; i++) setStep(i, 'pending'); }
 
   /* ── Token input auto-format ────────────────────────────────── */
@@ -659,15 +729,16 @@
       try { this.setSelectionRange(pos, pos); } catch {}
     }
   });
-
   document.getElementById('token-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') primaryAction();
   });
 
   /* ── Primary action dispatcher ─────────────────────────────── */
   function primaryAction() {
-    if (state.stage === 'token')  verifyToken();
-    if (state.stage === 'plans')  proceedToPayment();
+    if (state.stage === 'token')                               verifyToken();
+    else if (state.stage === 'reconnect' && !state.needsPayment) generatePairingCode();
+    else if (state.stage === 'reconnect' && state.needsPayment)  { buildPlansGrid(state.plans); showStage('plans'); }
+    else if (state.stage === 'plans')                          proceedToPayment();
   }
 
   /* ── Stage 1: Verify token ──────────────────────────────────── */
@@ -702,18 +773,28 @@
 
       state.token = tokenVal;
       state.phone = res.phone;
-      state.plans = res.plans;
+      state.plans = res.plans || [];
+      state.needsPayment = res.needsPayment;
 
-      // Mark token input as verified
+      // Lock the token input
       const input = document.getElementById('token-input');
       input.classList.add('success');
       input.readOnly = true;
 
-      setStatus('dot-busy', 'var(--blue)', 'Token verified — choose a plan');
-      toast('✅ Token verified!', 'success');
+      // Populate reconnect panel
+      populateReconnectPanel(res);
+      showStage('reconnect');
 
-      buildPlansGrid(res.plans);
-      showStage('plans');
+      if (!res.needsPayment) {
+        toast('✅ Licence verified — generate your pairing code', 'success');
+        setStatus('dot-busy', 'var(--blue)', 'Licence active — ready to pair');
+      } else if (res.status === 'expired') {
+        toast('⚠️ Licence expired — please renew', 'error');
+        setStatus('dot-err', 'var(--amber)', 'Licence expired — renewal required');
+      } else {
+        toast('✅ Token verified — choose a plan to activate', 'success');
+        setStatus('dot-busy', 'var(--blue)', 'Token verified — choose a plan');
+      }
 
     } catch (err) {
       showError('Network error: ' + err.message);
@@ -721,6 +802,57 @@
       btn.textContent = '⚡ Verify Token';
       setStatus('dot-err', 'var(--red)', 'Network error');
     }
+  }
+
+  /* ── Populate reconnect / expired panel ─────────────────────── */
+  function populateReconnectPanel(res) {
+    if (!res.needsPayment) {
+      // Active — show licence details
+      document.getElementById('notice-box').classList.remove('show');
+      document.getElementById('licence-box').classList.add('show');
+      document.getElementById('lc-phone').textContent   = '+' + res.phone;
+      document.getElementById('lc-plan').textContent    = res.plan || '—';
+      document.getElementById('lc-expires').textContent = res.expiresAt
+        ? new Date(res.expiresAt).toLocaleString() : '—';
+    } else {
+      // Expired / suspended / inactive — show notice
+      document.getElementById('licence-box').classList.remove('show');
+      if (res.message) {
+        document.getElementById('notice-msg').textContent = res.message;
+        document.getElementById('notice-box').classList.add('show');
+      }
+    }
+  }
+
+  /* ── Path A: Active licence — generate pairing code directly ── */
+  async function generatePairingCode() {
+    showStage('loading');
+    resetSteps();
+    setStatus('dot-busy', 'var(--amber)', 'Generating pairing code…');
+    document.getElementById('step-text-1').textContent = 'Licence Verified — No Payment Needed…';
+
+    const STEP_DELAY = 700;
+    let currentStep = 0;
+    function advanceSteps() {
+      return new Promise(resolve => {
+        function next() {
+          if (currentStep < 5) { setStep(currentStep, 'active'); currentStep++; setTimeout(next, STEP_DELAY); }
+          else resolve();
+        }
+        next();
+      });
+    }
+
+    const [, result] = await Promise.all([
+      advanceSteps(),
+      fetch('/api/tokens/activate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: state.token }),
+      }).then(r => r.json()).catch(e => ({ error: 'Network error: ' + e.message })),
+    ]);
+
+    handleActivationResult(result, currentStep);
   }
 
   /* ── Build plans grid ───────────────────────────────────────── */
@@ -731,17 +863,11 @@
       const card = document.createElement('div');
       card.className = 'plan-card' + (plan.id === 'enterprise' ? ' enterprise' : '');
       card.id = 'plan-' + plan.id;
-
       if (plan.id === 'enterprise') {
         card.innerHTML = `
-          <div>
-            <div class="plan-name">${plan.name}</div>
-            <div class="plan-enterprise-badge">Contact Us</div>
-          </div>
-          <div class="plan-right">
-            <div class="plan-price custom">Custom</div>
-          </div>
-        `;
+          <div><div class="plan-name">${plan.name}</div>
+          <div class="plan-enterprise-badge">Contact Us</div></div>
+          <div class="plan-right"><div class="plan-price custom">Custom</div></div>`;
         card.addEventListener('click', () => {
           showError('For Enterprise pricing, please contact us directly.');
         });
@@ -751,8 +877,7 @@
           <div class="plan-check">✓</div>
           <div class="plan-name">${plan.name}</div>
           <div class="plan-price">${priceStr}</div>
-          <div class="plan-badge">${plan.badge}</div>
-        `;
+          <div class="plan-badge">${plan.badge}</div>`;
         card.addEventListener('click', () => selectPlan(plan));
       }
       grid.appendChild(card);
@@ -765,24 +890,22 @@
     document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
     const card = document.getElementById('plan-' + plan.id);
     if (card) card.classList.add('selected');
-
     const btn = document.getElementById('primary-btn');
     btn.disabled = false;
     btn.textContent = `→ Pay KSh ${plan.price} — ${plan.name} Plan`;
     setStatus('dot-busy', 'var(--blue)', `${plan.name} plan selected`);
   }
 
-  /* ── Stage 2 → Stage 3: Proceed to payment ─────────────────── */
+  /* ── Reconnect (expired) → Plans ───────────────────────────── */
+  // Build plans grid before transitioning so cards are ready when the stage shows.
+
+  /* ── Stage 2B → Stage 3: Proceed to payment ────────────────── */
   function proceedToPayment() {
     if (!state.selectedPlan) { showError('Please select a plan first'); return; }
-
-    // Pre-fill M-Pesa phone with token's phone
     const mpesaInput = document.getElementById('mpesa-phone');
-    // Format phone for display: if starts with 254, convert to 07xx
     let displayPhone = state.phone;
     if (displayPhone.startsWith('254')) displayPhone = '0' + displayPhone.slice(3);
     mpesaInput.value = displayPhone;
-
     document.getElementById('pay-amount').textContent = state.selectedPlan.price;
     document.getElementById('payment-status').classList.remove('show');
     showStage('payment');
@@ -822,8 +945,6 @@
       }
 
       state.checkoutRequestId = res.checkoutRequestId;
-
-      // Show payment status box
       const psBox = document.getElementById('payment-status');
       psBox.classList.add('show');
       document.getElementById('ps-icon').textContent  = '⏳';
@@ -837,8 +958,6 @@
 
       setStatus('dot-busy', 'var(--amber)', 'Waiting for M-Pesa payment…');
       toast('📱 M-Pesa prompt sent — check your phone', 'success');
-
-      // Start polling
       pollPaymentStatus();
 
     } catch (err) {
@@ -852,7 +971,7 @@
   /* ── Poll payment status ────────────────────────────────────── */
   function pollPaymentStatus() {
     let attempts = 0;
-    const MAX_ATTEMPTS = 60; // 2 min
+    const MAX_ATTEMPTS = 60;
 
     function poll() {
       attempts++;
@@ -873,7 +992,6 @@
         .then(r => r.json())
         .then(data => {
           if (data.status === 'confirmed') {
-            // Payment confirmed — proceed to activate
             document.getElementById('ps-icon').textContent  = '✅';
             document.getElementById('ps-icon').className    = 'ps-icon success';
             document.getElementById('ps-label').textContent = 'Payment confirmed!';
@@ -881,7 +999,6 @@
               '<span class="ps-ref">' + (data.mpesaReceiptNumber || state.checkoutRequestId) + '</span>';
             toast('💚 Payment confirmed!', 'success');
             activateBot(data.mpesaReceiptNumber);
-
           } else if (data.status === 'failed') {
             document.getElementById('ps-icon').textContent  = '❌';
             document.getElementById('ps-icon').className    = 'ps-icon failed';
@@ -892,40 +1009,29 @@
             btn.disabled = false;
             btn.innerHTML = `<span class="mpesa-logo">M</span> Retry Payment`;
             setStatus('dot-err', 'var(--red)', 'Payment failed');
-
           } else {
-            // Still pending — poll again
             state.pollTimer = setTimeout(poll, 2000);
           }
         })
-        .catch(() => {
-          state.pollTimer = setTimeout(poll, 3000);
-        });
+        .catch(() => { state.pollTimer = setTimeout(poll, 3000); });
     }
-
     state.pollTimer = setTimeout(poll, 2000);
   }
 
-  /* ── Stage 4 → 5: Activate bot ─────────────────────────────── */
-  async function activateBot(paymentRef) {
+  /* ── Stage 4: Activate bot (payment path) ───────────────────── */
+  async function activateBot() {
     showStage('loading');
     resetSteps();
+    document.getElementById('step-text-1').textContent = 'Payment Confirmed…';
     setStatus('dot-busy', 'var(--amber)', 'Activating bot…');
 
-    // Step animation that runs while API call proceeds
     const STEP_DELAY = 700;
     let currentStep = 0;
-
     function advanceSteps() {
       return new Promise(resolve => {
         function next() {
-          if (currentStep < 5) {
-            setStep(currentStep, 'active');
-            currentStep++;
-            setTimeout(next, STEP_DELAY);
-          } else {
-            resolve();
-          }
+          if (currentStep < 5) { setStep(currentStep, 'active'); currentStep++; setTimeout(next, STEP_DELAY); }
+          else resolve();
         }
         next();
       });
@@ -944,38 +1050,36 @@
       }).then(r => r.json()).catch(e => ({ error: 'Network error: ' + e.message })),
     ]);
 
+    handleActivationResult(result, currentStep);
+  }
+
+  /* ── Shared result handler ──────────────────────────────────── */
+  function handleActivationResult(result, currentStep) {
     if (result.code) {
-      // All steps done
       for (let i = 0; i < 5; i++) setStep(i, 'done');
 
-      // Populate result
-      document.getElementById('result-code').textContent = result.code;
+      document.getElementById('result-code').textContent  = result.code;
       document.getElementById('result-phone').textContent = '+' + result.phone;
 
-      const planName = result.plan ? result.plan.name : state.selectedPlan.name;
-      const planBadge = result.plan ? result.plan.badge : state.selectedPlan.badge;
+      const planName  = result.plan ? result.plan.name : (state.selectedPlan ? state.selectedPlan.name : '—');
+      const planBadge = result.plan ? result.plan.badge : (state.selectedPlan ? state.selectedPlan.badge : '');
       document.getElementById('result-plan').textContent = planName + (planBadge ? ' · ' + planBadge : '');
 
-      if (result.runtimeHours) {
-        const h = result.runtimeHours;
-        const days = Math.floor(h / 24);
-        document.getElementById('result-runtime').textContent = days > 0 ? `${days} days` : `${h} hours`;
-      } else {
-        document.getElementById('result-runtime').textContent = 'Custom';
-      }
-
-      document.getElementById('result-payref').textContent = result.paymentRef || '—';
+      document.getElementById('result-expires').textContent = result.expiresAt
+        ? new Date(result.expiresAt).toLocaleString() : '—';
+      document.getElementById('result-payref').textContent  = result.paymentRef || (result.reconnect ? 'Reconnect — no payment' : '—');
 
       showStage('result');
-      setStatus('dot-on', 'var(--green)', '✅ Bot activated — enter pairing code in WhatsApp');
-      toast('🎉 Bot activated!', 'success');
-
+      const msg = result.reconnect
+        ? '🔄 Reconnected — enter pairing code in WhatsApp'
+        : '✅ Bot activated — enter pairing code in WhatsApp';
+      setStatus('dot-on', 'var(--green)', msg);
+      toast(result.reconnect ? '🔄 New pairing code generated!' : '🎉 Bot activated!', 'success');
     } else {
-      // Mark error on current step
       for (let i = 0; i < 5; i++) {
-        if (i < currentStep - 1)      setStep(i, 'done');
+        if (i < currentStep - 1)        setStep(i, 'done');
         else if (i === currentStep - 1) setStep(i, 'error');
-        else                           setStep(i, 'pending');
+        else                            setStep(i, 'pending');
       }
       showError(result.error || 'Activation failed — please try again');
       setStatus('dot-err', 'var(--red)', 'Activation failed');
@@ -993,6 +1097,17 @@
         toast('Pairing code copied!', 'success');
       })
       .catch(() => toast('Could not copy — please copy manually', 'error'));
+  }
+
+  /* ── Start over ─────────────────────────────────────────────── */
+  function startOver() {
+    state = { stage: 'token', token: '', phone: '', plans: [], selectedPlan: null,
+              checkoutRequestId: null, pollTimer: null, needsPayment: false };
+    const input = document.getElementById('token-input');
+    input.value = ''; input.readOnly = false;
+    input.classList.remove('success', 'error');
+    showStage('token');
+    setStatus('dot-idle', 'var(--muted)', 'Enter your activation token to begin');
   }
 
   // Initialise
