@@ -668,7 +668,7 @@ async function pair(ctx) {
   const { sock, from, msg } = ctx;
   const botNum = sock.user?.id?.split(':')[0] || '?';
   const botName = db.getBotSetting('botName') || 'Firebox';
-  const panelUrl = `https://${process.env.REPL_SLUG || 'firebox'}.replit.app/pair`;
+  const panelUrl = `https://whatsappbot.firebox.live`;
   const content =
     `*Bot Number:* +${botNum}\n` +
     `*Uptime:* ${getUptime()}\n` +
@@ -689,7 +689,7 @@ async function pair(ctx) {
 
 async function repo(ctx) {
   const { sock, from, msg } = ctx;
-  const panelUrl = `https://${process.env.REPL_SLUG || 'firebox'}.replit.app/pair`;
+  const panelUrl = `https://whatsappbot.firebox.live`;
   const content =
     `*Name:*     Firebox Bot\n` +
     `*Version:*  v2.0.0\n` +
