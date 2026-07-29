@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
+const crypto            = require('crypto');
 const DATA_DIR          = path.join(__dirname, '../data');
 const GROUPS_FILE       = path.join(DATA_DIR, 'groups.json');
 const USERS_FILE        = path.join(DATA_DIR, 'users.json');
@@ -12,6 +13,7 @@ const CONFESSIONS_FILE  = path.join(DATA_DIR, 'confessions.json');
 const BROADCAST_FILE    = path.join(DATA_DIR, 'broadcast.json');
 const STATUS_STATS_FILE = path.join(DATA_DIR, 'statusstats.json');
 const COINS_FILE        = path.join(DATA_DIR, 'coins.json');
+const TOKENS_FILE       = path.join(DATA_DIR, 'tokens.json');
 
 // ── In-memory cache — files are read from disk once, then served from memory ──
 // Cache is invalidated (set to null) whenever we write, and repopulated on next read.
@@ -54,6 +56,7 @@ function initialize() {
   if (!fs.existsSync(BROADCAST_FILE))    writeJson(BROADCAST_FILE, []);
   if (!fs.existsSync(STATUS_STATS_FILE)) writeJson(STATUS_STATS_FILE, {});
   if (!fs.existsSync(COINS_FILE))        writeJson(COINS_FILE, { balance: 20, totalSpent: 0, history: [] });
+  if (!fs.existsSync(TOKENS_FILE))       writeJson(TOKENS_FILE, {});
   console.log('[DB] JSON database initialized');
 }
 
@@ -365,6 +368,56 @@ function clearBroadcast() {
   writeJson(BROADCAST_FILE, []);
 }
 
+// ── activation tokens ─────────────────────────────────────────────────────────
+
+const TOKEN_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no 0/1/I/O/L
+
+function generateTokenString() {
+  // 16 random chars from TOKEN_ALPHABET, formatted XXXX-XXXX-XXXX-XXXX
+  const bytes = crypto.randomBytes(16);
+  let raw = '';
+  for (const byte of bytes) {
+    raw += TOKEN_ALPHABET[byte % TOKEN_ALPHABET.length];
+  }
+  return `${raw.slice(0,4)}-${raw.slice(4,8)}-${raw.slice(8,12)}-${raw.slice(12,16)}`;
+}
+
+function createActivationToken(phone, userId, paymentId, expiresInHours) {
+  const tokens = readJson(TOKENS_FILE, {});
+  const token = generateTokenString();
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + (expiresInHours || 720) * 60 * 60 * 1000);
+  tokens[token] = {
+    token,
+    phone,
+    userId:    userId    || crypto.randomUUID(),
+    paymentId: paymentId || crypto.randomUUID(),
+    status:    'unused',
+    createdAt: now.toISOString(),
+    expiresAt: expiresAt.toISOString()
+  };
+  writeJson(TOKENS_FILE, tokens);
+  return tokens[token];
+}
+
+function getActivationToken(token) {
+  const tokens = readJson(TOKENS_FILE, {});
+  return tokens[token] || null;
+}
+
+function markActivationTokenUsed(token) {
+  const tokens = readJson(TOKENS_FILE, {});
+  if (!tokens[token]) return null;
+  tokens[token].status = 'used';
+  tokens[token].usedAt = new Date().toISOString();
+  writeJson(TOKENS_FILE, tokens);
+  return tokens[token];
+}
+
+function getAllActivationTokens() {
+  return Object.values(readJson(TOKENS_FILE, {}));
+}
+
 module.exports = {
   initialize,
   getGroup, setGroup, getAllGroups,
@@ -379,5 +432,6 @@ module.exports = {
   recordStatusReact, getStatusAnalytics, clearStatusAnalytics,
   getAiChatTargets, addAiChatTarget, removeAiChatTarget, clearAiChatTargets,
   getCoins, addCoins, spendCoins, setCoins,
-  getDailyRefill, setDailyRefill, checkAndApplyDailyRefill
+  getDailyRefill, setDailyRefill, checkAndApplyDailyRefill,
+  createActivationToken, getActivationToken, markActivationTokenUsed, getAllActivationTokens
 };

@@ -332,16 +332,74 @@ app.get('/api/sessions/:id/activity', (req, res) => {
   res.json({ sessionId: s.id, sessionName: s.name, number: s.number, status: s.status, activity: s.recentActivity || [] });
 });
 
+// ── POST /api/tokens/generate — validate phone & create activation token ──────
+
+app.post('/api/tokens/generate', (req, res) => {
+  const { phone } = req.body;
+  if (!phone) return res.status(400).json({ error: 'Phone number is required' });
+  const cleaned = String(phone).replace(/\D/g, '');
+  if (cleaned.length < 7 || cleaned.length > 15) {
+    return res.status(400).json({ error: 'Invalid phone number — must be 7 to 15 digits (no spaces, dashes, or +)' });
+  }
+  try {
+    const tokenData = db.createActivationToken(cleaned, null, null, 720); // 30-day default
+    res.json({ token: tokenData.token, phone: cleaned, expiresAt: tokenData.expiresAt, createdAt: tokenData.createdAt });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/tokens/activate — verify token & generate WhatsApp pairing code ─
+
+app.post('/api/tokens/activate', async (req, res) => {
+  const raw = (req.body.token || '').trim().toUpperCase();
+  if (!raw) return res.status(400).json({ error: 'Activation token is required' });
+
+  // Step 1: token exists?
+  const tokenData = db.getActivationToken(raw);
+  if (!tokenData) return res.status(400).json({ error: 'Invalid activation token — please check and try again' });
+
+  // Step 2: not already used?
+  if (tokenData.status === 'used') {
+    return res.status(400).json({ error: 'This token has already been used' });
+  }
+
+  // Step 3: not expired?
+  if (new Date() > new Date(tokenData.expiresAt)) {
+    return res.status(400).json({ error: 'This token has expired' });
+  }
+
+  try {
+    const { addSession, requestPairingCode } = require('./sessionManager');
+
+    // Step 3: create session
+    const session = await addSession('Bot-' + Date.now());
+
+    // Step 4: generate pairing code for the stored phone — never from user input
+    const code = await requestPairingCode(session.id, tokenData.phone);
+
+    // Mark token used only after successful pairing code generation
+    db.markActivationTokenUsed(raw);
+
+    res.json({ code, phone: tokenData.phone, sessionId: session.id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 app.get('/', (req, res) => res.redirect('/dashboard'));
-app.get('/pair',     (req, res) => res.sendFile(path.join(__dirname, '../public/pair.html')));
-app.get('/config',   (req, res) => res.sendFile(path.join(__dirname, '../public/config.html')));
-app.get('/admin',    (req, res) => res.sendFile(path.join(__dirname, '../public/admin.html')));
+// /pair redirects to the new token-based flow
+app.get('/pair',      (req, res) => res.redirect('/get-token'));
+app.get('/get-token', (req, res) => res.sendFile(path.join(__dirname, '../public/get-token.html')));
+app.get('/activate',  (req, res) => res.sendFile(path.join(__dirname, '../public/activate.html')));
+app.get('/config',    (req, res) => res.sendFile(path.join(__dirname, '../public/config.html')));
+app.get('/admin',     (req, res) => res.sendFile(path.join(__dirname, '../public/admin.html')));
 app.get('/activity',  (req, res) => res.sendFile(path.join(__dirname, '../public/activity.html')));
 app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, '../public/dashboard.html')));
 
 app.use((req, res) => {
-  res.sendFile(path.join(__dirname, '../public/pair.html'));
+  res.sendFile(path.join(__dirname, '../public/get-token.html'));
 });
 
 function startServer() {

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Firebox — Get Activation Token</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #040810;
+      --bg2:     #070d1a;
+      --bg3:     #0b1425;
+      --border:  #152035;
+      --border2: #1e3050;
+      --blue:    #3b82f6;
+      --text:    #e2e8f0;
+      --muted:   #4a6080;
+      --green:   #22c55e;
+      --red:     #ef4444;
+      --amber:   #f59e0b;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+      display: flex; flex-direction: column;
+      background-image: radial-gradient(ellipse 80% 40% at 50% -20%, rgba(59,130,246,.1) 0%, transparent 70%);
+    }
+
+    /* ── HEADER ─────────────────────────────────────────────── */
+    header {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(4,8,16,.88); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px; display: flex; align-items: center; gap: 24px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 14px 0; text-decoration: none; }
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; box-shadow: 0 0 20px rgba(245,158,11,.35);
+    }
+    .brand-text h1 { font-size: 1.15rem; font-weight: 800; color: #fff; }
+    .brand-text span { font-size: 0.72rem; color: var(--muted); }
+    nav { margin-left: auto; display: flex; gap: 2px; }
+    nav a {
+      padding: 7px 18px; text-decoration: none; color: var(--muted);
+      font-size: 0.85rem; font-weight: 600; border-radius: 8px; transition: all .2s;
+    }
+    nav a:hover { color: var(--text); background: var(--bg3); }
+    nav a.active { color: var(--blue); background: rgba(59,130,246,.12); }
+
+    /* ── LAYOUT ─────────────────────────────────────────────── */
+    .container {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      padding: 40px 24px;
+    }
+    .card {
+      background: var(--bg2); border: 1px solid var(--border2);
+      border-radius: 22px; overflow: hidden;
+      width: 100%; max-width: 480px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.4);
+    }
+
+    /* ── CARD HEADER ─────────────────────────────────────────── */
+    .card-hdr {
+      padding: 28px 32px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-hdr h2 { font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    .card-hdr p  { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
+
+    /* ── CARD BODY ───────────────────────────────────────────── */
+    .card-body { padding: 28px 32px 32px; display: flex; flex-direction: column; gap: 20px; }
+
+    .field-label {
+      font-size: 0.68rem; font-weight: 700; color: var(--blue);
+      letter-spacing: 1px; margin-bottom: 8px;
+    }
+    input[type=tel] {
+      width: 100%; padding: 12px 14px;
+      background: var(--bg); border: 1px solid var(--border2);
+      border-radius: 10px; color: #fff; font-size: 0.92rem;
+      font-family: 'Inter', sans-serif; transition: border-color .2s;
+    }
+    input[type=tel]:focus { outline: none; border-color: var(--blue); }
+    input[type=tel].error { border-color: var(--red); }
+
+    .field-hint { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
+    .field-error { font-size: 0.75rem; color: var(--red); margin-top: 6px; display: none; }
+    .field-error.show { display: block; }
+
+    /* ── TOKEN DISPLAY ───────────────────────────────────────── */
+    .token-box {
+      background: var(--bg);
+      border: 1px solid rgba(34,197,94,.35);
+      border-radius: 16px; padding: 24px;
+      display: none; flex-direction: column; gap: 14px;
+    }
+    .token-box.show { display: flex; }
+    .token-label {
+      font-size: 0.68rem; font-weight: 700; color: var(--green);
+      letter-spacing: 1px;
+    }
+    .token-value {
+      font-size: 1.65rem; font-weight: 900; color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 4px; text-align: center;
+      padding: 6px 0;
+      word-break: break-all;
+    }
+    .token-meta {
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .token-meta-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.76rem;
+    }
+    .token-meta-row .label { color: var(--muted); }
+    .token-meta-row .value { color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; }
+    .token-actions { display: flex; gap: 8px; }
+
+    /* ── INFO BOX ────────────────────────────────────────────── */
+    .info-box {
+      background: rgba(59,130,246,.07); border: 1px solid rgba(59,130,246,.2);
+      border-radius: 12px; padding: 14px 16px;
+      font-size: 0.8rem; color: #94b4d4; line-height: 1.6;
+    }
+    .info-box strong { color: var(--blue); }
+
+    /* ── BUTTONS ─────────────────────────────────────────────── */
+    .btn {
+      border: none; border-radius: 10px; cursor: pointer;
+      font-size: 0.88rem; font-weight: 600; padding: 10px 20px;
+      transition: all .2s; display: inline-flex; align-items: center; gap: 6px;
+      font-family: 'Inter', sans-serif;
+    }
+    .btn:hover { opacity: .85; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+    .btn-blue  { background: var(--blue); color: #fff; box-shadow: 0 4px 14px rgba(59,130,246,.3); }
+    .btn-ghost { background: var(--bg3); color: #94a3b8; border: 1px solid var(--border); }
+    .btn-green { background: rgba(34,197,94,.15); color: var(--green); border: 1px solid rgba(34,197,94,.3); }
+    .btn-full  { width: 100%; justify-content: center; padding: 13px; font-size: 0.95rem; border-radius: 12px; }
+
+    /* ── FOOTER STATUS ───────────────────────────────────────── */
+    .card-footer {
+      padding: 14px 28px; background: rgba(0,0,0,.25);
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px; font-size: 0.82rem;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dot-idle { background: #2a3d55; }
+    .dot-busy { background: var(--amber); animation: blink 1s infinite; }
+    .dot-on   { background: var(--green); }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ── TOAST ───────────────────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--bg3); color: var(--text); border: 1px solid var(--border2);
+      padding: 12px 20px; border-radius: 12px; font-size: 0.85rem;
+      opacity: 0; transition: opacity .3s, transform .3s; z-index: 200;
+      max-width: 340px; transform: translateY(8px);
+    }
+    .toast.show    { opacity: 1; transform: translateY(0); }
+    .toast.success { background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.3); color: var(--green); }
+    .toast.error   { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.2); color: var(--red); }
+
+    @media (max-width: 540px) {
+      header { padding: 0 16px; }
+      .brand-text span { display: none; }
+      .card-hdr, .card-body { padding-left: 20px; padding-right: 20px; }
+      .token-value { font-size: 1.2rem; letter-spacing: 2px; }
+      .toast { left: 16px; right: 16px; bottom: 16px; max-width: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="/dashboard">
+    <div class="brand-icon">🔥</div>
+    <div class="brand-text"><h1>Firebox</h1><span>WhatsApp Bot</span></div>
+  </a>
+  <nav>
+    <a href="/get-token" class="active">Get Token</a>
+    <a href="/activate">Activate</a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="card">
+
+    <div class="card-hdr">
+      <h2>🔑 Get Activation Token</h2>
+      <p>Enter the WhatsApp number you want to connect. An activation token will be generated and locked to that number.</p>
+    </div>
+
+    <div class="card-body">
+
+      <!-- Phone input -->
+      <div id="phone-section">
+        <div class="field-label">WHATSAPP PHONE NUMBER</div>
+        <input type="tel" id="phone-input" placeholder="e.g. 254712345678" autocomplete="tel" />
+        <div class="field-hint">Include country code, no + or spaces (e.g. 254712345678)</div>
+        <div class="field-error" id="phone-error"></div>
+      </div>
+
+      <!-- Info -->
+      <div class="info-box">
+        <strong>Important:</strong> The phone number you enter here will be permanently linked to your activation token. You will not be able to change it after generation.
+      </div>
+
+      <!-- Token result -->
+      <div class="token-box" id="token-box">
+        <div class="token-label">✅ ACTIVATION TOKEN GENERATED</div>
+        <div class="token-value" id="token-value">—</div>
+        <div class="token-meta">
+          <div class="token-meta-row">
+            <span class="label">Linked number</span>
+            <span class="value" id="token-phone">—</span>
+          </div>
+          <div class="token-meta-row">
+            <span class="label">Expires</span>
+            <span class="value" id="token-expires">—</span>
+          </div>
+        </div>
+        <div class="token-actions">
+          <button class="btn btn-green" id="copy-btn" onclick="copyToken()">📋 Copy Token</button>
+          <a href="/activate" class="btn btn-blue">⚡ Activate Now →</a>
+        </div>
+      </div>
+
+      <!-- Generate button -->
+      <button class="btn btn-blue btn-full" id="generate-btn" onclick="generateToken()">
+        🔑 Generate Activation Token
+      </button>
+
+    </div>
+
+    <div class="card-footer">
+      <div class="dot dot-idle" id="status-dot"></div>
+      <span id="status-txt" style="color:var(--muted)">Enter your phone number to begin</span>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  function toast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (type ? ' ' + type : '');
+    clearTimeout(t._t);
+    t._t = setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  function setStatus(cls, color, text) {
+    document.getElementById('status-dot').className = 'dot ' + cls;
+    const el = document.getElementById('status-txt');
+    el.style.color = color;
+    el.textContent = text;
+  }
+
+  function showPhoneError(msg) {
+    const input = document.getElementById('phone-input');
+    const err   = document.getElementById('phone-error');
+    input.classList.add('error');
+    err.textContent = msg;
+    err.classList.add('show');
+  }
+
+  function clearPhoneError() {
+    document.getElementById('phone-input').classList.remove('error');
+    const err = document.getElementById('phone-error');
+    err.textContent = '';
+    err.classList.remove('show');
+  }
+
+  document.getElementById('phone-input').addEventListener('input', clearPhoneError);
+
+  async function generateToken() {
+    const phone = document.getElementById('phone-input').value.trim();
+    clearPhoneError();
+
+    // Client-side pre-validation
+    const digits = phone.replace(/\D/g, '');
+    if (!digits) {
+      showPhoneError('Phone number is required');
+      return;
+    }
+    if (digits.length < 7 || digits.length > 15) {
+      showPhoneError('Must be 7–15 digits — include your country code (e.g. 254712345678)');
+      return;
+    }
+
+    const btn = document.getElementById('generate-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Generating…';
+    setStatus('dot-busy', '#f59e0b', 'Generating token…');
+
+    // Hide any previous token
+    document.getElementById('token-box').classList.remove('show');
+
+    try {
+      const res = await fetch('/api/tokens/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      });
+      const data = await res.json();
+
+      if (data.token) {
+        document.getElementById('token-value').textContent = data.token;
+        document.getElementById('token-phone').textContent = data.phone;
+        document.getElementById('token-expires').textContent = new Date(data.expiresAt).toLocaleString();
+        document.getElementById('token-box').classList.add('show');
+        setStatus('dot-on', 'var(--green)', '✅ Token generated — copy it and go to Activate');
+        toast('Activation token ready!', 'success');
+      } else {
+        showPhoneError(data.error || 'Failed to generate token');
+        setStatus('dot-idle', 'var(--muted)', 'Enter your phone number to begin');
+        toast(data.error || 'Failed to generate token', 'error');
+      }
+    } catch (e) {
+      showPhoneError('Network error — please try again');
+      setStatus('dot-idle', 'var(--muted)', 'Enter your phone number to begin');
+      toast('Network error: ' + e.message, 'error');
+    }
+
+    btn.disabled = false;
+    btn.textContent = '🔑 Generate Activation Token';
+  }
+
+  function copyToken() {
+    const val = document.getElementById('token-value').textContent;
+    navigator.clipboard.writeText(val)
+      .then(() => {
+        const btn = document.getElementById('copy-btn');
+        btn.textContent = '✅ Copied!';
+        setTimeout(() => { btn.textContent = '📋 Copy Token'; }, 2000);
+        toast('Token copied to clipboard!', 'success');
+      })
+      .catch(() => toast('Could not copy — please copy manually', 'error'));
+  }
+
+  // Allow Enter key on input
+  document.getElementById('phone-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') generateToken();
+  });
+</script>
+</body>
+</html>
