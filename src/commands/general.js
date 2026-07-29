@@ -373,10 +373,7 @@ async function menu(ctx) {
   const header =
     `╔══════════════════════╗\n` +
     `║   ${f.bold('FIREBOX  BOT')}   ║\n` +
-    `╚══════════════════════╝\n` +
-    `${f.smallCaps('Prefix')} » ${f.mono(p)}   ${f.smallCaps('Uptime')} » ${f.italic(getUptime())}\n` +
-    `${f.smallCaps('Mode')}   » ${f.bold(botMode.toUpperCase())}\n` +
-    `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n`;
+    `╚══════════════════════╝\n`;
 
   const footer =
     `\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
