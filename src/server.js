@@ -378,14 +378,29 @@ app.post('/api/mpesa/stk-push', async (req, res) => {
 
   const payPhone = mpesaPhone ? mpesaPhone.replace(/\D/g, '') : tokenData.phone;
 
+  const hasCredentials = !!(process.env.MPESA_CONSUMER_KEY && process.env.MPESA_CONSUMER_SECRET &&
+                             process.env.MPESA_SHORTCODE && process.env.MPESA_PASSKEY);
+  const testMode = process.env.MPESA_TEST_MODE === 'true';
+
+  // No credentials configured → auto-confirm immediately (dev / payment-disabled mode)
+  if (!hasCredentials && !testMode) {
+    const crypto = require('crypto');
+    const checkoutId = 'BYPASS-' + crypto.randomUUID().toUpperCase().replace(/-/g, '').slice(0, 16);
+    db.createPayment(checkoutId, { token: raw, plan: planId, phone: payPhone, amount: plan.price });
+    db.updatePayment(checkoutId, {
+      status: 'confirmed',
+      mpesaReceiptNumber: 'BYPASS-' + Date.now(),
+      resultCode: 0,
+      resultDesc: 'Payment bypassed — credentials not yet configured',
+    });
+    console.log(`[MPESA] Payment bypassed (no credentials) → ${checkoutId}`);
+    return res.json({ checkoutRequestId: checkoutId, testMode: true });
+  }
+
   try {
     const mpesa = require('./mpesa');
     const callbackUrl = process.env.MPESA_CALLBACK_URL ||
       (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}/api/mpesa/callback` : null);
-
-    if (!callbackUrl && !mpesa.isTestMode()) {
-      return res.status(500).json({ error: 'Callback URL not configured — set MPESA_CALLBACK_URL or REPLIT_DEV_DOMAIN' });
-    }
 
     const result = await mpesa.stkPush({
       phone:       payPhone,
@@ -399,7 +414,7 @@ app.post('/api/mpesa/stk-push', async (req, res) => {
     db.createPayment(checkoutId, { token: raw, plan: planId, phone: payPhone, amount: plan.price });
 
     // In test mode, auto-confirm after a short delay (simulate payment)
-    if (mpesa.isTestMode()) {
+    if (testMode) {
       setTimeout(() => {
         db.updatePayment(checkoutId, {
           status: 'confirmed',
@@ -411,7 +426,7 @@ app.post('/api/mpesa/stk-push', async (req, res) => {
       }, 4000);
     }
 
-    res.json({ checkoutRequestId: checkoutId, testMode: mpesa.isTestMode() });
+    res.json({ checkoutRequestId: checkoutId, testMode });
   } catch (err) {
     console.error('[MPESA] STK push error:', err.message);
     res.status(500).json({ error: err.message });
