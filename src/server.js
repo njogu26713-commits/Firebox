@@ -370,10 +370,11 @@ app.post('/api/tokens/activate', async (req, res) => {
   }
 
   try {
-    const { addSession, requestPairingCode } = require('./sessionManager');
+    const { addSession, waitForPairingReady, requestPairingCode } = require('./sessionManager');
 
-    // Step 3: create session
+    // Step 3: create session and wait until the socket has reached WA's servers
     const session = await addSession('Bot-' + Date.now());
+    await waitForPairingReady(session.id);
 
     // Step 4: generate pairing code for the stored phone — never from user input
     const code = await requestPairingCode(session.id, tokenData.phone);

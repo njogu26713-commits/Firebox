@@ -142,6 +142,9 @@ async function startSession(id, name, createdAt) {
   if (!sessionState._connectedAt) sessionState._connectedAt = 0;
 
   sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
+    // Mark socket as having received at least one update — safe to request pairing code now
+    sessionState._socketInitialized = true;
+
     if (qr) {
       sessionState.qr = qr;
       sessionState.pairingCode = null;
@@ -837,6 +840,21 @@ async function requestPairingCode(id, number) {
   return formatted;
 }
 
+// Wait until the Baileys socket has received its first connection.update — meaning it has
+// reached WhatsApp's servers and is ready to accept a pairing code request.
+async function waitForPairingReady(id, timeoutMs = 25000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const s = sessions.get(id);
+    if (!s) throw new Error('Session not found');
+    if (s.status === 'connected') throw new Error('Session is already connected');
+    // Once the socket has emitted its first connection.update it has reached WA servers
+    if (s.sock && s._socketInitialized) return s;
+    await new Promise(r => setTimeout(r, 250));
+  }
+  throw new Error('Timed out waiting for WhatsApp connection — please try again');
+}
+
 // ── Check if setup is required (no session configured yet) ────────────────────
 
 function isSetupRequired() {
@@ -934,4 +952,4 @@ async function loadAndStartAll() {
   }
 }
 
-module.exports = { sessions, addSession, startSession, removeSession, requestPairingCode, loadAndStartAll };
+module.exports = { sessions, addSession, startSession, removeSession, requestPairingCode, waitForPairingReady, loadAndStartAll };
