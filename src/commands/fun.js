@@ -2,7 +2,7 @@ const axios = require('axios');
 const { sendFireboxCard } = require('../card');
 
 async function send(sock, from, msg, text, title) {
-  return sendFireboxCard(sock, from, msg, { title: title || '🎭 Firebox Fun', content: text });
+  return sendFireboxCard(sock, from, msg, { title: title || 'Firebox Fun', content: text });
 }
 
 // ── helper: extract tagged/quoted JID ────────────────────────────────────────
@@ -20,38 +20,38 @@ function randomPct() { return Math.floor(Math.random() * 101); }
 
 function loveBar(pct) {
   const filled = Math.round(pct / 10);
-  return '❤️'.repeat(filled) + '🖤'.repeat(10 - filled);
+  return ''.repeat(filled) + ''.repeat(10 - filled);
 }
 
 // ── .bf / .gf ─────────────────────────────────────────────────────────────────
 async function bf(ctx) {
   const { sock, from, msg, text, sender } = ctx;
-  const name = text || 'Mystery Person 💕';
+  const name = text || 'Mystery Person ';
   const pct = randomPct();
   const bar = loveBar(pct);
-  const emoji = pct >= 80 ? '😍' : pct >= 60 ? '😊' : pct >= 40 ? '😐' : '😢';
+  const emoji = pct >= 80 ? '' : pct >= 60 ? '' : pct >= 40 ? '' : '';
   await send(sock, from, msg,
-    `👤 *User:* @${sender.split('@')[0]}\n` +
-    `💑 *BF:* ${name}\n` +
+    `*User:* @${sender.split('@')[0]}\n` +
+    `*BF:* ${name}\n` +
     `${bar}\n` +
-    `💘 *Love:* ${pct}% ${emoji}\n` +
-    `_${pct >= 80 ? 'Perfect match! 💍' : pct >= 60 ? 'Great couple! 💕' : pct >= 40 ? 'Could work with effort ✨' : 'Hmm... maybe not 😅'}_`,
-    '💑 Boyfriend Meter');
+    `*Love:* ${pct}% ${emoji}\n` +
+    `_${pct >= 80 ? 'Perfect match! ' : pct >= 60 ? 'Great couple! ' : pct >= 40 ? 'Could work with effort ' : 'Hmm... maybe not '}_`,
+    'Boyfriend Meter');
 }
 
 async function gf(ctx) {
   const { sock, from, msg, text, sender } = ctx;
-  const name = text || 'Mystery Girl 💕';
+  const name = text || 'Mystery Girl ';
   const pct = randomPct();
   const bar = loveBar(pct);
-  const emoji = pct >= 80 ? '😍' : pct >= 60 ? '😊' : pct >= 40 ? '😐' : '😢';
+  const emoji = pct >= 80 ? '' : pct >= 60 ? '' : pct >= 40 ? '' : '';
   await send(sock, from, msg,
-    `👤 *User:* @${sender.split('@')[0]}\n` +
-    `💑 *GF:* ${name}\n` +
+    `*User:* @${sender.split('@')[0]}\n` +
+    `*GF:* ${name}\n` +
     `${bar}\n` +
-    `💘 *Love:* ${pct}% ${emoji}\n` +
-    `_${pct >= 80 ? 'Perfect match! 💍' : pct >= 60 ? 'Great couple! 💕' : pct >= 40 ? 'Could work with effort ✨' : 'Hmm... maybe not 😅'}_`,
-    '💑 Girlfriend Meter');
+    `*Love:* ${pct}% ${emoji}\n` +
+    `_${pct >= 80 ? 'Perfect match! ' : pct >= 60 ? 'Great couple! ' : pct >= 40 ? 'Could work with effort ' : 'Hmm... maybe not '}_`,
+    'Girlfriend Meter');
 }
 
 // ── .couple ───────────────────────────────────────────────────────────────────
@@ -60,17 +60,17 @@ async function couple(ctx) {
   const mentioned = getMentionedJid(ctx);
   const partner = mentioned
     ? `@${mentioned.split('@')[0]}`
-    : 'someone special 💕';
+    : 'someone special ';
   const pct = randomPct();
   const bar = loveBar(pct);
   await send(sock, from, msg,
-    `👫 *Couple Compatibility*\n` +
-    `💙 @${sender.split('@')[0]}\n` +
-    `❤️ ${partner}\n` +
+    `*Couple Compatibility*\n` +
+    `@${sender.split('@')[0]}\n` +
+    `${partner}\n` +
     `${bar}\n` +
-    `💘 *Score:* ${pct}%\n` +
-    `_${pct >= 80 ? '👑 Soulmates!' : pct >= 60 ? '💕 Great together!' : pct >= 40 ? '✨ Worth a shot!' : '💀 Disaster incoming 😂'}_`,
-    '💑 Couple Meter');
+    `*Score:* ${pct}%\n` +
+    `_${pct >= 80 ? 'Soulmates!' : pct >= 60 ? 'Great together!' : pct >= 40 ? 'Worth a shot!' : 'Disaster incoming '}_`,
+    'Couple Meter');
 }
 
 // ── .gay ──────────────────────────────────────────────────────────────────────
@@ -78,14 +78,14 @@ async function gay(ctx) {
   const { sock, from, msg, text, sender } = ctx;
   const target = text || `@${sender.split('@')[0]}`;
   const pct = randomPct();
-  const flags = pct >= 75 ? '🏳️‍🌈🏳️‍🌈🏳️‍🌈' : pct >= 50 ? '🏳️‍🌈🏳️‍🌈' : pct >= 25 ? '🏳️‍🌈' : '😐';
+  const flags = pct >= 75 ? '' : pct >= 50 ? '' : pct >= 25 ? '' : '';
   await send(sock, from, msg,
-    `🏳️‍🌈 *Gay Meter*\n` +
-    `👤 *User:* ${target}\n` +
-    `${'🌈'.repeat(Math.round(pct / 10))}${'⬛'.repeat(10 - Math.round(pct / 10))}\n` +
-    `📊 *Score:* ${pct}% ${flags}\n` +
-    `_This is just for fun — all love is valid! 🌈_`,
-    '🏳️‍🌈 Gay Meter');
+    `*Gay Meter*\n` +
+    `*User:* ${target}\n` +
+    `${''.repeat(Math.round(pct / 10))}${''.repeat(10 - Math.round(pct / 10))}\n` +
+    `*Score:* ${pct}% ${flags}\n` +
+    `_This is just for fun — all love is valid! _`,
+    'Gay Meter');
 }
 
 // ── .getjid ───────────────────────────────────────────────────────────────────
@@ -94,14 +94,14 @@ async function getjid(ctx) {
   const mentioned = getMentionedJid(ctx);
   const jid = mentioned || sender;
   const number = jid.split('@')[0];
-  const type = jid.includes('g.us') ? '👥 Group' : '👤 User';
+  const type = jid.includes('g.us') ? 'Group' : 'User';
   await send(sock, from, msg,
-    `🔍 *JID Lookup*\n` +
-    `📋 *JID:* \`${jid}\`\n` +
-    `📱 *Number:* ${number}\n` +
-    `🏷️ *Type:* ${type}\n` +
+    `*JID Lookup*\n` +
+    `*JID:* \`${jid}\`\n` +
+    `*Number:* ${number}\n` +
+    `*Type:* ${type}\n` +
     `_Tag someone or reply to a message to get their JID_`,
-    '🔍 Get JID');
+    'Get JID');
 }
 
 // ── .device ───────────────────────────────────────────────────────────────────
@@ -114,25 +114,25 @@ async function device(ctx) {
   // Agent ID hints: 0=unknown, 1=web, 2=ios, 3=android, 4=desktop
   // Try to infer from message key device suffix
   const deviceId = msg?.key?.id?.length;
-  let device = 'Unknown 📱';
+  let device = 'Unknown ';
   // Heuristic based on message ID length (not guaranteed, fun only)
-  if (deviceId === 16) device = 'WhatsApp Web 🖥️';
-  else if (deviceId === 20) device = 'Android 📱';
-  else if (deviceId === 22) device = 'iPhone 🍎';
-  else device = 'WhatsApp App 📱';
+  if (deviceId === 16) device = 'WhatsApp Web ';
+  else if (deviceId === 20) device = 'Android ';
+  else if (deviceId === 22) device = 'iPhone ';
+  else device = 'WhatsApp App ';
 
   await send(sock, from, msg,
-    `📱 *Device Checker*\n` +
-    `👤 *Number:* +${number}\n` +
-    `📲 *Device:* ${device}\n` +
+    `*Device Checker*\n` +
+    `*Number:* +${number}\n` +
+    `*Device:* ${device}\n` +
     `_Note: This is an approximation based on message data_`,
-    '📱 Device Info');
+    'Device Info');
 }
 
 // ── .movie ────────────────────────────────────────────────────────────────────
 async function movie(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '🎬 Usage: .movie <title>\nExample: .movie Inception', '🎬 Movie Info');
+  if (!text) return send(sock, from, msg, 'Usage: .movie <title>\nExample: .movie Inception', 'Movie Info');
 
   try {
     // Use free OMDB API (no key needed for basic results)
@@ -142,29 +142,29 @@ async function movie(ctx) {
     });
     const d = res.data;
     if (d.Response === 'False') {
-      return send(sock, from, msg, `❌ Movie not found: *${text}*\nTry a different title.`);
+      return send(sock, from, msg, `Movie not found: *${text}*\nTry a different title.`);
     }
     const content =
-      `🎬 *${d.Title}* (${d.Year})\n` +
-      `⭐ *Rating:* ${d.imdbRating}/10 (${d.imdbVotes} votes)\n` +
-      `🎭 *Genre:* ${d.Genre}\n` +
-      `⏱️ *Runtime:* ${d.Runtime}\n` +
-      `🌍 *Language:* ${d.Language}\n` +
-      `🏆 *Awards:* ${d.Awards}\n` +
-      `🎥 *Director:* ${d.Director}\n` +
-      `👥 *Cast:* ${d.Actors}\n` +
-      `📖 *Plot:*\n${d.Plot}\n` +
-      `🔗 *IMDB:* https://www.imdb.com/title/${d.imdbID}`;
-    await send(sock, from, msg, content, `🎬 ${d.Title}`);
+      `*${d.Title}* (${d.Year})\n` +
+      `*Rating:* ${d.imdbRating}/10 (${d.imdbVotes} votes)\n` +
+      `*Genre:* ${d.Genre}\n` +
+      `*Runtime:* ${d.Runtime}\n` +
+      `*Language:* ${d.Language}\n` +
+      `*Awards:* ${d.Awards}\n` +
+      `*Director:* ${d.Director}\n` +
+      `*Cast:* ${d.Actors}\n` +
+      `*Plot:*\n${d.Plot}\n` +
+      `*IMDB:* https://www.imdb.com/title/${d.imdbID}`;
+    await send(sock, from, msg, content, `${d.Title}`);
   } catch (e) {
-    await send(sock, from, msg, `❌ Failed to fetch movie info: ${e.message}`);
+    await send(sock, from, msg, `Failed to fetch movie info: ${e.message}`);
   }
 }
 
 // ── .trailer ──────────────────────────────────────────────────────────────────
 async function trailer(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '🎬 Usage: .trailer <movie title>\nExample: .trailer Avengers', '🎬 Movie Trailer');
+  if (!text) return send(sock, from, msg, 'Usage: .trailer <movie title>\nExample: .trailer Avengers', 'Movie Trailer');
 
   try {
     const query = encodeURIComponent(text + ' official trailer');
@@ -174,24 +174,24 @@ async function trailer(ctx) {
     if (match) {
       const videoId = match[1];
       await send(sock, from, msg,
-        `🎬 *Trailer: ${text}*\n` +
-        `▶️ https://www.youtube.com/watch?v=${videoId}\n` +
+        `*Trailer: ${text}*\n` +
+        `▶https://www.youtube.com/watch?v=${videoId}\n` +
         `_Open the link to watch the trailer_`,
-        '🎬 Movie Trailer');
+        'Movie Trailer');
     } else {
       await send(sock, from, msg,
-        `🔍 Search for the trailer here:\n${searchUrl}`,
-        '🎬 Movie Trailer');
+        `Search for the trailer here:\n${searchUrl}`,
+        'Movie Trailer');
     }
   } catch (e) {
-    await send(sock, from, msg, `❌ Couldn't fetch trailer: ${e.message}`);
+    await send(sock, from, msg, `Couldn't fetch trailer: ${e.message}`);
   }
 }
 
 // ── .readsite ─────────────────────────────────────────────────────────────────
 async function readsite(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '🌐 Usage: .readsite <url>\nExample: .readsite https://example.com', '🌐 Read Site');
+  if (!text) return send(sock, from, msg, 'Usage: .readsite <url>\nExample: .readsite https://example.com', 'Read Site');
 
   let url = text.trim();
   if (!url.startsWith('http')) url = 'https://' + url;
@@ -215,34 +215,34 @@ async function readsite(ctx) {
       .trim()
       .slice(0, 800);
     await send(sock, from, msg,
-      `🌐 *${url}*\n${text2}…\n_First 800 characters of content_`,
-      '🌐 Site Reader');
+      `*${url}*\n${text2}…\n_First 800 characters of content_`,
+      'Site Reader');
   } catch (e) {
-    await send(sock, from, msg, `❌ Failed to read site: ${e.message}`);
+    await send(sock, from, msg, `Failed to read site: ${e.message}`);
   }
 }
 
 // ── .goodmorning / .goodnight ─────────────────────────────────────────────────
 const MORNING_MSGS = [
-  "Rise and shine! ☀️ A new day full of possibilities awaits you!",
-  "Good morning! 🌅 Today is a gift — make the most of it!",
-  "Wake up and smell the coffee! ☕ Another beautiful day begins!",
-  "Good morning! 🌞 May your day be as bright as your smile!",
-  "Rise up, start fresh. 🌸 Good morning — you've got this!",
-  "Good morning! 🐦 Early birds catch the worms AND the blessings!",
-  "Morning! ✨ Believe in yourself — today is YOUR day!",
-  "Good morning! 🌈 Forget yesterday's worries and embrace today!",
+  "Rise and shine! A new day full of possibilities awaits you!",
+  "Good morning! Today is a gift — make the most of it!",
+  "Wake up and smell the coffee! Another beautiful day begins!",
+  "Good morning! May your day be as bright as your smile!",
+  "Rise up, start fresh. Good morning — you've got this!",
+  "Good morning! Early birds catch the worms AND the blessings!",
+  "Morning! Believe in yourself — today is YOUR day!",
+  "Good morning! Forget yesterday's worries and embrace today!",
 ];
 
 const NIGHT_MSGS = [
-  "Good night! 🌙 Sweet dreams and peaceful rest to you.",
-  "Sleep tight! ⭐ Tomorrow will be even better. Rest well!",
-  "Good night! 🌛 May your dreams be full of wonderful adventures.",
-  "Nighty night! 💤 Recharge for another amazing day tomorrow.",
-  "Good night! 🌠 May you wake up refreshed and ready to conquer!",
-  "Sweet dreams! 🌃 You've worked hard today. Rest now.",
-  "Good night! 🌟 Sleep well — big things are coming your way!",
-  "Time to rest! 🌜 Good night from your friendly bot 🤖",
+  "Good night! Sweet dreams and peaceful rest to you.",
+  "Sleep tight! Tomorrow will be even better. Rest well!",
+  "Good night! May your dreams be full of wonderful adventures.",
+  "Nighty night! Recharge for another amazing day tomorrow.",
+  "Good night! May you wake up refreshed and ready to conquer!",
+  "Sweet dreams! You've worked hard today. Rest now.",
+  "Good night! Sleep well — big things are coming your way!",
+  "Time to rest! Good night from your friendly bot ",
 ];
 
 async function goodmorning(ctx) {
@@ -250,34 +250,34 @@ async function goodmorning(ctx) {
   const greeting = MORNING_MSGS[Math.floor(Math.random() * MORNING_MSGS.length)];
   const hour = new Date().getHours();
   await send(sock, from, msg,
-    `☀️ *Good Morning!*\n` +
-    `👤 @${sender.split('@')[0]}\n` +
+    `*Good Morning!*\n` +
+    `@${sender.split('@')[0]}\n` +
     `${greeting}\n` +
-    `🕐 *Time:* ${new Date().toLocaleTimeString()}\n` +
-    `📅 *Date:* ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n` +
-    `_Have a wonderful day! 🌺_`,
-    '☀️ Good Morning');
+    `*Time:* ${new Date().toLocaleTimeString()}\n` +
+    `*Date:* ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n` +
+    `_Have a wonderful day! _`,
+    'Good Morning');
 }
 
 async function goodnight(ctx) {
   const { sock, from, msg, sender } = ctx;
   const greeting = NIGHT_MSGS[Math.floor(Math.random() * NIGHT_MSGS.length)];
   await send(sock, from, msg,
-    `🌙 *Good Night!*\n` +
-    `👤 @${sender.split('@')[0]}\n` +
+    `*Good Night!*\n` +
+    `@${sender.split('@')[0]}\n` +
     `${greeting}\n` +
-    `🕐 *Time:* ${new Date().toLocaleTimeString()}\n` +
-    `📅 *Date:* ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n` +
-    `_Sleep well! 🌟_`,
-    '🌙 Good Night');
+    `*Time:* ${new Date().toLocaleTimeString()}\n` +
+    `*Date:* ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n` +
+    `_Sleep well! _`,
+    'Good Night');
 }
 
 // ── .channelstatus ────────────────────────────────────────────────────────────
 async function channelstatus(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text) return send(sock, from, msg,
-    '📢 Usage: .channelstatus <channel invite link>\nExample: .channelstatus https://whatsapp.com/channel/xxx',
-    '📢 Channel Status');
+    'Usage: .channelstatus <channel invite link>\nExample: .channelstatus https://whatsapp.com/channel/xxx',
+    'Channel Status');
 
   const inviteCode = text.split('/').pop().trim();
   try {
@@ -285,19 +285,19 @@ async function channelstatus(ctx) {
     const subs = info?.subscriberCount ?? '?';
     const name = info?.name ?? 'Unknown';
     const desc = info?.description ?? 'No description';
-    const verified = info?.verification === 'VERIFIED' ? '✅ Verified' : '❌ Not Verified';
+    const verified = info?.verification === 'VERIFIED' ? 'Verified' : 'Not Verified';
     await send(sock, from, msg,
-      `📢 *Channel Info*\n` +
-      `📌 *Name:* ${name}\n` +
+      `*Channel Info*\n` +
+      `*Name:* ${name}\n` +
       `${verified}\n` +
-      `👥 *Subscribers:* ${subs}\n` +
-      `📝 *Description:* ${desc}\n` +
-      `🔗 *Link:* ${text}`,
-      '📢 Channel Status');
+      `*Subscribers:* ${subs}\n` +
+      `*Description:* ${desc}\n` +
+      `*Link:* ${text}`,
+      'Channel Status');
   } catch {
     await send(sock, from, msg,
-      `❌ *Could not fetch channel info*\nMake sure you sent a valid WhatsApp channel link.\n_Example: https://whatsapp.com/channel/..._`,
-      '📢 Channel Status');
+      `*Could not fetch channel info*\nMake sure you sent a valid WhatsApp channel link.\n_Example: https://whatsapp.com/channel/..._`,
+      'Channel Status');
   }
 }
 
@@ -307,14 +307,14 @@ async function hack(ctx) {
   const target = text || `+${sender.split('@')[0]}`;
   const steps = [
     `[*] Initialising hack sequence for ${target}...`,
-    `[*] Scanning ports... 22, 80, 443, 8080 ✓`,
+    `[*] Scanning ports... 22, 80, 443, 8080 `,
     `[*] Bypassing firewall... ████████░░ 80%`,
-    `[*] Firewall bypassed! ✓`,
+    `[*] Firewall bypassed! `,
     `[*] Injecting payload... ███████████ 100%`,
-    `[*] Accessing database... ✓`,
+    `[*] Accessing database... `,
     `[*] Extracting data... ████████████ 100%`,
-    `[*] Covering tracks... ✓\n[*] Logs cleared.`,
-    `\n✅ *HACK COMPLETE!*\n👤 Target: ${target}\n📁 Files stolen: ${Math.floor(Math.random()*9000+1000)}\n🔐 Passwords cracked: ${Math.floor(Math.random()*20+5)}\n💳 Cards found: ${Math.floor(Math.random()*5+1)}\n_😂 Relax! This is just for fun!_`,
+    `[*] Covering tracks...\n[*] Logs cleared.`,
+    `\n*HACK COMPLETE!*\nTarget: ${target}\nFiles stolen: ${Math.floor(Math.random()*9000+1000)}\nPasswords cracked: ${Math.floor(Math.random()*20+5)}\nCards found: ${Math.floor(Math.random()*5+1)}\n_Relax! This is just for fun!_`,
   ];
 
   let sentMsg;
@@ -322,18 +322,18 @@ async function hack(ctx) {
     const content = steps.slice(0, i + 1).join('\n');
     if (!sentMsg) {
       sentMsg = await sendFireboxCard(sock, from, msg, {
-        title: '💻 Hacking...',
+        title: 'Hacking...',
         content,
       });
     } else {
       try {
         await sock.sendMessage(from, {
-          text: `╔══════════════════════╗\n║  💻 *FIREBOX HACK*  ║\n╚══════════════════════╝\n${content}`,
+          text: `╔══════════════════════╗\n║  *FIREBOX HACK*  ║\n╚══════════════════════╝\n${content}`,
           edit: sentMsg.key
         });
       } catch {
         sentMsg = await sock.sendMessage(from, {
-          text: `╔══════════════════════╗\n║  💻 *FIREBOX HACK*  ║\n╚══════════════════════╝\n${content}`
+          text: `╔══════════════════════╗\n║  *FIREBOX HACK*  ║\n╚══════════════════════╝\n${content}`
         });
       }
     }
@@ -352,11 +352,11 @@ async function up(ctx) {
   const uptime = [d && `${d}d`, h && `${h}h`, m && `${m}m`, `${sec}s`].filter(Boolean).join(' ');
   const mem = process.memoryUsage();
   await send(sock, from, msg,
-    `✅ *Bot is Online!*\n` +
-    `⏱️ *Uptime:* ${uptime}\n` +
-    `💾 *RAM:* ${(mem.rss / 1024 / 1024).toFixed(1)} MB\n` +
-    `⚡ *Status:* Running smoothly 🔥`,
-    '⚡ Bot Status');
+    `*Bot is Online!*\n` +
+    `*Uptime:* ${uptime}\n` +
+    `*RAM:* ${(mem.rss / 1024 / 1024).toFixed(1)} MB\n` +
+    `*Status:* Running smoothly `,
+    'Bot Status');
 }
 
 // ── .snake ────────────────────────────────────────────────────────────────────
@@ -365,26 +365,26 @@ async function snake(ctx) {
   const { sock, from, msg } = ctx;
   // Generate a random snake board for fun
   const size = 8;
-  const board = Array.from({ length: size }, () => Array(size).fill('⬛'));
+  const board = Array.from({ length: size }, () => Array(size).fill(''));
   // Place snake
   const snakeLen = Math.floor(Math.random() * 4) + 3;
   const sx = Math.floor(Math.random() * (size - snakeLen));
   const sy = Math.floor(Math.random() * size);
-  for (let i = 0; i < snakeLen; i++) board[sy][sx + i] = i === snakeLen - 1 ? '🟩' : '🟢';
+  for (let i = 0; i < snakeLen; i++) board[sy][sx + i] = i === snakeLen - 1 ? '' : '';
   // Place food
   let fx, fy;
   do { fx = Math.floor(Math.random() * size); fy = Math.floor(Math.random() * size); }
-  while (board[fy][fx] !== '⬛');
-  board[fy][fx] = '🍎';
+  while (board[fy][fx] !== '');
+  board[fy][fx] = '';
   const score = Math.floor(Math.random() * 50) + snakeLen * 10;
   const grid = board.map(r => r.join('')).join('\n');
   await send(sock, from, msg,
     `${grid}\n` +
-    `🟩 Head  🟢 Body  🍎 Food\n` +
-    `📊 *Score:* ${score}\n` +
-    `📏 *Length:* ${snakeLen}\n` +
+    `Head  Body  Food\n` +
+    `*Score:* ${score}\n` +
+    `*Length:* ${snakeLen}\n` +
     `_Interactive snake coming soon!_`,
-    '🐍 Snake Game');
+    'Snake Game');
 }
 
 // ── .tictactoe ────────────────────────────────────────────────────────────────
@@ -392,7 +392,7 @@ async function tictactoe(ctx) {
   const { sock, from, msg, text } = ctx;
   // Simple: show a board or make a move
   // Display a fresh game board
-  const cells = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣'];
+  const cells = ['','','','','','','','',''];
   const board =
     `${cells[0]} ${cells[1]} ${cells[2]}\n` +
     `${cells[3]} ${cells[4]} ${cells[5]}\n` +
@@ -402,11 +402,11 @@ async function tictactoe(ctx) {
     `${board}\n` +
     `*How to play:*\n` +
     `• Two players take turns\n` +
-    `• ❌ vs ⭕\n` +
+    `• vs\n` +
     `• Get 3 in a row to win!\n` +
     `_Reply with a number (1-9) to make a move_\n` +
     `_Interactive mode coming soon!_`,
-    '🎮 Tic Tac Toe');
+    'Tic Tac Toe');
 }
 
 module.exports = { bf, gf, couple, gay, getjid, device, movie, trailer, readsite, goodmorning, goodnight, channelstatus, hack, up, snake, tictactoe };

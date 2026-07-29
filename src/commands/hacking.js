@@ -6,13 +6,13 @@ const { parsePhoneNumber, isValidPhoneNumber, getNumberType, PhoneNumberType } =
 const { sendFireboxCard } = require('../card');
 
 async function send(sock, from, msg, text, title) {
-  return sendFireboxCard(sock, from, msg, { title: title || '💻 Firebox Hacking', content: text });
+  return sendFireboxCard(sock, from, msg, { title: title || 'Firebox Hacking', content: text });
 }
 
 // ── PASSWORD STRENGTH CHECKER ─────────────────────────────────────────────────
 async function checkpass(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '🔐 *Usage:* .checkpass <password>\nExample: .checkpass MyP@ss123');
+  if (!text) return send(sock, from, msg, '*Usage:* .checkpass <password>\nExample: .checkpass MyP@ss123');
 
   const p = text;
   let score = 0;
@@ -33,19 +33,19 @@ async function checkpass(ctx) {
   const bar = '█'.repeat(Math.round(percent / 10)) + '░'.repeat(10 - Math.round(percent / 10));
 
   const strength =
-    percent >= 85 ? '💚 *Very Strong*' :
-    percent >= 65 ? '🟡 *Strong*' :
-    percent >= 45 ? '🟠 *Moderate*' :
-    percent >= 25 ? '🔴 *Weak*' :
-                    '💀 *Very Weak*';
+    percent >= 85 ? '*Very Strong*' :
+    percent >= 65 ? '*Strong*' :
+    percent >= 45 ? '*Moderate*' :
+    percent >= 25 ? '*Weak*' :
+                    '*Very Weak*';
 
-  const lines = Object.entries(checks).map(([k, v]) => `${v ? '✅' : '❌'} ${k}`).join('\n');
+  const lines = Object.entries(checks).map(([k, v]) => `${v ? '' : ''} ${k}`).join('\n');
 
   await send(sock, from, msg,
-    `🔐 *Password Strength Checker*\n` +
-    `🔑 Password: \`${'*'.repeat(p.length)}\`\n` +
-    `📊 Score: [${bar}] ${percent}%\n` +
-    `💪 Strength: ${strength}\n` +
+    `*Password Strength Checker*\n` +
+    `Password: \`${'*'.repeat(p.length)}\`\n` +
+    `Score: [${bar}] ${percent}%\n` +
+    `Strength: ${strength}\n` +
     `*Checklist:*\n${lines}\n` +
     `_Tip: Use a mix of upper, lower, numbers & symbols for max security._`);
 }
@@ -59,7 +59,7 @@ async function hash(ctx) {
 
   if (!algo || !algos.includes(algo) || !input) {
     return send(sock, from, msg,
-      `#️⃣ *Hash Generator*\n` +
+      `*Hash Generator*\n` +
       `*Usage:* .hash <algorithm> <text>\n` +
       `*Algorithms:*\n• md5\n• sha1\n• sha256\n• sha512\n` +
       `*Example:* .hash sha256 hello world`);
@@ -67,88 +67,88 @@ async function hash(ctx) {
 
   const result = crypto.createHash(algo).update(input).digest('hex');
   await send(sock, from, msg,
-    `#️⃣ *Hash Generator*\n` +
-    `📝 Input: \`${input}\`\n` +
-    `⚙️ Algorithm: *${algo.toUpperCase()}*\n` +
-    `🔐 Hash:\n\`${result}\``);
+    `*Hash Generator*\n` +
+    `Input: \`${input}\`\n` +
+    `Algorithm: *${algo.toUpperCase()}*\n` +
+    `Hash:\n\`${result}\``);
 }
 
 // ── BASE64 ENCODE / DECODE ────────────────────────────────────────────────────
 async function b64encode(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '📦 *Usage:* .b64encode <text>');
+  if (!text) return send(sock, from, msg, '*Usage:* .b64encode <text>');
   const encoded = Buffer.from(text).toString('base64');
   await send(sock, from, msg,
-    `📦 *Base64 Encode*\n` +
-    `📝 Input: \`${text}\`\n` +
-    `🔐 Encoded:\n\`${encoded}\``);
+    `*Base64 Encode*\n` +
+    `Input: \`${text}\`\n` +
+    `Encoded:\n\`${encoded}\``);
 }
 
 async function b64decode(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '📦 *Usage:* .b64decode <encoded text>');
+  if (!text) return send(sock, from, msg, '*Usage:* .b64decode <encoded text>');
   try {
     const decoded = Buffer.from(text, 'base64').toString('utf8');
     await send(sock, from, msg,
-      `📦 *Base64 Decode*\n` +
-      `🔐 Input: \`${text}\`\n` +
-      `📝 Decoded:\n\`${decoded}\``);
+      `*Base64 Decode*\n` +
+      `Input: \`${text}\`\n` +
+      `Decoded:\n\`${decoded}\``);
   } catch {
-    await send(sock, from, msg, '❌ Invalid Base64 string.');
+    await send(sock, from, msg, 'Invalid Base64 string.');
   }
 }
 
 // ── HEX ENCODE / DECODE ───────────────────────────────────────────────────────
 async function hexencode(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '🔢 *Usage:* .hexencode <text>');
+  if (!text) return send(sock, from, msg, '*Usage:* .hexencode <text>');
   const encoded = Buffer.from(text).toString('hex');
   await send(sock, from, msg,
-    `🔢 *Hex Encode*\n` +
-    `📝 Input: \`${text}\`\n` +
-    `🔐 Hex:\n\`${encoded}\``);
+    `*Hex Encode*\n` +
+    `Input: \`${text}\`\n` +
+    `Hex:\n\`${encoded}\``);
 }
 
 async function hexdecode(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '🔢 *Usage:* .hexdecode <hex string>');
+  if (!text) return send(sock, from, msg, '*Usage:* .hexdecode <hex string>');
   try {
     const decoded = Buffer.from(text.replace(/\s/g, ''), 'hex').toString('utf8');
     await send(sock, from, msg,
-      `🔢 *Hex Decode*\n` +
-      `🔐 Input: \`${text}\`\n` +
-      `📝 Decoded:\n\`${decoded}\``);
+      `*Hex Decode*\n` +
+      `Input: \`${text}\`\n` +
+      `Decoded:\n\`${decoded}\``);
   } catch {
-    await send(sock, from, msg, '❌ Invalid hex string.');
+    await send(sock, from, msg, 'Invalid hex string.');
   }
 }
 
 // ── IP LOOKUP ─────────────────────────────────────────────────────────────────
 async function iplookup(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '🌐 *Usage:* .iplookup <IP address>\nExample: .iplookup 8.8.8.8');
+  if (!text) return send(sock, from, msg, '*Usage:* .iplookup <IP address>\nExample: .iplookup 8.8.8.8');
 
   const ip = text.trim();
   try {
     const { data } = await axios.get(`http://ip-api.com/json/${ip}?fields=status,message,country,countryCode,regionName,city,zip,lat,lon,timezone,isp,org,as,query,mobile,proxy,hosting`, { timeout: 8000 });
-    if (data.status !== 'success') return send(sock, from, msg, `❌ ${data.message || 'IP not found.'}`);
+    if (data.status !== 'success') return send(sock, from, msg, `${data.message || 'IP not found.'}`);
 
     await send(sock, from, msg,
-      `🌐 *IP Lookup: ${data.query}*\n` +
-      `🗺️ Country: ${data.country} ${data.countryCode ? `(${data.countryCode})` : ''}\n` +
-      `🏙️ Region: ${data.regionName}\n` +
-      `🌆 City: ${data.city}\n` +
-      `📮 ZIP: ${data.zip || 'N/A'}\n` +
-      `📍 Coords: ${data.lat}, ${data.lon}\n` +
-      `🕐 Timezone: ${data.timezone}\n` +
-      `🏢 ISP: ${data.isp}\n` +
-      `🏛️ Org: ${data.org || 'N/A'}\n` +
-      `📡 AS: ${data.as || 'N/A'}\n` +
-      `📱 Mobile: ${data.mobile ? 'Yes' : 'No'}\n` +
-      `🕵️ Proxy/VPN: ${data.proxy ? 'Yes ⚠️' : 'No'}\n` +
-      `🖥️ Hosting/DC: ${data.hosting ? 'Yes' : 'No'}`);
+      `*IP Lookup: ${data.query}*\n` +
+      `Country: ${data.country} ${data.countryCode ? `(${data.countryCode})` : ''}\n` +
+      `Region: ${data.regionName}\n` +
+      `City: ${data.city}\n` +
+      `ZIP: ${data.zip || 'N/A'}\n` +
+      `Coords: ${data.lat}, ${data.lon}\n` +
+      `Timezone: ${data.timezone}\n` +
+      `ISP: ${data.isp}\n` +
+      `Org: ${data.org || 'N/A'}\n` +
+      `AS: ${data.as || 'N/A'}\n` +
+      `Mobile: ${data.mobile ? 'Yes' : 'No'}\n` +
+      `Proxy/VPN: ${data.proxy ? 'Yes ' : 'No'}\n` +
+      `Hosting/DC: ${data.hosting ? 'Yes' : 'No'}`);
   } catch (err) {
-    await send(sock, from, msg, `❌ Failed to lookup IP: ${err.message}`);
+    await send(sock, from, msg, `Failed to lookup IP: ${err.message}`);
   }
 }
 
@@ -156,7 +156,7 @@ async function iplookup(ctx) {
 async function dnslookup(ctx) {
   const { sock, from, msg, args } = ctx;
   const domain = args[0];
-  if (!domain) return send(sock, from, msg, '🔎 *Usage:* .dns <domain>\nExample: .dns google.com');
+  if (!domain) return send(sock, from, msg, '*Usage:* .dns <domain>\nExample: .dns google.com');
 
   try {
     const [a, mx, txt, ns] = await Promise.allSettled([
@@ -172,13 +172,13 @@ async function dnslookup(ctx) {
     const txtRecords = txt.status === 'fulfilled' ? txt.value.map(r => r.join('')).slice(0, 3).join('\n  ') : 'None';
 
     await send(sock, from, msg,
-      `🔎 *DNS Lookup: ${domain}*\n` +
-      `📌 *A Records (IPv4):*\n  ${aRecords}\n` +
-      `📬 *MX Records (Mail):*\n  ${mxRecords}\n` +
-      `🏷️ *NS Records (Nameservers):*\n  ${nsRecords}\n` +
-      `📝 *TXT Records:*\n  ${txtRecords}`);
+      `*DNS Lookup: ${domain}*\n` +
+      `*A Records (IPv4):*\n  ${aRecords}\n` +
+      `*MX Records (Mail):*\n  ${mxRecords}\n` +
+      `*NS Records (Nameservers):*\n  ${nsRecords}\n` +
+      `*TXT Records:*\n  ${txtRecords}`);
   } catch (err) {
-    await send(sock, from, msg, `❌ DNS lookup failed: ${err.message}`);
+    await send(sock, from, msg, `DNS lookup failed: ${err.message}`);
   }
 }
 
@@ -186,15 +186,15 @@ async function dnslookup(ctx) {
 async function whois(ctx) {
   const { sock, from, msg, args } = ctx;
   const domain = args[0];
-  if (!domain) return send(sock, from, msg, '📋 *Usage:* .whois <domain>\nExample: .whois google.com');
+  if (!domain) return send(sock, from, msg, '*Usage:* .whois <domain>\nExample: .whois google.com');
 
   try {
     const { data } = await axios.get(`https://api.whois.vu/?q=${encodeURIComponent(domain)}`, { timeout: 10000 });
     const raw = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
     const trimmed = raw.length > 1500 ? raw.slice(0, 1500) + '\n...(truncated)' : raw;
-    await send(sock, from, msg, `📋 *WHOIS: ${domain}*\n\`\`\`\n${trimmed}\n\`\`\``);
+    await send(sock, from, msg, `*WHOIS: ${domain}*\n\`\`\`\n${trimmed}\n\`\`\``);
   } catch (err) {
-    await send(sock, from, msg, `❌ WHOIS lookup failed: ${err.message}`);
+    await send(sock, from, msg, `WHOIS lookup failed: ${err.message}`);
   }
 }
 
@@ -226,19 +226,19 @@ async function portinfo(ctx) {
 
   if (!args[0]) {
     const list = Object.entries(PORT_DB).map(([p, d]) => `• *${p}* — ${d}`).join('\n');
-    return send(sock, from, msg, `🔌 *Common Port Reference*\n${list}\n_Usage: .portinfo <port number>_`);
+    return send(sock, from, msg, `*Common Port Reference*\n${list}\n_Usage: .portinfo <port number>_`);
   }
 
   if (isNaN(port) || port < 1 || port > 65535) {
-    return send(sock, from, msg, '❌ Invalid port. Must be between 1 and 65535.');
+    return send(sock, from, msg, 'Invalid port. Must be between 1 and 65535.');
   }
 
   const info = PORT_DB[port];
   await send(sock, from, msg,
-    `🔌 *Port ${port} Info*\n` +
+    `*Port ${port} Info*\n` +
     (info
-      ? `📋 Service: ${info}\n_This is a well-known port often targeted in security audits._`
-      : `⚠️ Port ${port} is not in our common ports database.\n_It may be a custom/proprietary service. Check documentation or use a port scanner tool for more details._`));
+      ? `Service: ${info}\n_This is a well-known port often targeted in security audits._`
+      : `Port ${port} is not in our common ports database.\n_It may be a custom/proprietary service. Check documentation or use a port scanner tool for more details._`));
 }
 
 // ── CIPHER (ROT13 / Caesar) ───────────────────────────────────────────────────
@@ -250,7 +250,7 @@ async function cipher(ctx) {
 
   if (!['encode', 'decode'].includes(mode) || isNaN(shift) || !input) {
     return send(sock, from, msg,
-      `🔄 *Caesar Cipher*\n` +
+      `*Caesar Cipher*\n` +
       `*Usage:* .cipher encode/decode <shift> <text>\n` +
       `*Example:*\n• .cipher encode 13 Hello World\n• .cipher decode 13 Uryyb Jbeyq`);
   }
@@ -262,32 +262,32 @@ async function cipher(ctx) {
   });
 
   await send(sock, from, msg,
-    `🔄 *Caesar Cipher (Shift ${shift})*\n` +
-    `📝 Input: \`${input}\`\n` +
-    `⚙️ Mode: ${mode}\n` +
-    `🔐 Result:\n\`${result}\``);
+    `*Caesar Cipher (Shift ${shift})*\n` +
+    `Input: \`${input}\`\n` +
+    `Mode: ${mode}\n` +
+    `Result:\n\`${result}\``);
 }
 
 // ── NUMBER LOCATION LOOKUP ────────────────────────────────────────────────────
 const NUMBER_TYPE_LABELS = {
-  MOBILE:           '📱 Mobile',
-  FIXED_LINE:       '☎️ Fixed Line',
-  FIXED_LINE_OR_MOBILE: '📞 Fixed/Mobile',
-  TOLL_FREE:        '🆓 Toll Free',
-  PREMIUM_RATE:     '💰 Premium Rate',
-  SHARED_COST:      '💱 Shared Cost',
-  VOIP:             '🌐 VoIP',
-  PERSONAL_NUMBER:  '👤 Personal',
-  PAGER:            '📟 Pager',
-  UAN:              '🏢 UAN',
-  VOICEMAIL:        '📬 Voicemail',
-  UNKNOWN:          '❓ Unknown',
+  MOBILE:           'Mobile',
+  FIXED_LINE:       'Fixed Line',
+  FIXED_LINE_OR_MOBILE: 'Fixed/Mobile',
+  TOLL_FREE:        'Toll Free',
+  PREMIUM_RATE:     'Premium Rate',
+  SHARED_COST:      'Shared Cost',
+  VOIP:             'VoIP',
+  PERSONAL_NUMBER:  'Personal',
+  PAGER:            'Pager',
+  UAN:              'UAN',
+  VOICEMAIL:        'Voicemail',
+  UNKNOWN:          'Unknown',
 };
 
 async function numlookup(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text) return send(sock, from, msg,
-    `📍 *Number Location Lookup*\n` +
+    `*Number Location Lookup*\n` +
     `*Usage:* .numlookup <number with country code>\n` +
     `*Examples:*\n• .numlookup +254712345678\n• .numlookup +447911123456\n• .numlookup +12025551234\n` +
     `_Always include the + and country code_`);
@@ -300,12 +300,12 @@ async function numlookup(ctx) {
     try {
       parsed = parsePhoneNumber(withPlus);
     } catch {
-      return send(sock, from, msg, `❌ Invalid phone number. Make sure to include the country code.\n*Example:* .numlookup +254712345678`);
+      return send(sock, from, msg, `Invalid phone number. Make sure to include the country code.\n*Example:* .numlookup +254712345678`);
     }
 
     const valid = isValidPhoneNumber(withPlus);
     const typeKey = PhoneNumberType ? Object.keys(PhoneNumberType).find(k => PhoneNumberType[k] === getNumberType(parsed)) : 'UNKNOWN';
-    const typeLabel = NUMBER_TYPE_LABELS[typeKey] || '❓ Unknown';
+    const typeLabel = NUMBER_TYPE_LABELS[typeKey] || 'Unknown';
 
     const country = parsed.country || 'Unknown';
     const countryCallingCode = parsed.countryCallingCode;
@@ -329,25 +329,25 @@ async function numlookup(ctx) {
       const lang     = Object.values(data.languages || {})[0] || 'N/A';
 
       countryInfo =
-        `\n🗺️ Region: ${region}` +
-        `\n🏙️ Capital: ${capital}` +
-        `\n🕐 Timezone: ${tz}` +
-        `\n💰 Currency: ${currStr}` +
-        `\n🗣️ Language: ${lang}`;
+        `\nRegion: ${region}` +
+        `\nCapital: ${capital}` +
+        `\nTimezone: ${tz}` +
+        `\nCurrency: ${currStr}` +
+        `\nLanguage: ${lang}`;
     } catch { }
 
     await send(sock, from, msg,
-      `📍 *Number Location Lookup*\n` +
-      `📞 Number: *${formatted}*\n` +
-      `${valid ? '✅ Valid number' : '⚠️ Possibly invalid number'}\n` +
-      `🌍 Country: *${country}*\n` +
-      `🔢 Country Code: +${countryCallingCode}\n` +
-      `📋 National Number: ${nationalNumber}\n` +
-      `📡 Type: ${typeLabel}` +
+      `*Number Location Lookup*\n` +
+      `Number: *${formatted}*\n` +
+      `${valid ? 'Valid number' : 'Possibly invalid number'}\n` +
+      `Country: *${country}*\n` +
+      `Country Code: +${countryCallingCode}\n` +
+      `National Number: ${nationalNumber}\n` +
+      `Type: ${typeLabel}` +
       countryInfo +
       `\n_Note: This shows info based on the number prefix only. Exact GPS location cannot be determined from a phone number._`);
   } catch (err) {
-    await send(sock, from, msg, `❌ Lookup failed: ${err.message}`);
+    await send(sock, from, msg, `Lookup failed: ${err.message}`);
   }
 }
 
@@ -363,7 +363,7 @@ async function scamalyze(ctx) {
 
   if (!input) {
     return send(sock, from, msg,
-      `🕵️ *Scam Analyzer*\n` +
+      `*Scam Analyzer*\n` +
       `*Usage:*\n• .scamalyze <message or link>\n• Reply to a suspicious message with .scamalyze\n` +
       `*Examples:*\n• .scamalyze You have won $1,000,000! Click here: bit.ly/win-now\n• .scamalyze Congratulations! Your account needs verification at paypa1.com`);
   }
@@ -378,26 +378,26 @@ MESSAGE TO ANALYZE:
 
 Respond ONLY with this exact format (fill in each section):
 
-🎯 VERDICT: [SCAM / LIKELY SCAM / SUSPICIOUS / LIKELY SAFE / SAFE]
-⚠️ RISK LEVEL: [CRITICAL / HIGH / MEDIUM / LOW / NONE]
-🔥 CONFIDENCE: [0-100]%
+VERDICT: [SCAM / LIKELY SCAM / SUSPICIOUS / LIKELY SAFE / SAFE]
+RISK LEVEL: [CRITICAL / HIGH / MEDIUM / LOW / NONE]
+CONFIDENCE: [0-100]%
 
-🚩 RED FLAGS FOUND:
+RED FLAGS FOUND:
 [List each red flag as a bullet point, or "None detected" if safe]
 
-🔍 ANALYSIS:
+ANALYSIS:
 [2-3 sentence plain-English explanation of why this is or isn't a scam]
 
-💡 WHAT TO DO:
+WHAT TO DO:
 [1-2 clear action steps the user should take]
 
-🛡️ SCAM TYPE:
+SCAM TYPE:
 [e.g. Phishing / Advance Fee / Lottery Scam / Fake Giveaway / Credential Harvesting / Malware Link / Impersonation / None]`;
 
     const analysis = await openRouterPrompt(prompt);
-    await send(sock, from, msg, `🕵️ *Scam Analysis Report*\n${analysis}\n_Powered by Firebox AI_`);
+    await send(sock, from, msg, `*Scam Analysis Report*\n${analysis}\n_Powered by Firebox AI_`);
   } catch (err) {
-    await send(sock, from, msg, `❌ Analysis failed: ${err.message}`);
+    await send(sock, from, msg, `Analysis failed: ${err.message}`);
   }
 }
 
@@ -405,33 +405,33 @@ Respond ONLY with this exact format (fill in each section):
 async function sslcheck(ctx) {
   const { sock, from, msg, args } = ctx;
   const domain = args[0]?.replace(/^https?:\/\//, '').split('/')[0];
-  if (!domain) return send(sock, from, msg, '🔒 *Usage:* .sslcheck <domain>\nExample: .sslcheck google.com');
+  if (!domain) return send(sock, from, msg, '*Usage:* .sslcheck <domain>\nExample: .sslcheck google.com');
 
   try {
     const { data } = await axios.get(`https://api.ssllabs.com/api/v3/analyze?host=${encodeURIComponent(domain)}&fromCache=on&maxAge=24`, { timeout: 12000 });
     const grade = data.endpoints?.[0]?.grade || 'N/A';
     const statusMsg = data.statusMessage || data.status || 'Unknown';
 
-    let gradeEmoji = '❓';
-    if (grade.startsWith('A')) gradeEmoji = '💚';
-    else if (grade.startsWith('B')) gradeEmoji = '🟡';
-    else if (grade.startsWith('C')) gradeEmoji = '🟠';
-    else if (['D','E','F','T','M'].includes(grade[0])) gradeEmoji = '🔴';
+    let gradeEmoji = '';
+    if (grade.startsWith('A')) gradeEmoji = '';
+    else if (grade.startsWith('B')) gradeEmoji = '';
+    else if (grade.startsWith('C')) gradeEmoji = '';
+    else if (['D','E','F','T','M'].includes(grade[0])) gradeEmoji = '';
 
-    if (data.status === 'DNS') return send(sock, from, msg, `🔒 *SSL Check: ${domain}*\n⏳ Analysis in progress, please try again in ~30 seconds.`);
-    if (data.status === 'ERROR') return send(sock, from, msg, `❌ SSL check failed for *${domain}*: ${statusMsg}`);
+    if (data.status === 'DNS') return send(sock, from, msg, `*SSL Check: ${domain}*\nAnalysis in progress, please try again in ~30 seconds.`);
+    if (data.status === 'ERROR') return send(sock, from, msg, `SSL check failed for *${domain}*: ${statusMsg}`);
 
     const ep = data.endpoints?.[0];
     await send(sock, from, msg,
-      `🔒 *SSL Certificate Check*\n` +
-      `🌐 Domain: *${domain}*\n` +
+      `*SSL Certificate Check*\n` +
+      `Domain: *${domain}*\n` +
       `${gradeEmoji} Grade: *${grade}*\n` +
-      `📊 Status: ${statusMsg}\n` +
-      `🖥️ Server: ${ep?.serverName || 'N/A'}\n` +
-      `📍 IP: ${ep?.ipAddress || 'N/A'}\n` +
+      `Status: ${statusMsg}\n` +
+      `Server: ${ep?.serverName || 'N/A'}\n` +
+      `IP: ${ep?.ipAddress || 'N/A'}\n` +
       `_Grade A = excellent SSL config, F = critically broken_`);
   } catch (err) {
-    await send(sock, from, msg, `❌ SSL check failed: ${err.message}`);
+    await send(sock, from, msg, `SSL check failed: ${err.message}`);
   }
 }
 
@@ -439,7 +439,7 @@ async function sslcheck(ctx) {
 async function headers(ctx) {
   const { sock, from, msg, args } = ctx;
   let url = args[0];
-  if (!url) return send(sock, from, msg, '🛡️ *Usage:* .headers <url>\nExample: .headers https://google.com');
+  if (!url) return send(sock, from, msg, '*Usage:* .headers <url>\nExample: .headers https://google.com');
   if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
 
   try {
@@ -466,19 +466,19 @@ async function headers(ctx) {
     const score   = Math.round((present.length / Object.keys(checks).length) * 100);
 
     const bar = '█'.repeat(Math.round(score / 10)) + '░'.repeat(10 - Math.round(score / 10));
-    const rating = score >= 85 ? '💚 Excellent' : score >= 60 ? '🟡 Good' : score >= 40 ? '🟠 Fair' : '🔴 Poor';
+    const rating = score >= 85 ? 'Excellent' : score >= 60 ? 'Good' : score >= 40 ? 'Fair' : 'Poor';
 
-    const presentLines = present.map(([k, v]) => `✅ *${k}*\n   \`${String(v).slice(0, 80)}\``).join('\n');
-    const missingLines = missing.map(([k]) => `❌ ${k}`).join('\n');
+    const presentLines = present.map(([k, v]) => `*${k}*\n   \`${String(v).slice(0, 80)}\``).join('\n');
+    const missingLines = missing.map(([k]) => `${k}`).join('\n');
 
     await send(sock, from, msg,
-      `🛡️ *Security Headers: ${url}*\n` +
-      `📊 Score: [${bar}] ${score}%\n` +
+      `*Security Headers: ${url}*\n` +
+      `Score: [${bar}] ${score}%\n` +
       `${rating}\n` +
       (presentLines ? `*Present Headers:*\n${presentLines}\n` : '') +
       (missingLines ? `*Missing Headers:*\n${missingLines}` : ''));
   } catch (err) {
-    await send(sock, from, msg, `❌ Failed to scan headers: ${err.message}`);
+    await send(sock, from, msg, `Failed to scan headers: ${err.message}`);
   }
 }
 
@@ -486,7 +486,7 @@ async function headers(ctx) {
 async function subdomains(ctx) {
   const { sock, from, msg, args } = ctx;
   const domain = args[0]?.replace(/^https?:\/\//, '').split('/')[0];
-  if (!domain) return send(sock, from, msg, '🔍 *Usage:* .subdomains <domain>\nExample: .subdomains example.com');
+  if (!domain) return send(sock, from, msg, '*Usage:* .subdomains <domain>\nExample: .subdomains example.com');
 
   try {
     await sock.sendPresenceUpdate('composing', from).catch(() => {});
@@ -496,7 +496,7 @@ async function subdomains(ctx) {
     );
 
     if (!Array.isArray(data) || !data.length) {
-      return send(sock, from, msg, `🔍 No subdomains found for *${domain}* in certificate logs.`);
+      return send(sock, from, msg, `No subdomains found for *${domain}* in certificate logs.`);
     }
 
     const unique = [...new Set(
@@ -505,15 +505,15 @@ async function subdomains(ctx) {
           .filter(s => s.endsWith(domain) && s !== domain)
     )].sort().slice(0, 30);
 
-    if (!unique.length) return send(sock, from, msg, `🔍 No unique subdomains found for *${domain}*.`);
+    if (!unique.length) return send(sock, from, msg, `No unique subdomains found for *${domain}*.`);
 
     await send(sock, from, msg,
-      `🔍 *Subdomains Found: ${domain}*\n` +
-      `📊 Showing ${unique.length} unique subdomains from SSL certificate logs\n` +
+      `*Subdomains Found: ${domain}*\n` +
+      `Showing ${unique.length} unique subdomains from SSL certificate logs\n` +
       unique.map((s, i) => `${i + 1}. ${s}`).join('\n') +
       `\n_Source: crt.sh — certificate transparency logs_`);
   } catch (err) {
-    await send(sock, from, msg, `❌ Subdomain lookup failed: ${err.message}`);
+    await send(sock, from, msg, `Subdomain lookup failed: ${err.message}`);
   }
 }
 
@@ -522,12 +522,12 @@ async function macinfo(ctx) {
   const { sock, from, msg, args } = ctx;
   const mac = args[0];
   if (!mac) return send(sock, from, msg,
-    '🖧 *Usage:* .macinfo <MAC address>\n' +
+    '*Usage:* .macinfo <MAC address>\n' +
     '*Examples:*\n• .macinfo 00:1A:2B:3C:4D:5E\n• .macinfo 001A2B3C4D5E\n' +
     '_The first 6 hex digits (OUI) identify the manufacturer_');
 
   const cleaned = mac.replace(/[:\-\.]/g, '').toUpperCase();
-  if (!/^[0-9A-F]{6,12}$/.test(cleaned)) return send(sock, from, msg, '❌ Invalid MAC address format.');
+  if (!/^[0-9A-F]{6,12}$/.test(cleaned)) return send(sock, from, msg, 'Invalid MAC address format.');
 
   try {
     const { data } = await axios.get(`https://api.macvendors.com/${encodeURIComponent(mac)}`, {
@@ -536,18 +536,18 @@ async function macinfo(ctx) {
     });
 
     if (typeof data === 'string' && data.includes('errors')) {
-      return send(sock, from, msg, `🖧 *MAC Lookup: ${mac}*\n❓ Vendor not found for OUI \`${cleaned.slice(0, 6)}\`\n_This may be a locally administered or randomized MAC address._`);
+      return send(sock, from, msg, `*MAC Lookup: ${mac}*\nVendor not found for OUI \`${cleaned.slice(0, 6)}\`\n_This may be a locally administered or randomized MAC address._`);
     }
 
     const oui = cleaned.slice(0, 6).match(/.{2}/g).join(':');
     await send(sock, from, msg,
-      `🖧 *MAC Address Vendor Lookup*\n` +
-      `📋 MAC: \`${mac}\`\n` +
-      `🔑 OUI: \`${oui}\`\n` +
-      `🏭 Vendor: *${data}*\n` +
+      `*MAC Address Vendor Lookup*\n` +
+      `MAC: \`${mac}\`\n` +
+      `OUI: \`${oui}\`\n` +
+      `Vendor: *${data}*\n` +
       `_The OUI (first 3 octets) is assigned by IEEE to manufacturers._`);
   } catch (err) {
-    await send(sock, from, msg, `❌ MAC lookup failed: ${err.message}`);
+    await send(sock, from, msg, `MAC lookup failed: ${err.message}`);
   }
 }
 
@@ -555,7 +555,7 @@ async function macinfo(ctx) {
 async function rot47(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text) return send(sock, from, msg,
-    '🔄 *ROT47 Cipher*\n' +
+    '*ROT47 Cipher*\n' +
     '*Usage:* .rot47 <text>\n' +
     'ROT47 rotates all printable ASCII characters (33–126) by 47 positions.\n' +
     'Encoding and decoding use the same operation.\n' +
@@ -570,9 +570,9 @@ async function rot47(ctx) {
   }).join('');
 
   await send(sock, from, msg,
-    `🔄 *ROT47 Cipher*\n` +
-    `📝 Input:  \`${text}\`\n` +
-    `🔐 Output: \`${result}\`\n` +
+    `*ROT47 Cipher*\n` +
+    `Input:  \`${text}\`\n` +
+    `Output: \`${result}\`\n` +
     `_ROT47 is symmetric — apply it again to get back the original_`);
 }
 
@@ -581,7 +581,7 @@ async function urlinfo(ctx) {
   const { sock, from, msg, args } = ctx;
   let url = args[0];
   if (!url) return send(sock, from, msg,
-    '🔗 *Usage:* .urlinfo <url>\nExample: .urlinfo bit.ly/abc123\n' +
+    '*Usage:* .urlinfo <url>\nExample: .urlinfo bit.ly/abc123\n' +
     '_Expands short URLs and checks where they really lead_');
   if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
 
@@ -608,21 +608,21 @@ async function urlinfo(ctx) {
 
     const final = history[history.length - 1] || { url, status: '?' };
     const steps = history.length > 1
-      ? `\n🔀 *Redirect Chain (${history.length - 1} hop${history.length > 2 ? 's' : ''}):*\n` +
+      ? `\n*Redirect Chain (${history.length - 1} hop${history.length > 2 ? 's' : ''}):*\n` +
         history.slice(0, -1).map((h, i) => `${i + 1}. \`${h.url.slice(0, 60)}\` → ${h.status}`).join('\n')
       : '';
 
     const suspicious = /bit\.ly|tinyurl|t\.co|goo\.gl|ow\.ly|buff\.ly|rebrand\.ly/i.test(url);
 
     await send(sock, from, msg,
-      `🔗 *URL Inspector*\n` +
-      `📎 Original: \`${url}\`\n` +
-      `🎯 Final URL: \`${final.url}\`\n` +
-      `📊 Status: ${final.status}` +
+      `*URL Inspector*\n` +
+      `Original: \`${url}\`\n` +
+      `Final URL: \`${final.url}\`\n` +
+      `Status: ${final.status}` +
       steps +
-      `\n${suspicious ? '⚠️ _Short URL detected — always verify the destination before clicking!_' : '✅ _Direct URL — no redirection tricks detected_'}`);
+      `\n${suspicious ? '_Short URL detected — always verify the destination before clicking!_' : '_Direct URL — no redirection tricks detected_'}`);
   } catch (err) {
-    await send(sock, from, msg, `❌ URL inspection failed: ${err.message}`);
+    await send(sock, from, msg, `URL inspection failed: ${err.message}`);
   }
 }
 
@@ -630,50 +630,50 @@ async function urlinfo(ctx) {
 async function fakecall(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text) return send(sock, from, msg,
-    '📞 *Usage:* .fakecall <caller name>\n' +
+    '*Usage:* .fakecall <caller name>\n' +
     '*Examples:*\n' +
     '• .fakecall Mum\n' +
     '• .fakecall Boss Man\n' +
     '• .fakecall +254712345678\n' +
-    '_Simulates a realistic incoming WhatsApp call notification_ 😈');
+    '_Simulates a realistic incoming WhatsApp call notification_ ');
 
   const caller = text.trim();
   const delay = ms => new Promise(r => setTimeout(r, ms));
 
   // Ringing frames
-  const ring1 = `📲 *Incoming WhatsApp call...*\n` +
+  const ring1 = `*Incoming WhatsApp call...*\n` +
     `┌─────────────────────┐\n` +
-    `│  📞  *${caller}*\n` +
+    `│   *${caller}*\n` +
     `│  WhatsApp Voice Call\n` +
     `│\n` +
-    `│  🔴 Decline   🟢 Accept\n` +
+    `│  Decline   Accept\n` +
     `└─────────────────────┘`;
 
-  const ring2 = `📲 *Incoming WhatsApp call...*\n` +
+  const ring2 = `*Incoming WhatsApp call...*\n` +
     `┌─────────────────────┐\n` +
-    `│  📳  *${caller}*\n` +
+    `│   *${caller}*\n` +
     `│  WhatsApp Voice Call\n` +
-    `│  🔔 Ringing...\n` +
+    `│  Ringing...\n` +
     `│\n` +
-    `│  🔴 Decline   🟢 Accept\n` +
+    `│  Decline   Accept\n` +
     `└─────────────────────┘`;
 
-  const ring3 = `📲 *Incoming WhatsApp call...*\n` +
+  const ring3 = `*Incoming WhatsApp call...*\n` +
     `┌─────────────────────┐\n` +
-    `│  📞  *${caller}*\n` +
+    `│   *${caller}*\n` +
     `│  WhatsApp Voice Call\n` +
-    `│  🔔 Ringing...\n` +
-    `│  🔔 Ringing...\n` +
+    `│  Ringing...\n` +
+    `│  Ringing...\n` +
     `│\n` +
-    `│  🔴 Decline   🟢 Accept\n` +
+    `│  Decline   Accept\n` +
     `└─────────────────────┘`;
 
-  const missed = `📵 *Missed WhatsApp call*\n` +
+  const missed = `*Missed WhatsApp call*\n` +
     `┌─────────────────────┐\n` +
-    `│  📵  *${caller}*\n` +
+    `│   *${caller}*\n` +
     `│  WhatsApp Voice Call\n` +
-    `│  ❌ Missed call\n` +
-    `│  🕐 Just now\n` +
+    `│  Missed call\n` +
+    `│  Just now\n` +
     `└─────────────────────┘\n` +
     `_Tap to call back_`;
 
@@ -687,7 +687,7 @@ async function fakecall(ctx) {
     await sock.sendMessage(from, { text: missed });
     console.log(`[FAKECALL] Done — caller="${caller}" in ${from}`);
   } catch (err) {
-    await send(sock, from, msg, `❌ Fake call failed: ${err.message}`);
+    await send(sock, from, msg, `Fake call failed: ${err.message}`);
   }
 }
 
@@ -721,7 +721,7 @@ const FAKE_BANKS     = ['KCB Bank','Equity Bank','Cooperative Bank','ABSA Bank',
 async function hack(ctx) {
   const { sock, from, msg, text, isGroup } = ctx;
   if (!text) return send(sock, from, msg,
-    '💀 *Usage:* .hack <phone number>\n*Example:* .hack +254712345678\n_⚠️ For entertainment purposes only_');
+    '*Usage:* .hack <phone number>\n*Example:* .hack +254712345678\n_For entertainment purposes only_');
 
   const number = text.trim().replace(/\s+/g, '');
   const displayNum = number.startsWith('+') ? number : `+${number}`;
@@ -731,12 +731,12 @@ async function hack(ctx) {
   const steps = [
     `\`\`\`\n[ FIREBOX HACKER v3.7 ]\n> Initializing target: ${displayNum}\n> Loading exploit modules...\n████░░░░░░ 40%\`\`\``,
     `\`\`\`\n> Bypassing firewall...\n> Spoofing source IP: ${randIP()}\n> Establishing encrypted tunnel...\n████████░░ 80%\`\`\``,
-    `\`\`\`\n> Injecting payload...\n> Cracking signal encryption...\n> Access granted ✓\n██████████ 100%\`\`\``,
+    `\`\`\`\n> Injecting payload...\n> Cracking signal encryption...\n> Access granted\n██████████ 100%\`\`\``,
     `\`\`\`\n[ NETWORK SCAN COMPLETE ]\n> Device IP   : ${randIP()}\n> MAC Address : ${randMAC()}\n> GPS Coords  : ${randCoords()}\n> Signal      : ${randInt(60,99)}% (4G LTE)\`\`\``,
     `\`\`\`\n[ DEVICE INFO ]\n> Model  : ${FAKE_DEVICES[randInt(0,FAKE_DEVICES.length-1)]}\n> OS     : ${FAKE_OS[randInt(0,FAKE_OS.length-1)]}\n> Browser: ${FAKE_BROWSERS[randInt(0,FAKE_BROWSERS.length-1)]}\n> IMEI   : ${randInt(100000,999999)}${randInt(100000,999999)}${randInt(100,999)}\`\`\``,
-    `\`\`\`\n[ CARRIER INFO ]\n> Network  : ${FAKE_CARRIERS[randInt(0,FAKE_CARRIERS.length-1)]}\n> SIM ICCID: ${randHex(10).toUpperCase()}\n> Roaming  : ${Math.random()>0.7?'Yes':'No'}\n> 2FA SMS  : Intercepted ✓\`\`\``,
+    `\`\`\`\n[ CARRIER INFO ]\n> Network  : ${FAKE_CARRIERS[randInt(0,FAKE_CARRIERS.length-1)]}\n> SIM ICCID: ${randHex(10).toUpperCase()}\n> Roaming  : ${Math.random()>0.7?'Yes':'No'}\n> 2FA SMS  : Intercepted \`\`\``,
     `\`\`\`\n[ PERSONAL DATA EXTRACTED ]\n> Name    : ${FAKE_NAMES[randInt(0,FAKE_NAMES.length-1)]}\n> Email   : ${FAKE_EMAILS[randInt(0,FAKE_EMAILS.length-1)]}\n> Bank    : ${FAKE_BANKS[randInt(0,FAKE_BANKS.length-1)]}\n> Balance : KES ${randInt(1,99)},${randInt(100,999)}.${randInt(10,99)}\`\`\``,
-    `\`\`\`\n[ SESSION TOKENS ]\n> Auth Token  : ${randHex(32)}\n> Cookie Hash : ${randHex(16)}\n> Session ID  : ${randHex(8)}-${randHex(4)}-${randHex(4)}\n> Expires     : NEVER (stolen ✓)\`\`\``,
+    `\`\`\`\n[ SESSION TOKENS ]\n> Auth Token  : ${randHex(32)}\n> Cookie Hash : ${randHex(16)}\n> Session ID  : ${randHex(8)}-${randHex(4)}-${randHex(4)}\n> Expires     : NEVER (stolen )\`\`\``,
   ];
 
   try {
@@ -750,19 +750,19 @@ async function hack(ctx) {
     await delay(1500);
     await sock.sendMessage(from, {
       text:
-        `💀 *HACK COMPLETE*\n` +
-        `📱 Target: *${displayNum}*\n` +
-        `✅ Device compromised\n` +
-        `✅ Location tracked\n` +
-        `✅ Messages intercepted\n` +
-        `✅ Credentials stolen\n` +
-        `_⚠️ This is 100% fake entertainment — no real hacking occurred. Actual hacking is illegal._\n` +
-        `_Powered by 🔥 Firebox_`
+        `*HACK COMPLETE*\n` +
+        `Target: *${displayNum}*\n` +
+        `Device compromised\n` +
+        `Location tracked\n` +
+        `Messages intercepted\n` +
+        `Credentials stolen\n` +
+        `_This is 100% fake entertainment — no real hacking occurred. Actual hacking is illegal._\n` +
+        `_Powered by Firebox_`
     });
     console.log(`[HACK] Done — ${isGroup ? 'GROUP' : 'DM'} ${from}`);
   } catch (err) {
     console.error(`[HACK] Error in ${isGroup ? 'GROUP' : 'DM'} ${from}:`, err.message);
-    await send(sock, from, msg, `❌ Hack failed: ${err.message}`);
+    await send(sock, from, msg, `Hack failed: ${err.message}`);
   }
 }
 
@@ -770,13 +770,13 @@ async function hack(ctx) {
 async function jwtdecode(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text) return send(sock, from, msg,
-    '🔑 *JWT Decoder*\n' +
+    '*JWT Decoder*\n' +
     '*Usage:* .jwt <token>\n' +
     '_Decodes JWT header & payload without verifying the signature._\n' +
     '_Useful for inspecting tokens during security testing._');
 
   const parts = text.trim().split('.');
-  if (parts.length !== 3) return send(sock, from, msg, '❌ Invalid JWT format. Must have 3 parts separated by dots.');
+  if (parts.length !== 3) return send(sock, from, msg, 'Invalid JWT format. Must have 3 parts separated by dots.');
 
   try {
     const decode = b64 => {
@@ -790,26 +790,26 @@ async function jwtdecode(ctx) {
 
     const expStatus = payload.exp
       ? (payload.exp < now
-          ? `❌ *EXPIRED* (${new Date(payload.exp * 1000).toUTCString()})`
-          : `✅ Valid until ${new Date(payload.exp * 1000).toUTCString()}`)
-      : '⚠️ No expiry set';
+          ? `*EXPIRED* (${new Date(payload.exp * 1000).toUTCString()})`
+          : `Valid until ${new Date(payload.exp * 1000).toUTCString()}`)
+      : 'No expiry set';
 
-    const iatStr = payload.iat ? `\n📅 Issued: ${new Date(payload.iat * 1000).toUTCString()}` : '';
-    const subStr = payload.sub ? `\n👤 Subject: ${payload.sub}` : '';
-    const issStr = payload.iss ? `\n🏢 Issuer: ${payload.iss}` : '';
-    const audStr = payload.aud ? `\n🎯 Audience: ${Array.isArray(payload.aud) ? payload.aud.join(', ') : payload.aud}` : '';
+    const iatStr = payload.iat ? `\nIssued: ${new Date(payload.iat * 1000).toUTCString()}` : '';
+    const subStr = payload.sub ? `\nSubject: ${payload.sub}` : '';
+    const issStr = payload.iss ? `\nIssuer: ${payload.iss}` : '';
+    const audStr = payload.aud ? `\nAudience: ${Array.isArray(payload.aud) ? payload.aud.join(', ') : payload.aud}` : '';
 
     const payloadStr = JSON.stringify(payload, null, 2);
     const trimmed = payloadStr.length > 800 ? payloadStr.slice(0, 800) + '\n...(truncated)' : payloadStr;
 
     await send(sock, from, msg,
-      `🔑 *JWT Decoded*\n` +
-      `⚙️ *Header:*\n• Algorithm: *${header.alg || 'N/A'}*\n• Type: ${header.typ || 'N/A'}\n` +
-      `⏰ *Expiry:* ${expStatus}${iatStr}${subStr}${issStr}${audStr}\n` +
-      `📦 *Payload:*\n\`\`\`\n${trimmed}\n\`\`\`\n` +
-      `🔓 Signature: \`${parts[2].slice(0, 20)}...\` _(not verified — decode only)_`);
+      `*JWT Decoded*\n` +
+      `*Header:*\n• Algorithm: *${header.alg || 'N/A'}*\n• Type: ${header.typ || 'N/A'}\n` +
+      `*Expiry:* ${expStatus}${iatStr}${subStr}${issStr}${audStr}\n` +
+      `*Payload:*\n\`\`\`\n${trimmed}\n\`\`\`\n` +
+      `Signature: \`${parts[2].slice(0, 20)}...\` _(not verified — decode only)_`);
   } catch (err) {
-    await send(sock, from, msg, `❌ Failed to decode JWT: ${err.message}`);
+    await send(sock, from, msg, `Failed to decode JWT: ${err.message}`);
   }
 }
 
@@ -817,7 +817,7 @@ async function jwtdecode(ctx) {
 async function reversedns(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text) return send(sock, from, msg,
-    '🔁 *Reverse DNS Lookup*\n' +
+    '*Reverse DNS Lookup*\n' +
     '*Usage:* .rdns <IP address>\n' +
     '*Examples:*\n• .rdns 8.8.8.8\n• .rdns 1.1.1.1\n' +
     '_Finds the hostname(s) registered to an IP address._');
@@ -835,20 +835,20 @@ async function reversedns(ctx) {
 
     const hostsStr = hosts.length
       ? hosts.map((h, i) => `${i + 1}. \`${h}\``).join('\n')
-      : '❌ No PTR records found (rDNS not configured)';
+      : 'No PTR records found (rDNS not configured)';
 
     await send(sock, from, msg,
-      `🔁 *Reverse DNS: ${ip}*\n` +
-      `📋 *PTR Records:*\n${hostsStr}\n` +
+      `*Reverse DNS: ${ip}*\n` +
+      `*PTR Records:*\n${hostsStr}\n` +
       (geo
-        ? `🌍 Location: ${geo.city || ''}, ${geo.country || ''}\n` +
-          `🏢 ISP: ${geo.isp || 'N/A'}\n` +
-          `🏛️ Org: ${geo.org || 'N/A'}\n` +
-          `🕵️ Proxy/VPN: ${geo.proxy ? 'Yes ⚠️' : 'No'}\n` +
-          `🖥️ Hosting/DC: ${geo.hosting ? 'Yes' : 'No'}`
+        ? `Location: ${geo.city || ''}, ${geo.country || ''}\n` +
+          `ISP: ${geo.isp || 'N/A'}\n` +
+          `Org: ${geo.org || 'N/A'}\n` +
+          `Proxy/VPN: ${geo.proxy ? 'Yes ' : 'No'}\n` +
+          `Hosting/DC: ${geo.hosting ? 'Yes' : 'No'}`
         : '_Geo info unavailable_'));
   } catch (err) {
-    await send(sock, from, msg, `❌ Reverse DNS failed: ${err.message}`);
+    await send(sock, from, msg, `Reverse DNS failed: ${err.message}`);
   }
 }
 
@@ -857,7 +857,7 @@ async function robotstxt(ctx) {
   const { sock, from, msg, args } = ctx;
   let domain = args[0]?.replace(/^https?:\/\//, '').split('/')[0];
   if (!domain) return send(sock, from, msg,
-    '🤖 *Robots.txt Recon*\n' +
+    '*Robots.txt Recon*\n' +
     '*Usage:* .robots <domain>\n' +
     '*Examples:*\n• .robots google.com\n• .robots facebook.com\n' +
     '_Reveals paths the site owner wants hidden from crawlers — often exposes admin panels, backups, or sensitive directories._');
@@ -871,7 +871,7 @@ async function robotstxt(ctx) {
       headers: { 'User-Agent': 'Mozilla/5.0 (SecurityAudit)' }
     });
 
-    if (status === 404) return send(sock, from, msg, `🤖 *${domain}*\n❌ No robots.txt found (404)\n_The site doesn't restrict crawlers, or the file doesn't exist._`);
+    if (status === 404) return send(sock, from, msg, `*${domain}*\nNo robots.txt found (404)\n_The site doesn't restrict crawlers, or the file doesn't exist._`);
 
     const text2 = typeof data === 'string' ? data : JSON.stringify(data);
     const lines  = text2.split('\n').map(l => l.trim()).filter(Boolean);
@@ -889,15 +889,15 @@ async function robotstxt(ctx) {
     const raw = text2.length > 1000 ? text2.slice(0, 1000) + '\n...(truncated)' : text2;
 
     await send(sock, from, msg,
-      `🤖 *Robots.txt Recon: ${domain}*\n` +
-      (interesting.length ? `🚨 *Interesting Paths Found:*\n${interesting.map(p => `⚠️ \`${p}\``).join('\n')}\n` : '') +
-      `🚫 *Disallowed (${disallowed.length}):* ${disallowed.length ? disallowed.slice(0, 10).map(p => `\`${p}\``).join(', ') + (disallowed.length > 10 ? ` +${disallowed.length - 10} more` : '') : 'None'}\n` +
-      `✅ *Allowed (${allowed.length}):* ${allowed.length ? allowed.slice(0, 5).map(p => `\`${p}\``).join(', ') : 'None'}\n` +
-      `🗺️ *Sitemaps:* ${sitemaps.length ? sitemaps.join(', ') : 'None'}\n` +
-      `🤖 *User-Agents targeted:* ${[...new Set(agents)].join(', ') || 'None'}\n` +
-      `📄 *Raw Content:*\n\`\`\`\n${raw}\n\`\`\``);
+      `*Robots.txt Recon: ${domain}*\n` +
+      (interesting.length ? `*Interesting Paths Found:*\n${interesting.map(p => `\`${p}\``).join('\n')}\n` : '') +
+      `*Disallowed (${disallowed.length}):* ${disallowed.length ? disallowed.slice(0, 10).map(p => `\`${p}\``).join(', ') + (disallowed.length > 10 ? ` +${disallowed.length - 10} more` : '') : 'None'}\n` +
+      `*Allowed (${allowed.length}):* ${allowed.length ? allowed.slice(0, 5).map(p => `\`${p}\``).join(', ') : 'None'}\n` +
+      `*Sitemaps:* ${sitemaps.length ? sitemaps.join(', ') : 'None'}\n` +
+      `*User-Agents targeted:* ${[...new Set(agents)].join(', ') || 'None'}\n` +
+      `*Raw Content:*\n\`\`\`\n${raw}\n\`\`\``);
   } catch (err) {
-    await send(sock, from, msg, `❌ Failed to fetch robots.txt: ${err.message}`);
+    await send(sock, from, msg, `Failed to fetch robots.txt: ${err.message}`);
   }
 }
 
@@ -905,7 +905,7 @@ async function robotstxt(ctx) {
 async function breach(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text) return send(sock, from, msg,
-    '🔓 *Data Breach Checker*\n' +
+    '*Data Breach Checker*\n' +
     '*Usage:* .breach <email or username>\n' +
     '*Examples:*\n• .breach user@gmail.com\n• .breach johndoe\n' +
     '_Checks if your credentials appeared in known data leaks._');
@@ -921,8 +921,8 @@ async function breach(ctx) {
 
     if (status === 404 || data?.Error === 'Not found') {
       return send(sock, from, msg,
-        `🔓 *Breach Check: ${query}*\n` +
-        `✅ *Good news!* No breaches found in our database.\n` +
+        `*Breach Check: ${query}*\n` +
+        `*Good news!* No breaches found in our database.\n` +
         `_Note: This doesn't guarantee 100% safety — new breaches may not yet be indexed._`);
     }
 
@@ -936,15 +936,15 @@ async function breach(ctx) {
       : 'See details above';
 
     await send(sock, from, msg,
-      `🔓 *Breach Check: ${query}*\n` +
-      `🚨 *EXPOSED in ${count} breach${count !== 1 ? 'es' : ''}!*\n` +
-      `📊 Records leaked: ~${typeof records === 'number' ? records.toLocaleString() : records}\n` +
-      (breachList ? `📂 *Breaches:*\n${breachList}\n` : '') +
-      (domains.length ? `🌐 *Domains:* ${domains.slice(0, 5).join(', ')}\n` : '') +
-      `💡 *What to do:*\n• Change your password immediately\n• Enable 2FA on all accounts\n• Check if same password used elsewhere\n` +
+      `*Breach Check: ${query}*\n` +
+      `*EXPOSED in ${count} breach${count !== 1 ? 'es' : ''}!*\n` +
+      `Records leaked: ~${typeof records === 'number' ? records.toLocaleString() : records}\n` +
+      (breachList ? `*Breaches:*\n${breachList}\n` : '') +
+      (domains.length ? `*Domains:* ${domains.slice(0, 5).join(', ')}\n` : '') +
+      `*What to do:*\n• Change your password immediately\n• Enable 2FA on all accounts\n• Check if same password used elsewhere\n` +
       `_Source: xposedornot.com — for educational/security purposes only_`);
   } catch (err) {
-    await send(sock, from, msg, `❌ Breach check failed: ${err.message}`);
+    await send(sock, from, msg, `Breach check failed: ${err.message}`);
   }
 }
 
@@ -953,7 +953,7 @@ async function sitestatus(ctx) {
   const { sock, from, msg, args } = ctx;
   let url = args[0];
   if (!url) return send(sock, from, msg,
-    '📡 *Site Status Check*\n' +
+    '*Site Status Check*\n' +
     '*Usage:* .status <url or domain>\n' +
     '*Examples:*\n• .status google.com\n• .status https://api.example.com/health\n' +
     '_Checks if a site/server is up, measures response time, and inspects server info._');
@@ -973,33 +973,33 @@ async function sitestatus(ctx) {
     const code    = res.status;
     const server  = res.headers['server'] || res.headers['x-powered-by'] || 'Hidden';
     const ctype   = res.headers['content-type']?.split(';')[0] || 'N/A';
-    const hsts    = res.headers['strict-transport-security'] ? '✅' : '❌';
-    const csp     = res.headers['content-security-policy']   ? '✅' : '❌';
-    const xfo     = res.headers['x-frame-options']           ? '✅' : '❌';
+    const hsts    = res.headers['strict-transport-security'] ? '' : '';
+    const csp     = res.headers['content-security-policy']   ? '' : '';
+    const xfo     = res.headers['x-frame-options']           ? '' : '';
 
     const statusEmoji =
-      code >= 200 && code < 300 ? '🟢' :
-      code >= 300 && code < 400 ? '🔵' :
-      code >= 400 && code < 500 ? '🟡' :
-      code >= 500                ? '🔴' : '⚪';
+      code >= 200 && code < 300 ? '' :
+      code >= 300 && code < 400 ? '' :
+      code >= 400 && code < 500 ? '' :
+      code >= 500                ? '' : '';
 
-    const speedEmoji = ms < 300 ? '⚡ Lightning' : ms < 800 ? '✅ Fast' : ms < 2000 ? '🟡 Moderate' : '🔴 Slow';
+    const speedEmoji = ms < 300 ? 'Lightning' : ms < 800 ? 'Fast' : ms < 2000 ? 'Moderate' : 'Slow';
 
     await send(sock, from, msg,
-      `📡 *Site Status: ${url}*\n` +
+      `*Site Status: ${url}*\n` +
       `${statusEmoji} *HTTP ${code}* — ${res.statusText || httpStatusText(code)}\n` +
-      `⏱️ Response: *${ms}ms* — ${speedEmoji}\n` +
-      `🖥️ Server: ${server}\n` +
-      `📄 Content-Type: ${ctype}\n` +
-      `🛡️ *Security Headers:*\n` +
+      `Response: *${ms}ms* — ${speedEmoji}\n` +
+      `Server: ${server}\n` +
+      `Content-Type: ${ctype}\n` +
+      `*Security Headers:*\n` +
       `${hsts} HSTS  ${csp} CSP  ${xfo} X-Frame-Options\n` +
-      `_${code < 400 ? '✅ Site is UP and reachable' : code < 500 ? '⚠️ Site returned a client error' : '❌ Site is DOWN or has server errors'}_`);
+      `_${code < 400 ? 'Site is UP and reachable' : code < 500 ? 'Site returned a client error' : 'Site is DOWN or has server errors'}_`);
   } catch (err) {
     const reason = err.code === 'ECONNREFUSED' ? 'Connection refused — server may be down'
       : err.code === 'ENOTFOUND' ? 'DNS not found — domain does not exist or is unreachable'
       : err.code === 'ETIMEDOUT' || err.message.includes('timeout') ? 'Request timed out — server too slow or offline'
       : err.message;
-    await send(sock, from, msg, `📡 *Site Status: ${url}*\n🔴 *OFFLINE / Unreachable*\n❌ ${reason}`);
+    await send(sock, from, msg, `*Site Status: ${url}*\n*OFFLINE / Unreachable*\n${reason}`);
   }
 }
 
@@ -1012,7 +1012,7 @@ function httpStatusText(code) {
 async function cvelookup(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text) return send(sock, from, msg,
-    '🛡️ *CVE Vulnerability Lookup*\n' +
+    '*CVE Vulnerability Lookup*\n' +
     '*Usage:* .cve <CVE-ID or keyword>\n' +
     '*Examples:*\n• .cve CVE-2021-44228\n• .cve log4shell\n• .cve apache struts\n' +
     '_Looks up known vulnerabilities from the NIST National Vulnerability Database._');
@@ -1030,7 +1030,7 @@ async function cvelookup(ctx) {
 
     const { data } = await axios.get(apiUrl, { timeout: 15000, headers: { 'User-Agent': 'Firebox-CVE-Lookup' } });
     const vulns = data?.vulnerabilities;
-    if (!vulns || !vulns.length) return send(sock, from, msg, `🛡️ No CVEs found for: *${query}*`);
+    if (!vulns || !vulns.length) return send(sock, from, msg, `No CVEs found for: *${query}*`);
 
     const results = vulns.slice(0, 3).map(v => {
       const cve      = v.cve;
@@ -1043,23 +1043,23 @@ async function cvelookup(ctx) {
       const pubDate  = cve.published ? new Date(cve.published).toDateString() : 'N/A';
       const refs     = cve.references?.slice(0, 2).map(r => r.url) || [];
 
-      const sevEmoji = severity === 'CRITICAL' ? '💀' : severity === 'HIGH' ? '🔴' : severity === 'MEDIUM' ? '🟡' : severity === 'LOW' ? '🟢' : '⚪';
+      const sevEmoji = severity === 'CRITICAL' ? '' : severity === 'HIGH' ? '' : severity === 'MEDIUM' ? '' : severity === 'LOW' ? '' : '';
       const descShort = desc.length > 250 ? desc.slice(0, 250) + '...' : desc;
 
       return `${sevEmoji} *${id}*\n` +
-        `📊 Score: *${score ?? 'N/A'}* (${severity || 'N/A'})\n` +
-        `📅 Published: ${pubDate}\n` +
-        `📋 ${descShort}` +
-        (vector ? `\n🔗 Vector: \`${vector}\`` : '') +
-        (refs.length ? `\n🔗 ${refs[0]}` : '');
+        `Score: *${score ?? 'N/A'}* (${severity || 'N/A'})\n` +
+        `Published: ${pubDate}\n` +
+        `${descShort}` +
+        (vector ? `\nVector: \`${vector}\`` : '') +
+        (refs.length ? `\n${refs[0]}` : '');
     });
 
     await send(sock, from, msg,
-      `🛡️ *CVE Lookup: ${query}*\n` +
+      `*CVE Lookup: ${query}*\n` +
       results.join('\n─────────────────\n') +
       `\n_Source: NIST NVD — nvd.nist.gov_`);
   } catch (err) {
-    await send(sock, from, msg, `❌ CVE lookup failed: ${err.message}`);
+    await send(sock, from, msg, `CVE lookup failed: ${err.message}`);
   }
 }
 
@@ -1067,13 +1067,13 @@ async function cvelookup(ctx) {
 async function userscan(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text || text.includes(' ')) return send(sock, from, msg,
-    '🔍 *Username Scanner*\n' +
+    '*Username Scanner*\n' +
     '*Usage:* .userscan <username>\n' +
     '*Examples:*\n• .userscan johndoe\n• .userscan hacker_x\n' +
     '_Checks if the username exists on major platforms — useful for OSINT._');
 
   const username = text.trim().replace(/[^a-zA-Z0-9._-]/g, '');
-  if (!username) return send(sock, from, msg, '❌ Invalid username format.');
+  if (!username) return send(sock, from, msg, 'Invalid username format.');
 
   await sock.sendPresenceUpdate('composing', from).catch(() => {});
 
@@ -1116,14 +1116,14 @@ async function userscan(ctx) {
     else notFound.push(p.name);
   });
 
-  const foundStr    = found.map(n => `✅ ${n}`).join('\n') || '_None found_';
-  const notFoundStr = notFound.map(n => `❌ ${n}`).join('\n') || '_All found_';
+  const foundStr    = found.map(n => `${n}`).join('\n') || '_None found_';
+  const notFoundStr = notFound.map(n => `${n}`).join('\n') || '_All found_';
 
   await send(sock, from, msg,
-    `🔍 *Username Scanner: @${username}*\n` +
-    `📊 Found on *${found.length}/${platforms.length}* platforms\n` +
-    `*✅ Exists on:*\n${foundStr}\n` +
-    `*❌ Not found on:*\n${notFoundStr}\n` +
+    `*Username Scanner: @${username}*\n` +
+    `Found on *${found.length}/${platforms.length}* platforms\n` +
+    `*Exists on:*\n${foundStr}\n` +
+    `*Not found on:*\n${notFoundStr}\n` +
     `_Note: Some platforms block bots — results may not be 100% accurate._`);
 }
 

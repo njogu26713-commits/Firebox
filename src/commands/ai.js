@@ -5,7 +5,7 @@ const { sendFireboxCard } = require('../card');
 const PROMPT_TTL = 5 * 60 * 1000;
 
 async function send(sock, from, msg, text, title) {
-  return sendFireboxCard(sock, from, msg, { title: title || '🤖 Firebox AI', content: text });
+  return sendFireboxCard(sock, from, msg, { title: title || 'Firebox AI', content: text });
 }
 
 function parseSuggestions(raw) {
@@ -24,7 +24,7 @@ function parseSuggestions(raw) {
 async function sendWithPrompts(sock, from, msg, sessionState, sender, header, rawReply, cmdPrefix) {
   const { mainReply, suggestions } = parseSuggestions(rawReply);
   await sendFireboxCard(sock, from, msg, {
-    title: '🤖 Firebox AI',
+    title: 'Firebox AI',
     content: `${header}${mainReply}`,
   });
   if (suggestions.length > 0) {
@@ -34,7 +34,7 @@ async function sendWithPrompts(sock, from, msg, sessionState, sender, header, ra
     });
     const lines = suggestions.map((s, i) => `  *${i + 1}.* ${s}`).join('\n');
     await sendFireboxCard(sock, from, null, {
-      title: '💡 Follow-up Prompts',
+      title: 'Follow-up Prompts',
       content: `Reply *1*, *2* or *3* to continue:\n${lines}`,
       noQuote: true,
     });
@@ -69,130 +69,130 @@ async function chat(ctx) {
         ? await downloadImageBuffer(sock, message, 'imageMessage')
         : await downloadImageBuffer(sock, quotedMsg, 'imageMessage');
       const raw = await openRouterVision(buffer, mimeType, prompt);
-      await send(sock, from, msg, `🔍 *Firebox AI Vision*\n${raw}`);
+      await send(sock, from, msg, `*Firebox AI Vision*\n${raw}`);
     } catch (err) {
-      await send(sock, from, msg, `❌ Vision Error: ${err.message}`);
+      await send(sock, from, msg, `Vision Error: ${err.message}`);
     }
     return;
   }
 
-  if (!text) return send(sock, from, msg, '🤖 Usage: .ai <your question>\n_Tip: Send/reply to an image with .ai to analyze it!_');
+  if (!text) return send(sock, from, msg, 'Usage: .ai <your question>\n_Tip: Send/reply to an image with .ai to analyze it!_');
   try {
     await sock.sendPresenceUpdate('composing', from);
     const raw = await openRouterPrompt(
       `${text}\n\nAfter answering, add exactly 3 short follow-up questions the user might ask next, formatted as:\nSUGGESTIONS:\n1. ...\n2. ...\n3. ...`
     );
-    await sendWithPrompts(sock, from, msg, sessionState, sender, '🤖 *Firebox AI*\n', raw, '.ai ');
+    await sendWithPrompts(sock, from, msg, sessionState, sender, '*Firebox AI*\n', raw, '.ai ');
   } catch (err) {
-    await send(sock, from, msg, `❌ AI Error: ${err.message}`);
+    await send(sock, from, msg, `AI Error: ${err.message}`);
   }
 }
 
 async function code(ctx) {
   const { sock, from, msg, text, sender, sessionState } = ctx;
-  if (!text) return send(sock, from, msg, '💻 Usage: .code <your coding question or code to fix>');
+  if (!text) return send(sock, from, msg, 'Usage: .code <your coding question or code to fix>');
   try {
     await sock.sendPresenceUpdate('composing', from);
     const raw = await openRouterPrompt(
       `You are an expert programmer. Answer this coding question clearly with code examples:\n\n${text}\n\nAfter answering, add exactly 3 short follow-up questions formatted as:\nSUGGESTIONS:\n1. ...\n2. ...\n3. ...`
     );
-    await sendWithPrompts(sock, from, msg, sessionState, sender, '💻 *Code Assistant*\n', raw, '.code ');
+    await sendWithPrompts(sock, from, msg, sessionState, sender, '*Code Assistant*\n', raw, '.code ');
   } catch (err) {
-    await send(sock, from, msg, `❌ Error: ${err.message}`);
+    await send(sock, from, msg, `Error: ${err.message}`);
   }
 }
 
 async function story(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '📖 Usage: .story <topic or theme>');
+  if (!text) return send(sock, from, msg, 'Usage: .story <topic or theme>');
   try {
     await sock.sendPresenceUpdate('composing', from);
     const reply = await openRouterPrompt(`Write a creative short story about: ${text}. Make it engaging and about 3-4 paragraphs.`);
-    await send(sock, from, msg, `📖 *Story Time*\n${reply}`);
+    await send(sock, from, msg, `*Story Time*\n${reply}`);
   } catch (err) {
-    await send(sock, from, msg, `❌ Error: ${err.message}`);
+    await send(sock, from, msg, `Error: ${err.message}`);
   }
 }
 
 async function summarize(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '📋 Usage: .summarize <long text to summarize>');
+  if (!text) return send(sock, from, msg, 'Usage: .summarize <long text to summarize>');
   try {
     await sock.sendPresenceUpdate('composing', from);
     const reply = await openRouterPrompt(`Summarize the following text in clear bullet points:\n\n${text}`);
-    await send(sock, from, msg, `📋 *Summary*\n${reply}`);
+    await send(sock, from, msg, `*Summary*\n${reply}`);
   } catch (err) {
-    await send(sock, from, msg, `❌ Error: ${err.message}`);
+    await send(sock, from, msg, `Error: ${err.message}`);
   }
 }
 
 async function recipe(ctx) {
   const { sock, from, msg, text, sender, sessionState } = ctx;
-  if (!text) return send(sock, from, msg, '🍳 Usage: .recipe <dish name>');
+  if (!text) return send(sock, from, msg, 'Usage: .recipe <dish name>');
   try {
     await sock.sendPresenceUpdate('composing', from);
     const raw = await openRouterPrompt(
       `Give me a detailed recipe for: ${text}. Include ingredients and step-by-step instructions.\n\nAfter the recipe, add 3 short follow-up questions formatted as:\nSUGGESTIONS:\n1. ...\n2. ...\n3. ...`
     );
-    await sendWithPrompts(sock, from, msg, sessionState, sender, '🍳 *Recipe*\n', raw, '.recipe ');
+    await sendWithPrompts(sock, from, msg, sessionState, sender, '*Recipe*\n', raw, '.recipe ');
   } catch (err) {
-    await send(sock, from, msg, `❌ Error: ${err.message}`);
+    await send(sock, from, msg, `Error: ${err.message}`);
   }
 }
 
 async function teach(ctx) {
   const { sock, from, msg, text, sender, sessionState } = ctx;
-  if (!text) return send(sock, from, msg, '🎓 Usage: .teach <topic you want to learn>');
+  if (!text) return send(sock, from, msg, 'Usage: .teach <topic you want to learn>');
   try {
     await sock.sendPresenceUpdate('composing', from);
     const raw = await openRouterPrompt(
       `Explain this topic in simple, easy to understand terms with examples:\n\n${text}\n\nAfter explaining, add 3 short follow-up questions formatted as:\nSUGGESTIONS:\n1. ...\n2. ...\n3. ...`
     );
-    await sendWithPrompts(sock, from, msg, sessionState, sender, '🎓 *Lesson*\n', raw, '.teach ');
+    await sendWithPrompts(sock, from, msg, sessionState, sender, '*Lesson*\n', raw, '.teach ');
   } catch (err) {
-    await send(sock, from, msg, `❌ Error: ${err.message}`);
+    await send(sock, from, msg, `Error: ${err.message}`);
   }
 }
 
 async function analyze(ctx) {
   const { sock, from, msg, text, sender, sessionState } = ctx;
-  if (!text) return send(sock, from, msg, '🔍 Usage: .analyze <text to analyze>');
+  if (!text) return send(sock, from, msg, 'Usage: .analyze <text to analyze>');
   try {
     await sock.sendPresenceUpdate('composing', from);
     const raw = await openRouterPrompt(
       `Analyze the following text. Provide sentiment, key themes, tone, and any important insights:\n\n${text}\n\nAfter your analysis, add 3 short follow-up questions formatted as:\nSUGGESTIONS:\n1. ...\n2. ...\n3. ...`
     );
-    await sendWithPrompts(sock, from, msg, sessionState, sender, '🔍 *Analysis*\n', raw, '.analyze ');
+    await sendWithPrompts(sock, from, msg, sessionState, sender, '*Analysis*\n', raw, '.analyze ');
   } catch (err) {
-    await send(sock, from, msg, `❌ Error: ${err.message}`);
+    await send(sock, from, msg, `Error: ${err.message}`);
   }
 }
 
 async function translate(ctx) {
   const { sock, from, msg, args } = ctx;
-  if (args.length < 2) return send(sock, from, msg, '🌐 Usage: .translate <language> <text>\nExample: .translate French Hello how are you?');
+  if (args.length < 2) return send(sock, from, msg, 'Usage: .translate <language> <text>\nExample: .translate French Hello how are you?');
   const lang = args[0];
   const toTranslate = args.slice(1).join(' ');
   try {
     await sock.sendPresenceUpdate('composing', from);
     const reply = await openRouterPrompt(`Translate the following text to ${lang}. Only reply with the translation, nothing else:\n\n${toTranslate}`);
-    await send(sock, from, msg, `🌐 *Translation (${lang})*\n${reply}`);
+    await send(sock, from, msg, `*Translation (${lang})*\n${reply}`);
   } catch (err) {
-    await send(sock, from, msg, `❌ Error: ${err.message}`);
+    await send(sock, from, msg, `Error: ${err.message}`);
   }
 }
 
 async function blackbox(ctx) {
   const { sock, from, msg, text, sender, sessionState } = ctx;
-  if (!text) return send(sock, from, msg, '🖥️ Usage: .blackbox <coding problem>');
+  if (!text) return send(sock, from, msg, 'Usage: .blackbox <coding problem>');
   try {
     await sock.sendPresenceUpdate('composing', from);
     const raw = await openRouterPrompt(
       `You are an expert software engineer. Solve this programming problem with clean, efficient code and an explanation:\n\n${text}\n\nAfter solving, add 3 short follow-up questions formatted as:\nSUGGESTIONS:\n1. ...\n2. ...\n3. ...`
     );
-    await sendWithPrompts(sock, from, msg, sessionState, sender, '🖥️ *Code Solution*\n', raw, '.blackbox ');
+    await sendWithPrompts(sock, from, msg, sessionState, sender, '*Code Solution*\n', raw, '.blackbox ');
   } catch (err) {
-    await send(sock, from, msg, `❌ Error: ${err.message}`);
+    await send(sock, from, msg, `Error: ${err.message}`);
   }
 }
 
@@ -201,7 +201,7 @@ const SIMI_SESSION_TTL = 30 * 60 * 1000;
 
 async function simi(ctx) {
   const { sock, from, msg, text, sender } = ctx;
-  if (!text) return send(sock, from, msg, '💬 Usage: .simi <message>\nExample: .simi how are you?\n_Simi remembers your conversation for 30 minutes._');
+  if (!text) return send(sock, from, msg, 'Usage: .simi <message>\nExample: .simi how are you?\n_Simi remembers your conversation for 30 minutes._');
   try {
     await sock.sendPresenceUpdate('composing', from);
     const sessionKey = `${from}_${sender}`;
@@ -222,44 +222,44 @@ async function simi(ctx) {
     session.history.push({ role: 'simi', text: clean });
     if (session.history.length > 20) session.history = session.history.slice(-20);
     simiSessions.set(sessionKey, session);
-    await send(sock, from, msg, `💬 *Simi*\n${clean}`);
+    await send(sock, from, msg, `*Simi*\n${clean}`);
   } catch (err) {
-    await send(sock, from, msg, `❌ Simi error: ${err.message}`);
+    await send(sock, from, msg, `Simi error: ${err.message}`);
   }
 }
 
 async function dalle(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, 'Usage: `.dalle <prompt>`\nExample: `.dalle a sunset over Mount Kenya, photorealistic`', '🎨 AI Image Generate');
-  await send(sock, from, msg, `Generating image for: _"${text}"_...`, '🎨 AI Image Generate');
+  if (!text) return send(sock, from, msg, 'Usage: `.dalle <prompt>`\nExample: `.dalle a sunset over Mount Kenya, photorealistic`', 'AI Image Generate');
+  await send(sock, from, msg, `Generating image for: _"${text}"_...`, 'AI Image Generate');
   try {
     const axios = require('axios');
     const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(text)}?width=1024&height=1024&nologo=true&enhance=true&model=flux`;
     const res = await axios.get(url, { responseType: 'arraybuffer', timeout: 60000 });
     await sendFireboxCard(sock, from, msg, {
-      title: '🎨 AI Image Generated',
-      content: `✅ Image ready!\n📝 *Prompt:* _"${text}"_`,
+      title: 'AI Image Generated',
+      content: `Image ready!\n*Prompt:* _"${text}"_`,
       media: { type: 'image', buffer: Buffer.from(res.data), mimetype: 'image/jpeg' },
     });
-  } catch (err) { await send(sock, from, msg, `❌ Image generation failed: ${err.message}`, '🎨 AI Image Generate'); }
+  } catch (err) { await send(sock, from, msg, `Image generation failed: ${err.message}`, 'AI Image Generate'); }
 }
 
 async function generate(ctx) { return dalle(ctx); }
 
 async function deepseek(ctx) {
   const { sock, from, msg, text, sender, sessionState } = ctx;
-  if (!text) return send(sock, from, msg, '🧠 *DeepSeek AI*\nUsage: `.deepseek <question>`\nExample: `.deepseek Explain quantum entanglement`\n_DeepSeek is a powerful reasoning AI._');
+  if (!text) return send(sock, from, msg, '*DeepSeek AI*\nUsage: `.deepseek <question>`\nExample: `.deepseek Explain quantum entanglement`\n_DeepSeek is a powerful reasoning AI._');
   try {
     await sock.sendPresenceUpdate('composing', from);
     const raw = await openRouterPrompt(text, 'deepseek/deepseek-chat-v3-0324:free');
-    await sendWithPrompts(sock, from, msg, sessionState, sender, '🧠 *DeepSeek AI*\n', raw, '.deepseek ');
-  } catch (err) { await send(sock, from, msg, `❌ DeepSeek error: ${err.message}`); }
+    await sendWithPrompts(sock, from, msg, sessionState, sender, '*DeepSeek AI*\n', raw, '.deepseek ');
+  } catch (err) { await send(sock, from, msg, `DeepSeek error: ${err.message}`); }
 }
 
 async function doppleai(ctx) {
   const { sock, from, msg, text, args } = ctx;
   if (!text) return send(sock, from, msg,
-    '🎭 *DoppleAI — Character Chat*\n' +
+    '*DoppleAI — Character Chat*\n' +
     'Chat with a famous personality!\n' +
     'Usage: `.doppleai <character> | <message>`\n' +
     'Example: `.doppleai Elon Musk | What do you think about AI?`\n' +
@@ -276,8 +276,8 @@ async function doppleai(ctx) {
       { role: 'user', content: userMsg }
     ];
     const reply = await openRouterChat(messages);
-    await send(sock, from, msg, `🎭 *${character}:*\n${reply.trim()}\n_— ${character}_`);
-  } catch (err) { await send(sock, from, msg, `❌ DoppleAI error: ${err.message}`); }
+    await send(sock, from, msg, `*${character}:*\n${reply.trim()}\n_— ${character}_`);
+  } catch (err) { await send(sock, from, msg, `DoppleAI error: ${err.message}`); }
 }
 
 module.exports = { chat, code, story, summarize, recipe, teach, analyze, translate, blackbox, simi, dalle, generate, deepseek, doppleai };

@@ -2,14 +2,14 @@ const axios = require('axios');
 const { sendFireboxCard } = require('../card');
 
 async function send(sock, from, msg, text, title) {
-  return sendFireboxCard(sock, from, msg, { title: title || '📖 Firebox Religion', content: text });
+  return sendFireboxCard(sock, from, msg, { title: title || 'Firebox Religion', content: text });
 }
 
 async function bible(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text) {
     return send(sock, from, msg,
-      '📖 *Bible Verse*\n\n' +
+      '*Bible Verse*\n\n' +
       'Usage:\n' +
       '  `.bible John 3:16`\n' +
       '  `.bible Psalms 23:1-6`\n' +
@@ -28,7 +28,7 @@ async function bible(ctx) {
     ? randomVerses[Math.floor(Math.random() * randomVerses.length)]
     : text.trim();
 
-  await send(sock, from, msg, `📖 Fetching *${query}*...`);
+  await send(sock, from, msg, `Fetching *${query}*...`);
 
   try {
     const encoded = encodeURIComponent(query);
@@ -36,7 +36,7 @@ async function bible(ctx) {
     const d = res.data;
 
     if (!d.verses || d.verses.length === 0) {
-      return send(sock, from, msg, `❌ Verse not found: *${query}*\n\nTry: \`.bible John 3:16\` or \`.bible random\``);
+      return send(sock, from, msg, `Verse not found: *${query}*\n\nTry: \`.bible John 3:16\` or \`.bible random\``);
     }
 
     const verseText = d.verses.map(v => `[${v.verse}] ${v.text.trim()}`).join('\n');
@@ -44,8 +44,8 @@ async function bible(ctx) {
     const translation = (d.translation_name || 'King James Version').toUpperCase();
 
     const reply =
-      `📖 *${reference}*\n` +
-      `📜 _${translation}_\n` +
+      `*${reference}*\n` +
+      `_${translation}_\n` +
       `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
       `${verseText}\n` +
       `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
@@ -54,7 +54,7 @@ async function bible(ctx) {
     await send(sock, from, msg, reply);
   } catch (err) {
     await send(sock, from, msg,
-      `❌ Could not fetch verse: *${query}*\n\n` +
+      `Could not fetch verse: *${query}*\n\n` +
       `Make sure the format is correct:\n` +
       `• \`.bible John 3:16\`\n` +
       `• \`.bible Psalms 23:1-6\`\n` +
@@ -67,7 +67,7 @@ async function quran(ctx) {
   const { sock, from, msg, args, text } = ctx;
   if (!text) {
     return send(sock, from, msg,
-      '🕌 *Quran Verse*\n\n' +
+      '*Quran Verse*\n\n' +
       'Usage:\n' +
       '  `.quran 2:255` _(Surah:Ayah)_\n' +
       '  `.quran 1` _(entire surah)_\n' +
@@ -90,10 +90,10 @@ async function quran(ctx) {
   }
 
   if (!surah || isNaN(surah) || surah < 1 || surah > 114) {
-    return send(sock, from, msg, `❌ Invalid surah number. Must be 1–114.\n\nExample: \`.quran 2:255\``);
+    return send(sock, from, msg, `Invalid surah number. Must be 1–114.\n\nExample: \`.quran 2:255\``);
   }
 
-  await send(sock, from, msg, `🕌 Fetching *Surah ${surah}${ayah ? ':' + ayah : ''}*...`);
+  await send(sock, from, msg, `Fetching *Surah ${surah}${ayah ? ':' + ayah : ''}*...`);
 
   try {
     let apiUrl, isFullSurah = false;
@@ -107,7 +107,7 @@ async function quran(ctx) {
     const res = await axios.get(apiUrl, { timeout: 15000 });
     const d = res.data;
 
-    if (d.code !== 200) return send(sock, from, msg, `❌ Verse not found. Try: \`.quran 2:255\``);
+    if (d.code !== 200) return send(sock, from, msg, `Verse not found. Try: \`.quran 2:255\``);
 
     if (ayah) {
       const arabic = d.data[0];
@@ -116,8 +116,8 @@ async function quran(ctx) {
       const surahArabic = arabic.surah?.name || '';
 
       const reply =
-        `🕌 *${surahName}* ${surahArabic ? `(${surahArabic})` : ''}\n` +
-        `📍 _Surah ${surah}, Ayah ${ayah}_\n` +
+        `*${surahName}* ${surahArabic ? `(${surahArabic})` : ''}\n` +
+        `_Surah ${surah}, Ayah ${ayah}_\n` +
         `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
         `*Arabic:*\n${arabic.text}\n` +
         `*English (Asad):*\n_${english.text}_\n` +
@@ -138,8 +138,8 @@ async function quran(ctx) {
       ).join('\n');
 
       const reply =
-        `🕌 *${surahInfo}*\n` +
-        `📍 _Surah ${surah} — ${totalAyahs} ayahs_\n` +
+        `*${surahInfo}*\n` +
+        `_Surah ${surah} — ${totalAyahs} ayahs_\n` +
         `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
         `*Arabic (First Ayah):*\n${ayahs[0]?.text || ''}\n` +
         `*English Translation:*\n${preview}${totalAyahs > 5 ? `\n_...and ${totalAyahs - 5} more ayahs_` : ''}\n` +
@@ -150,7 +150,7 @@ async function quran(ctx) {
     }
   } catch (err) {
     await send(sock, from, msg,
-      `❌ Could not fetch Quran verse.\n\n` +
+      `Could not fetch Quran verse.\n\n` +
       `Try:\n• \`.quran 2:255\`\n• \`.quran 1\`\n• \`.quran random\``
     );
   }

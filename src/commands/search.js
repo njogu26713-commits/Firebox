@@ -3,14 +3,14 @@ const ytSearch = require('yt-search');
 const { sendFireboxCard } = require('../card');
 
 async function send(sock, from, msg, text, title) {
-  return sendFireboxCard(sock, from, msg, { title: title || '🔍 Firebox Search', content: text });
+  return sendFireboxCard(sock, from, msg, { title: title || 'Firebox Search', content: text });
 }
 
 async function weather(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '🌤️ Usage: .weather <city>\nExample: .weather Nairobi');
+  if (!text) return send(sock, from, msg, 'Usage: .weather <city>\nExample: .weather Nairobi');
   try {
-    await send(sock, from, msg, `🌤️ Fetching weather for *${text}*...`);
+    await send(sock, from, msg, `Fetching weather for *${text}*...`);
     const res = await axios.get(`https://wttr.in/${encodeURIComponent(text)}?format=j1`, { timeout: 10000 });
     const d = res.data;
     const current = d.current_condition[0];
@@ -24,19 +24,19 @@ async function weather(ctx) {
     const desc = current.weatherDesc[0].value;
     const uv = current.uvIndex;
 
-    const reply = `🌍 *Weather — ${areaName}, ${country}*\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n🌡️ *Temperature:* ${temp}°C\n🤔 *Feels Like:* ${feels}°C\n☁️ *Condition:* ${desc}\n💧 *Humidity:* ${humidity}%\n💨 *Wind Speed:* ${wind} km/h\n☀️ *UV Index:* ${uv}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰`;
+    const reply = `*Weather — ${areaName}, ${country}*\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n*Temperature:* ${temp}°C\n*Feels Like:* ${feels}°C\n*Condition:* ${desc}\n*Humidity:* ${humidity}%\n*Wind Speed:* ${wind} km/h\n*UV Index:* ${uv}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰`;
 
     await send(sock, from, msg, reply);
   } catch (err) {
-    await send(sock, from, msg, `❌ Could not fetch weather. Check the city name and try again.`);
+    await send(sock, from, msg, `Could not fetch weather. Check the city name and try again.`);
   }
 }
 
 async function lyrics(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '🎵 Usage: .lyrics <song name>\nExample: .lyrics Shape of You Ed Sheeran');
+  if (!text) return send(sock, from, msg, 'Usage: .lyrics <song name>\nExample: .lyrics Shape of You Ed Sheeran');
   try {
-    await send(sock, from, msg, `🎵 Searching lyrics for *${text}*...`);
+    await send(sock, from, msg, `Searching lyrics for *${text}*...`);
 
     const searchRes = await axios.get(`https://lrclib.net/api/search`, {
       params: { q: text },
@@ -45,33 +45,33 @@ async function lyrics(ctx) {
 
     const results = searchRes.data;
     if (!results || results.length === 0) {
-      return send(sock, from, msg, `❌ Lyrics not found for "*${text}*". Try including the artist name, e.g. _Shape of You Ed Sheeran_`);
+      return send(sock, from, msg, `Lyrics not found for "*${text}*". Try including the artist name, e.g. _Shape of You Ed Sheeran_`);
     }
 
     const best = results.find(r => r.plainLyrics) || results[0];
     const lyricsText = best.plainLyrics;
 
     if (!lyricsText) {
-      return send(sock, from, msg, `❌ Lyrics not found for "*${text}*".`);
+      return send(sock, from, msg, `Lyrics not found for "*${text}*".`);
     }
 
     const songTitle = best.trackName || text;
     const artistName = best.artistName || '';
     const duration = best.duration ? `${Math.floor(best.duration / 60)}:${String(Math.floor(best.duration % 60)).padStart(2, '0')}` : '';
 
-    const header = `🎵 *${songTitle}*${artistName ? ` — ${artistName}` : ''}${duration ? ` (${duration})` : ''}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n`;
+    const header = `*${songTitle}*${artistName ? ` — ${artistName}` : ''}${duration ? ` (${duration})` : ''}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n`;
     const trimmed = lyricsText.slice(0, 3500 - header.length);
     const truncated = lyricsText.length > (3500 - header.length);
 
     await send(sock, from, msg, `${header}${trimmed}${truncated ? '\n\n_...lyrics truncated_' : ''}`);
   } catch (err) {
-    await send(sock, from, msg, `❌ Lyrics not found for "*${text}*". Try: _artist name + song title_`);
+    await send(sock, from, msg, `Lyrics not found for "*${text}*". Try: _artist name + song title_`);
   }
 }
 
 async function define(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '📖 Usage: .define <word>\nExample: .define serendipity');
+  if (!text) return send(sock, from, msg, 'Usage: .define <word>\nExample: .define serendipity');
   try {
     const word = text.split(' ')[0].toLowerCase();
     const res = await axios.get(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`, { timeout: 10000 });
@@ -84,55 +84,55 @@ async function define(ctx) {
 
     const synonyms = entry.meanings[0]?.definitions[0]?.synonyms?.slice(0, 5).join(', ') || 'None';
 
-    const reply = `📖 *${word}* ${phonetic}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n${meanings}\n🔗 *Synonyms:* ${synonyms}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰`;
+    const reply = `*${word}* ${phonetic}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n${meanings}\n*Synonyms:* ${synonyms}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰`;
 
     await send(sock, from, msg, reply);
   } catch (err) {
-    await send(sock, from, msg, `❌ Word "*${text}*" not found in the dictionary.`);
+    await send(sock, from, msg, `Word "*${text}*" not found in the dictionary.`);
   }
 }
 
 async function yts(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '🔍 Usage: .yts <search query>\nExample: .yts Bohemian Rhapsody');
+  if (!text) return send(sock, from, msg, 'Usage: .yts <search query>\nExample: .yts Bohemian Rhapsody');
   try {
-    await send(sock, from, msg, `🔍 Searching YouTube for *${text}*...`);
+    await send(sock, from, msg, `Searching YouTube for *${text}*...`);
     const results = await ytSearch(text);
     const videos = results.videos.slice(0, 5);
-    if (!videos.length) return send(sock, from, msg, '❌ No results found!');
+    if (!videos.length) return send(sock, from, msg, 'No results found!');
 
     const list = videos.map((v, i) =>
-      `${i + 1}. 🎬 *${v.title}*\n   ⏱ ${v.timestamp} | 👁 ${Number(v.views).toLocaleString()} views\n   🔗 https://youtu.be/${v.videoId}`
+      `${i + 1}. *${v.title}*\n   ${v.timestamp} | ${Number(v.views).toLocaleString()} views\n   https://youtu.be/${v.videoId}`
     ).join('\n\n');
 
-    await send(sock, from, msg, `🔍 *YouTube Results for "${text}"*\n\n${list}\n\n_Use .play or .video to download_`);
+    await send(sock, from, msg, `*YouTube Results for "${text}"*\n\n${list}\n\n_Use .play or .video to download_`);
   } catch (err) {
-    await send(sock, from, msg, `❌ Search failed: ${err.message}`);
+    await send(sock, from, msg, `Search failed: ${err.message}`);
   }
 }
 
 async function imdb(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '🎬 Usage: .imdb <movie or show name>');
+  if (!text) return send(sock, from, msg, 'Usage: .imdb <movie or show name>');
   try {
-    await send(sock, from, msg, `🎬 Searching IMDB for *${text}*...`);
+    await send(sock, from, msg, `Searching IMDB for *${text}*...`);
     const res = await axios.get(`https://www.omdbapi.com/?t=${encodeURIComponent(text)}&apikey=trilogy`, { timeout: 10000 });
     const d = res.data;
-    if (d.Response === 'False') return send(sock, from, msg, `❌ Movie/Show "*${text}*" not found.`);
+    if (d.Response === 'False') return send(sock, from, msg, `Movie/Show "*${text}*" not found.`);
 
-    const reply = `🎬 *${d.Title}* (${d.Year})\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n📋 *Type:* ${d.Type}\n🎭 *Genre:* ${d.Genre}\n⭐ *Rating:* ${d.imdbRating}/10 (${d.imdbVotes} votes)\n⏱️ *Runtime:* ${d.Runtime}\n🌍 *Language:* ${d.Language}\n🎬 *Director:* ${d.Director}\n🌟 *Cast:* ${d.Actors}\n📝 *Plot:* ${d.Plot}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰`;
+    const reply = `*${d.Title}* (${d.Year})\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n*Type:* ${d.Type}\n*Genre:* ${d.Genre}\n*Rating:* ${d.imdbRating}/10 (${d.imdbVotes} votes)\n*Runtime:* ${d.Runtime}\n*Language:* ${d.Language}\n*Director:* ${d.Director}\n*Cast:* ${d.Actors}\n*Plot:* ${d.Plot}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰`;
 
     await send(sock, from, msg, reply);
   } catch (err) {
-    await send(sock, from, msg, `❌ IMDB search failed.`);
+    await send(sock, from, msg, `IMDB search failed.`);
   }
 }
 
 async function songinfo(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '🎵 Usage: .songinfo <song name>\nExample: .songinfo Blinding Lights The Weeknd');
+  if (!text) return send(sock, from, msg, 'Usage: .songinfo <song name>\nExample: .songinfo Blinding Lights The Weeknd');
   try {
-    await send(sock, from, msg, `🔍 Searching song info for *${text}*...`);
+    await send(sock, from, msg, `Searching song info for *${text}*...`);
 
     const res = await axios.get('https://itunes.apple.com/search', {
       params: { term: text, media: 'music', entity: 'song', limit: 5 },
@@ -141,7 +141,7 @@ async function songinfo(ctx) {
 
     const results = res.data.results;
     if (!results || results.length === 0) {
-      return send(sock, from, msg, `❌ No song found for "*${text}*". Try including the artist name.`);
+      return send(sock, from, msg, `No song found for "*${text}*". Try including the artist name.`);
     }
 
     const song = results[0];
@@ -157,13 +157,13 @@ async function songinfo(ctx) {
       ? song.artworkUrl100.replace('100x100bb', '600x600bb')
       : null;
 
-    const caption = `🎵 *${title}*\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n👤 *Artist:* ${artist}\n💿 *Album:* ${album}\n🎭 *Genre:* ${genre}\n📅 *Year:* ${released}\n⏱️ *Duration:* ${duration}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n_Use .lyrics ${title} to get the lyrics_`;
+    const caption = `*${title}*\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n*Artist:* ${artist}\n*Album:* ${album}\n*Genre:* ${genre}\n*Year:* ${released}\n*Duration:* ${duration}\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n_Use .lyrics ${title} to get the lyrics_`;
 
     if (artworkUrl) {
       try {
         const imgRes = await axios.get(artworkUrl, { responseType: 'arraybuffer', timeout: 15000 });
         await sendFireboxCard(sock, from, msg, {
-          title: `🎵 ${title} — ${artist}`,
+          title: `${title} — ${artist}`,
           content: caption,
           media: { type: 'image', buffer: Buffer.from(imgRes.data), mimetype: 'image/jpeg' },
         });
@@ -173,9 +173,9 @@ async function songinfo(ctx) {
       }
     }
 
-    await send(sock, from, msg, caption, `🎵 ${title}`);
+    await send(sock, from, msg, caption, `${title}`);
   } catch (err) {
-    await send(sock, from, msg, `❌ Could not fetch song info for "*${text}*".`);
+    await send(sock, from, msg, `Could not fetch song info for "*${text}*".`);
   }
 }
 
@@ -184,13 +184,13 @@ async function shazam(ctx) {
   const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
   if (!quoted?.audioMessage && !quoted?.videoMessage) {
     return send(sock, from, msg,
-      '🎵 *Shazam — Song Recognition*\n\n' +
+      '*Shazam — Song Recognition*\n\n' +
       'Reply to an audio or video message with `.shazam`\n' +
       'The bot will identify the song for you!\n\n' +
       '_Works best with music clips 10+ seconds long._'
     );
   }
-  await send(sock, from, msg, '🎵 Identifying song... please wait...');
+  await send(sock, from, msg, 'Identifying song... please wait...');
   try {
     const qCtx = msg.message.extendedTextMessage.contextInfo;
     const fakeMsg = {
@@ -219,11 +219,11 @@ async function shazam(ctx) {
     if (!track) throw new Error('Song not recognized');
 
     const reply =
-      `🎵 *Song Identified!*\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
-      `🎤 *Title:* ${track.title || 'Unknown'}\n` +
-      `👤 *Artist:* ${track.subtitle || 'Unknown'}\n` +
-      `${track.sections?.[0]?.metadata?.[0]?.text ? `💿 *Album:* ${track.sections[0].metadata[0].text}\n` : ''}` +
-      `${track.genres?.primary ? `🎭 *Genre:* ${track.genres.primary}\n` : ''}` +
+      `*Song Identified!*\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
+      `*Title:* ${track.title || 'Unknown'}\n` +
+      `*Artist:* ${track.subtitle || 'Unknown'}\n` +
+      `${track.sections?.[0]?.metadata?.[0]?.text ? `*Album:* ${track.sections[0].metadata[0].text}\n` : ''}` +
+      `${track.genres?.primary ? `*Genre:* ${track.genres.primary}\n` : ''}` +
       `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n_Use .lyrics ${track.title || ''} to get lyrics_`;
 
     const imgUrl = track.images?.coverart;
@@ -231,19 +231,19 @@ async function shazam(ctx) {
       try {
         const imgRes = await axios.get(imgUrl, { responseType: 'arraybuffer', timeout: 15000 });
         await sendFireboxCard(sock, from, msg, {
-          title: `🎵 ${track.title || 'Song Identified'}`,
+          title: `${track.title || 'Song Identified'}`,
           content: reply,
           media: { type: 'image', buffer: Buffer.from(imgRes.data), mimetype: 'image/jpeg' },
         });
         return;
       } catch {}
     }
-    await send(sock, from, msg, reply, '🎵 Shazam');
+    await send(sock, from, msg, reply, 'Shazam');
   } catch (err) {
     if (err.response?.status === 401 || err.response?.status === 403 || !process.env.RAPIDAPI_KEY) {
       await send(sock, from, msg,
-        '🎵 *Shazam*\n\n' +
-        '⚠️ Shazam recognition requires a RapidAPI key.\n\n' +
+        '*Shazam*\n\n' +
+        'Shazam recognition requires a RapidAPI key.\n\n' +
         '*To enable:*\n' +
         '1. Get free key at rapidapi.com\n' +
         '2. Subscribe to Shazam API (free tier)\n' +
@@ -251,7 +251,7 @@ async function shazam(ctx) {
         '_Try `.lyrics <song name>` if you know what song it might be!_'
       );
     } else {
-      await send(sock, from, msg, `❌ Shazam failed: ${err.message}\n\n_Try sending a clearer audio clip._`);
+      await send(sock, from, msg, `Shazam failed: ${err.message}\n\n_Try sending a clearer audio clip._`);
     }
   }
 }

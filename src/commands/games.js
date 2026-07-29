@@ -3,7 +3,7 @@ const axios = require('axios');
 const { sendFireboxCard } = require('../card');
 
 async function send(sock, from, msg, text, title) {
-  return sendFireboxCard(sock, from, msg, { title: title || '🎮 Firebox Games', content: text });
+  return sendFireboxCard(sock, from, msg, { title: title || 'Firebox Games', content: text });
 }
 
 const TRUTHS = [
@@ -49,38 +49,38 @@ const DARES = [
   "Write a poem about the person above you in the chat.",
   "Describe yourself in 3 emojis only.",
   "Share the most recent meme you saved.",
-  "Set any contact name to 'My Bestie 💕' for an hour."
+  "Set any contact name to 'My Bestie ' for an hour."
 ];
 
 async function eightBall(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '🎱 Ask me a yes/no question!\n*Example:* .8ball Will I be rich?', '🎱 Magic 8 Ball');
+  if (!text) return send(sock, from, msg, 'Ask me a yes/no question!\n*Example:* .8ball Will I be rich?', 'Magic 8 Ball');
 
   const responses = [
-    '✅ It is certain.', '✅ It is decidedly so.', '✅ Without a doubt.',
-    '✅ Yes, definitely.', '✅ You may rely on it.', '✅ As I see it, yes.',
-    '✅ Most likely.', '✅ Outlook good.', '✅ Yes.',
-    '✅ Signs point to yes.', '🤷 Reply hazy, try again.',
-    '🤷 Ask again later.', '🤷 Better not tell you now.',
-    '🤷 Cannot predict now.', '🤷 Concentrate and ask again.',
-    '❌ Don\'t count on it.', '❌ My reply is no.',
-    '❌ My sources say no.', '❌ Outlook not so good.', '❌ Very doubtful.'
+    'It is certain.', 'It is decidedly so.', 'Without a doubt.',
+    'Yes, definitely.', 'You may rely on it.', 'As I see it, yes.',
+    'Most likely.', 'Outlook good.', 'Yes.',
+    'Signs point to yes.', 'Reply hazy, try again.',
+    'Ask again later.', 'Better not tell you now.',
+    'Cannot predict now.', 'Concentrate and ask again.',
+    'Don\'t count on it.', 'My reply is no.',
+    'My sources say no.', 'Outlook not so good.', 'Very doubtful.'
   ];
 
   const answer = responses[Math.floor(Math.random() * responses.length)];
-  await send(sock, from, msg, `❓ _${text}_\n${answer}`, '🎱 Magic 8 Ball');
+  await send(sock, from, msg, `_${text}_\n${answer}`, 'Magic 8 Ball');
 }
 
 async function truth(ctx) {
   const { sock, from, msg } = ctx;
   const q = TRUTHS[Math.floor(Math.random() * TRUTHS.length)];
-  await send(sock, from, msg, q, '💬 Truth');
+  await send(sock, from, msg, q, 'Truth');
 }
 
 async function dare(ctx) {
   const { sock, from, msg } = ctx;
   const d = DARES[Math.floor(Math.random() * DARES.length)];
-  await send(sock, from, msg, d, '🎯 Dare');
+  await send(sock, from, msg, d, 'Dare');
 }
 
 async function trivia(ctx) {
@@ -90,7 +90,7 @@ async function trivia(ctx) {
   if (existing) {
     return send(sock, from, msg,
       `*Q:* ${existing.question}\n_Type your answer!_`,
-      '❓ Active Trivia'
+      'Active Trivia'
     );
   }
 
@@ -109,27 +109,27 @@ async function trivia(ctx) {
     db.setTrivia(from, question, answer);
 
     const body =
-      `📚 *Category:* ${item.category}\n` +
-      `🎯 *Difficulty:* ${item.difficulty.toUpperCase()}\n` +
-      `❓ ${question}\n` +
-      `${allAnswers.map((a, i) => `${['🇦', '🇧', '🇨', '🇩'][i]} ${a}`).join('\n')}\n` +
+      `*Category:* ${item.category}\n` +
+      `*Difficulty:* ${item.difficulty.toUpperCase()}\n` +
+      `${question}\n` +
+      `${allAnswers.map((a, i) => `${['', '', '', ''][i]} ${a}`).join('\n')}\n` +
       `_You have 60 seconds to answer!_`;
 
-    await send(sock, from, msg, body, '🎯 Trivia Time!');
+    await send(sock, from, msg, body, 'Trivia Time!');
 
     setTimeout(async () => {
       const current = db.getTrivia(from);
       if (current) {
         db.clearTrivia(from);
         await sendFireboxCard(sock, from, null, {
-          title: '⏰ Time\'s Up!',
-          content: `✅ The answer was: *${answer}*`,
+          title: 'Time\'s Up!',
+          content: `The answer was: *${answer}*`,
           noQuote: true,
         });
       }
     }, 60000);
   } catch (err) {
-    await send(sock, from, msg, '❌ Could not fetch trivia. Try again!');
+    await send(sock, from, msg, 'Could not fetch trivia. Try again!');
   }
 }
 
@@ -137,18 +137,18 @@ async function dice(ctx) {
   const { sock, from, msg, text } = ctx;
   const sides = Math.min(parseInt(text) || 6, 1000);
   const result = Math.floor(Math.random() * sides) + 1;
-  const dieFaces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+  const dieFaces = ['', '', '', '', '', ''];
   const display = sides === 6 ? dieFaces[result - 1] : `*${result}*`;
   await send(sock, from, msg,
-    `🎲 Rolling a *${sides}*-sided die...\n${display} — You got *${result}*!`,
-    '🎲 Dice Roll'
+    `Rolling a *${sides}*-sided die...\n${display} — You got *${result}*!`,
+    'Dice Roll'
   );
 }
 
 async function coinFlip(ctx) {
   const { sock, from, msg } = ctx;
-  const result = Math.random() < 0.5 ? '🪙 *HEADS!*' : '🪙 *TAILS!*';
-  await send(sock, from, msg, `Flipping...\n${result}`, '🪙 Coin Flip');
+  const result = Math.random() < 0.5 ? '*HEADS!*' : '*TAILS!*';
+  await send(sock, from, msg, `Flipping...\n${result}`, 'Coin Flip');
 }
 
 async function joke(ctx) {
@@ -163,10 +163,10 @@ async function joke(ctx) {
 
   try {
     const res = await axios.get('https://official-joke-api.appspot.com/random_joke', { timeout: 8000 });
-    await send(sock, from, msg, `${res.data.setup}\n_${res.data.punchline}_`, '😂 Joke');
+    await send(sock, from, msg, `${res.data.setup}\n_${res.data.punchline}_`, 'Joke');
   } catch {
     const j = fallback[Math.floor(Math.random() * fallback.length)];
-    await send(sock, from, msg, `${j.setup}\n_${j.punchline}_`, '😂 Joke');
+    await send(sock, from, msg, `${j.setup}\n_${j.punchline}_`, 'Joke');
   }
 }
 
@@ -184,9 +184,9 @@ async function fact(ctx) {
 
   try {
     const res = await axios.get('https://uselessfacts.jsph.pl/api/v2/facts/random?language=en', { timeout: 8000 });
-    await send(sock, from, msg, res.data.text, '🧠 Random Fact');
+    await send(sock, from, msg, res.data.text, 'Random Fact');
   } catch {
-    await send(sock, from, msg, fallback[Math.floor(Math.random() * fallback.length)], '🧠 Random Fact');
+    await send(sock, from, msg, fallback[Math.floor(Math.random() * fallback.length)], 'Random Fact');
   }
 }
 
@@ -202,10 +202,10 @@ async function quote(ctx) {
 
   try {
     const res = await axios.get('https://api.quotable.io/random', { timeout: 8000 });
-    await send(sock, from, msg, `_"${res.data.content}"_\n— *${res.data.author}*`, '💫 Quote');
+    await send(sock, from, msg, `_"${res.data.content}"_\n— *${res.data.author}*`, 'Quote');
   } catch {
     const q = fallback[Math.floor(Math.random() * fallback.length)];
-    await send(sock, from, msg, `_"${q.content}"_\n— *${q.author}*`, '💫 Quote');
+    await send(sock, from, msg, `_"${q.content}"_\n— *${q.author}*`, 'Quote');
   }
 }
 
@@ -217,8 +217,8 @@ async function memes(ctx) {
     if (!d?.url) throw new Error('No meme URL');
     const imgRes = await axios.get(d.url, { responseType: 'arraybuffer', timeout: 20000 });
     await sendFireboxCard(sock, from, msg, {
-      title: '😂 Random Meme',
-      content: `*${d.title || 'Random Meme'}*\n👍 ${d.ups?.toLocaleString() || '?'} upvotes — r/${d.subreddit || 'memes'}`,
+      title: 'Random Meme',
+      content: `*${d.title || 'Random Meme'}*\n${d.ups?.toLocaleString() || '?'} upvotes — r/${d.subreddit || 'memes'}`,
       media: { type: 'image', buffer: Buffer.from(imgRes.data), mimetype: 'image/jpeg' },
     });
   } catch {
@@ -231,12 +231,12 @@ async function memes(ctx) {
     try {
       const r = await axios.get(url, { responseType: 'arraybuffer', timeout: 15000 });
       await sendFireboxCard(sock, from, msg, {
-        title: '😂 Random Meme',
-        content: 'Fresh meme for you! 🔥',
+        title: 'Random Meme',
+        content: 'Fresh meme for you! ',
         media: { type: 'image', buffer: Buffer.from(r.data), mimetype: 'image/jpeg' },
       });
     } catch {
-      await send(sock, from, msg, 'Why do programmers prefer dark mode?\n_Because light attracts bugs!_ 🐛', '😂 Meme');
+      await send(sock, from, msg, 'Why do programmers prefer dark mode?\n_Because light attracts bugs!_ ', 'Meme');
     }
   }
 }
@@ -244,19 +244,19 @@ async function memes(ctx) {
 async function truthdetector(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!text) return send(sock, from, msg,
-    'Usage: `.truthdetector <statement>`\nExample: `.truthdetector I never eat junk food`\n_Warning: purely for fun! 😂_',
-    '🔍 Truth Detector'
+    'Usage: `.truthdetector <statement>`\nExample: `.truthdetector I never eat junk food`\n_Warning: purely for fun! _',
+    'Truth Detector'
   );
 
   const results = [
-    { emoji: '✅', label: '100% TRUE', percent: 100, desc: 'Absolutely no doubt about it!' },
-    { emoji: '🟢', label: '87% TRUE', percent: 87, desc: 'Mostly believable, with minor doubts.' },
-    { emoji: '🟡', label: '50% TRUE', percent: 50, desc: 'Half truth, half story 👀' },
-    { emoji: '🟠', label: '23% TRUE', percent: 23, desc: 'Mostly false. Nice try though! 😂' },
-    { emoji: '❌', label: '0% TRUE', percent: 0, desc: 'This is a whole LIE! 🤥' },
-    { emoji: '🤔', label: 'SUSPICIOUS', percent: 42, desc: 'Something doesn\'t add up here...' },
-    { emoji: '😂', label: 'LAUGHABLY FALSE', percent: 5, desc: 'Not even close to truth!' },
-    { emoji: '🔥', label: '99% TRUE', percent: 99, desc: 'Almost definitely happened!' },
+    { emoji: '', label: '100% TRUE', percent: 100, desc: 'Absolutely no doubt about it!' },
+    { emoji: '', label: '87% TRUE', percent: 87, desc: 'Mostly believable, with minor doubts.' },
+    { emoji: '', label: '50% TRUE', percent: 50, desc: 'Half truth, half story ' },
+    { emoji: '', label: '23% TRUE', percent: 23, desc: 'Mostly false. Nice try though! ' },
+    { emoji: '', label: '0% TRUE', percent: 0, desc: 'This is a whole LIE! ' },
+    { emoji: '', label: 'SUSPICIOUS', percent: 42, desc: 'Something doesn\'t add up here...' },
+    { emoji: '', label: 'LAUGHABLY FALSE', percent: 5, desc: 'Not even close to truth!' },
+    { emoji: '', label: '99% TRUE', percent: 99, desc: 'Almost definitely happened!' },
   ];
 
   const hash = text.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
@@ -264,11 +264,11 @@ async function truthdetector(ctx) {
   const bar = '█'.repeat(Math.floor(result.percent / 10)) + '░'.repeat(10 - Math.floor(result.percent / 10));
 
   const body =
-    `📋 Statement:\n_"${text}"_\n` +
+    `Statement:\n_"${text}"_\n` +
     `${result.emoji} *Result: ${result.label}*\n[${bar}] ${result.percent}%\n` +
-    `📝 ${result.desc}\n_⚠️ For fun only — not a real lie detector!_`;
+    `${result.desc}\n_For fun only — not a real lie detector!_`;
 
-  await send(sock, from, msg, body, '🔍 Truth Detector');
+  await send(sock, from, msg, body, 'Truth Detector');
 }
 
 async function xxqc(ctx) {
@@ -288,7 +288,7 @@ async function xxqc(ctx) {
     "If animals could talk, which animal would be the rudest?",
   ];
   const q = questions[Math.floor(Math.random() * questions.length)];
-  await send(sock, from, msg, `🤔 ${q}\n_Reply with your answer!_`, '💬 Quick Question');
+  await send(sock, from, msg, `${q}\n_Reply with your answer!_`, 'Quick Question');
 }
 
 module.exports = { eightBall, truth, dare, trivia, dice, coinFlip, joke, fact, quote, memes, truthdetector, xxqc };

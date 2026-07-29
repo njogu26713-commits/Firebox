@@ -16,11 +16,11 @@ function getUptime() {
 async function ping(ctx) {
   const { sock, from, msg } = ctx;
   const start = performance.now();
-  const sentMsg = await sock.sendMessage(from, { text: '🏓 Pinging...' }, { quoted: msg });
+  const sentMsg = await sock.sendMessage(from, { text: 'Pinging...' }, { quoted: msg });
   const ms = (performance.now() - start).toFixed(2);
   await sendFireboxCard(sock, from, msg, {
-    title: '🏓 Ping',
-    content: `${f.bold('Pong!')} ⚡\n⚡ *Speed:* ${f.mono(ms + 'ms')}\n⏱️ *Uptime:* ${getUptime()}\n🏷️ *Version:* v2.0.0`,
+    title: 'Ping',
+    content: `${f.bold('Pong!')}\n*Speed:* ${f.mono(ms + 'ms')}\n*Uptime:* ${getUptime()}\n*Version:* v2.0.0`,
   });
 }
 
@@ -28,17 +28,17 @@ async function info(ctx) {
   const { sock, from, msg, sessionState } = ctx;
   const mem = process.memoryUsage();
   const content =
-    `🔥 *Name:*     ${f.boldItalic('Firebox')}\n` +
-    `🏷️ *Version:*  ${f.mono('v2.0.0')}\n` +
-    `⏱️ *Uptime:*   ${f.italic(getUptime())}\n` +
-    `💾 *RAM:*      ${f.mono((mem.rss / 1024 / 1024).toFixed(1) + ' MB')}\n` +
-    `🖥️ *Platform:* ${f.italic(os.platform() + ' (' + os.arch() + ')')}\n` +
-    `📦 *Node.js:*  ${f.mono(process.version)}\n` +
-    `🧠 *AI:*       ${f.italic('Google Gemini 2.0 Flash')}\n` +
-    `📊 *Messages:* ${f.bold(String(sessionState.messageCount))}\n` +
-    `⚡ *Commands:* ${f.bold(String(sessionState.commandCount))}\n` +
-    `_Built with ❤️ by Firebox_`;
-  await sendFireboxCard(sock, from, msg, { title: '🤖 Bot Info', content });
+    `*Name:*     ${f.boldItalic('Firebox')}\n` +
+    `*Version:*  ${f.mono('v2.0.0')}\n` +
+    `*Uptime:*   ${f.italic(getUptime())}\n` +
+    `*RAM:*      ${f.mono((mem.rss / 1024 / 1024).toFixed(1) + ' MB')}\n` +
+    `*Platform:* ${f.italic(os.platform() + ' (' + os.arch() + ')')}\n` +
+    `*Node.js:*  ${f.mono(process.version)}\n` +
+    `*AI:*       ${f.italic('Google Gemini 2.0 Flash')}\n` +
+    `*Messages:* ${f.bold(String(sessionState.messageCount))}\n` +
+    `*Commands:* ${f.bold(String(sessionState.commandCount))}\n` +
+    `_Built with by Firebox_`;
+  await sendFireboxCard(sock, from, msg, { title: 'Bot Info', content });
 }
 
 async function owner(ctx) {
@@ -46,16 +46,16 @@ async function owner(ctx) {
   const ownerNumber = process.env.OWNER_NUMBER || 'Not configured';
   const ownerName = process.env.OWNER_NAME || 'Owner';
   const content =
-    `👤 *Name:*   ${f.boldItalic(ownerName)}\n` +
-    `📱 *Number:* ${f.mono('+' + ownerNumber)}\n` +
-    `🤖 *Bot:*    ${f.italic('Firebox v2.0.0')}\n` +
-    `🌐 *Status:* ${f.bold('Online')} ✅\n` +
+    `*Name:*   ${f.boldItalic(ownerName)}\n` +
+    `*Number:* ${f.mono('+' + ownerNumber)}\n` +
+    `*Bot:*    ${f.italic('Firebox v2.0.0')}\n` +
+    `*Status:* ${f.bold('Online')}\n` +
     `_Contact owner for support_`;
   await sendFireboxCard(sock, from, msg, {
-    title: '👑 Bot Owner',
+    title: 'Bot Owner',
     content,
     buttons: ownerNumber !== 'Not configured'
-      ? [{ text: '💬 Chat Owner', url: `https://wa.me/${ownerNumber}` }]
+      ? [{ text: 'Chat Owner', url: `https://wa.me/${ownerNumber}` }]
       : [],
   });
 }
@@ -63,8 +63,8 @@ async function owner(ctx) {
 async function runtime(ctx) {
   const { sock, from, msg } = ctx;
   await sendFireboxCard(sock, from, msg, {
-    title: '⏱️ Bot Runtime',
-    content: `🔥 ${f.italic('Firebox')} has been running for:\n${f.mono(getUptime())}`,
+    title: 'Bot Runtime',
+    content: `${f.italic('Firebox')} has been running for:\n${f.mono(getUptime())}`,
   });
 }
 
@@ -77,7 +77,7 @@ async function menu(ctx) {
 
   const sections = [
     {
-      title: '🔵 General',
+      title: 'General',
       rows: [
         row(`${p}ping`,      'Check bot response speed',           `${p}ping`),
         row(`${p}info`,      'Bot info, uptime & stats',           `${p}info`),
@@ -91,7 +91,7 @@ async function menu(ctx) {
       ]
     },
     {
-      title: '🤖 AI Chat',
+      title: 'AI Chat',
       rows: [
         row(`${p}ai`,        'Ask Gemini AI anything',             `${p}ai`),
         row(`${p}analyze`,   'Analyze text or image with AI',      `${p}analyze`),
@@ -108,14 +108,14 @@ async function menu(ctx) {
       ]
     },
     {
-      title: '🎨 AI Image',
+      title: 'AI Image',
       rows: [
         row(`${p}dalle`,    'Generate image with DALL·E',          `${p}dalle`),
         row(`${p}generate`, 'Text-to-image AI art',                `${p}generate`),
       ]
     },
     {
-      title: '🎵 Download',
+      title: 'Download',
       rows: [
         row(`${p}play`,        'Download YouTube song as MP3',     `${p}play`),
         row(`${p}video`,       'Download YouTube video (≤10 min)', `${p}video`),
@@ -135,7 +135,7 @@ async function menu(ctx) {
       ]
     },
     {
-      title: '🔍 Search',
+      title: 'Search',
       rows: [
         row(`${p}lyrics`,   'Get song lyrics',                    `${p}lyrics`),
         row(`${p}songinfo`, 'Song details & info',                `${p}songinfo`),
@@ -147,7 +147,7 @@ async function menu(ctx) {
       ]
     },
     {
-      title: '🛠️ Tools',
+      title: 'Tools',
       rows: [
         row(`${p}sticker`,   'Convert image/video to sticker',   `${p}sticker`),
         row(`${p}toimg`,     'Convert sticker back to image',    `${p}toimg`),
@@ -164,13 +164,13 @@ async function menu(ctx) {
       ]
     },
     {
-      title: '✨ Fun & Extras',
+      title: 'Fun & Extras',
       rows: [
         row(`${p}time`,      'Current time for any city',        `${p}time`),
         row(`${p}anon`,      'Send anonymous message',           `${p}anon`),
         row(`${p}confess`,   'Send anonymous confession',        `${p}confess`),
         row(`${p}compliment`,'Get a compliment',                 `${p}compliment`),
-        row(`${p}roast`,     'Get roasted 🔥',                   `${p}roast`),
+        row(`${p}roast`,     'Get roasted ',                   `${p}roast`),
         row(`${p}wyr`,       'Would You Rather question',        `${p}wyr`),
         row(`${p}riddle`,    'Answer a riddle',                  `${p}riddle`),
         row(`${p}reverse`,   'Reverse any text',                 `${p}reverse`),
@@ -184,7 +184,7 @@ async function menu(ctx) {
       ]
     },
     {
-      title: '🎵 Audio Effects',
+      title: 'Audio Effects',
       rows: [
         row(`${p}bass`,         'Bass boost audio',              `${p}bass`),
         row(`${p}blown`,        'Blown speaker effect',          `${p}blown`),
@@ -198,7 +198,7 @@ async function menu(ctx) {
       ]
     },
     {
-      title: '🖼️ Image Effects',
+      title: 'Image Effects',
       rows: [
         row(`${p}blur`,       'Blur an image',                   `${p}blur`),
         row(`${p}cartoon`,    'Cartoonify an image',             `${p}cartoon`),
@@ -213,7 +213,7 @@ async function menu(ctx) {
       ]
     },
     {
-      title: '🖼️ More Effects',
+      title: 'More Effects',
       rows: [
         row(`${p}greyscale`,  'Black & white filter',            `${p}greyscale`),
         row(`${p}pixelate`,   'Pixelate image',                  `${p}pixelate`),
@@ -228,14 +228,14 @@ async function menu(ctx) {
       ]
     },
     {
-      title: '⛪ Religion',
+      title: 'Religion',
       rows: [
         row(`${p}bible`,  'Get a Bible verse',                   `${p}bible`),
         row(`${p}quran`,  'Get a Quran surah/ayah',              `${p}quran`),
       ]
     },
     {
-      title: '👥 Group',
+      title: 'Group',
       rows: [
         row(`${p}tagall`,      'Tag all group members',          `${p}tagall`),
         row(`${p}hidetag`,     'Tag all without showing names',  `${p}hidetag`),
@@ -250,7 +250,7 @@ async function menu(ctx) {
       ]
     },
     {
-      title: '🛡️ Group Protection',
+      title: 'Group Protection',
       rows: [
         row(`${p}warn`,        'Warn a member',                  `${p}warn`),
         row(`${p}antilink`,    'Toggle anti-link protection',    `${p}antilink`),
@@ -265,7 +265,7 @@ async function menu(ctx) {
       ]
     },
     {
-      title: '🎮 Games',
+      title: 'Games',
       rows: [
         row(`${p}8ball`,         'Ask the magic 8 ball',         `${p}8ball`),
         row(`${p}truth`,         'Truth question',               `${p}truth`),
@@ -283,7 +283,7 @@ async function menu(ctx) {
       ]
     },
     {
-      title: '💻 Hacking',
+      title: 'Hacking',
       rows: [
         row(`${p}iplookup`,  'Look up an IP address',            `${p}iplookup`),
         row(`${p}whois`,     'WHOIS domain lookup',              `${p}whois`),
@@ -300,7 +300,7 @@ async function menu(ctx) {
       ]
     },
     {
-      title: '👑 Owner',
+      title: 'Owner',
       rows: [
         row(`${p}dead`,       'Toggle bot dead/offline mode',    `${p}dead`),
         row(`${p}mode`,       'Set bot mode (public/private)',   `${p}mode`),
@@ -321,7 +321,7 @@ async function menu(ctx) {
       ]
     },
     {
-      title: '⚙️ Owner Auto',
+      title: 'Owner Auto',
       rows: [
         row(`${p}autoviewstatus`,  'Auto-view all statuses',     `${p}autoviewstatus`),
         row(`${p}autoreactstatus`, 'Auto-react to statuses',     `${p}autoreactstatus`),
@@ -342,7 +342,7 @@ async function menu(ctx) {
       ]
     },
     {
-      title: '🔧 Owner Settings',
+      title: 'Owner Settings',
       rows: [
         row(`${p}setbotname`,         'Change bot name',         `${p}setbotname`),
         row(`${p}setownername`,       'Change owner name',       `${p}setownername`),
@@ -372,10 +372,10 @@ async function menu(ctx) {
 
   const header =
     `╔══════════════════════╗\n` +
-    `║  🔥  ${f.bold('FIREBOX  BOT')}  🔥  ║\n` +
+    `║   ${f.bold('FIREBOX  BOT')}   ║\n` +
     `╚══════════════════════╝\n` +
-    `📌 ${f.smallCaps('Prefix')} » ${f.mono(p)}   ⏱️ ${f.smallCaps('Uptime')} » ${f.italic(getUptime())}\n` +
-    `🌐 ${f.smallCaps('Mode')}   » ${f.bold(botMode.toUpperCase())}\n` +
+    `${f.smallCaps('Prefix')} » ${f.mono(p)}   ${f.smallCaps('Uptime')} » ${f.italic(getUptime())}\n` +
+    `${f.smallCaps('Mode')}   » ${f.bold(botMode.toUpperCase())}\n` +
     `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n`;
 
   const footer =
@@ -389,15 +389,15 @@ async function menu(ctx) {
     const imgBuf   = await generateMenuImage(botName, p, userNum);
     const caption  = header + body + footer;
     await sendFireboxCard(sock, from, msg, {
-      title: '📋 All Commands',
+      title: 'All Commands',
       content: caption,
       media: { type: 'image', buffer: imgBuf, mimetype: 'image/png' },
-      buttons: [{ text: '📖 Get Help', url: `https://wa.me/${process.env.OWNER_NUMBER || ''}` }],
+      buttons: [{ text: 'Get Help', url: `https://wa.me/${process.env.OWNER_NUMBER || ''}` }],
     });
   } catch (err) {
     console.error('[MENU] Image generation failed:', err.message);
     await sendFireboxCard(sock, from, msg, {
-      title: '📋 All Commands',
+      title: 'All Commands',
       content: header + body + footer,
     });
   }
@@ -407,7 +407,7 @@ async function menu(ctx) {
 async function sendButtons(sock, from, msg, text, buttons, sender, prefix, sessionState) {
   const lines = buttons.map((b, i) => `  *${i + 1}.* ${b.label}`).join('\n');
   await sendFireboxCard(sock, from, msg, {
-    title: '📋 Select an Option',
+    title: 'Select an Option',
     content: `${text}\n${lines}`,
   });
   sessionState.pendingPrompts.set(sender, {
@@ -481,7 +481,7 @@ const HELP = {
   cancelschedule:{ usage: 'cancelschedule <id>', desc: 'Cancel a scheduled message by its ID.' },
   confess:      { usage: 'confess <message>', desc: 'Submit an anonymous confession.' },
   delete:       { usage: 'delete', desc: 'Reply to a message to delete it (bot must be admin in groups).' },
-  emojimix:     { usage: 'emojimix <emoji1> <emoji2>', desc: 'Mix two emojis together. e.g. .emojimix 😀 😎' },
+  emojimix:     { usage: 'emojimix <emoji1> <emoji2>', desc: 'Mix two emojis together. e.g. .emojimix ' },
   fancy:        { usage: 'fancy <text>', desc: 'Convert text into fancy Unicode fonts.' },
   forward:      { usage: 'forward <number>', desc: 'Reply to a message to forward it to a number.' },
   genpass:      { usage: 'genpass [length]', desc: 'Generate a secure random password. Default length: 16.' },
@@ -600,14 +600,14 @@ async function help(ctx) {
   const entry = HELP[query];
   if (!entry) {
     await sendFireboxCard(sock, from, msg, {
-      title: '❓ Help',
-      content: `❌ No help found for *${p}${query}*\nType *${p}menu* to see all commands.`,
+      title: 'Help',
+      content: `No help found for *${p}${query}*\nType *${p}menu* to see all commands.`,
     });
     return;
   }
 
   await sendFireboxCard(sock, from, msg, {
-    title: `📖 ${p}${entry.usage}`,
+    title: `${p}${entry.usage}`,
     content: entry.desc,
   });
 }
@@ -617,22 +617,22 @@ async function ping2(ctx) {
   const { performance } = require('perf_hooks');
   const os = require('os');
   const start = performance.now();
-  await sock.sendMessage(from, { text: '🏓 Measuring...' }, { quoted: msg });
+  await sock.sendMessage(from, { text: 'Measuring...' }, { quoted: msg });
   const ms = (performance.now() - start).toFixed(2);
   const mem = process.memoryUsage();
   const cpus = os.cpus();
   const load = os.loadavg()[0].toFixed(2);
   const content =
-    `⚡ *Latency:*   ${ms}ms\n` +
-    `💾 *RAM:*       ${(mem.rss / 1024 / 1024).toFixed(1)}MB used\n` +
-    `🔄 *Heap:*      ${(mem.heapUsed / 1024 / 1024).toFixed(1)}/${(mem.heapTotal / 1024 / 1024).toFixed(1)}MB\n` +
-    `💻 *CPU Load:*  ${load} avg\n` +
-    `🖥️ *Cores:*     ${cpus.length} × ${cpus[0]?.model?.split(' ').slice(-1)[0] || 'CPU'}\n` +
-    `⏱️ *Uptime:*    ${getUptime()}\n` +
-    `📊 *Messages:*  ${sessionState.messageCount}\n` +
-    `⚡ *Commands:*  ${sessionState.commandCount}\n` +
-    `📦 *Node.js:*   ${process.version}`;
-  await sendFireboxCard(sock, from, msg, { title: '🏓 Detailed Stats', content });
+    `*Latency:*   ${ms}ms\n` +
+    `*RAM:*       ${(mem.rss / 1024 / 1024).toFixed(1)}MB used\n` +
+    `*Heap:*      ${(mem.heapUsed / 1024 / 1024).toFixed(1)}/${(mem.heapTotal / 1024 / 1024).toFixed(1)}MB\n` +
+    `*CPU Load:*  ${load} avg\n` +
+    `*Cores:*     ${cpus.length} × ${cpus[0]?.model?.split(' ').slice(-1)[0] || 'CPU'}\n` +
+    `*Uptime:*    ${getUptime()}\n` +
+    `*Messages:*  ${sessionState.messageCount}\n` +
+    `*Commands:*  ${sessionState.commandCount}\n` +
+    `*Node.js:*   ${process.version}`;
+  await sendFireboxCard(sock, from, msg, { title: 'Detailed Stats', content });
 }
 
 async function botstatus(ctx) {
@@ -645,26 +645,26 @@ async function botstatus(ctx) {
   const ownerName = db.getBotSetting('ownerName') || process.env.OWNER_NAME || 'Owner';
 
   const flags = [
-    ['🌐 Mode',              mode === 'private' ? '🔒 PRIVATE' : '🌍 PUBLIC'],
-    ['🤖 Chatbot',           db.getBotSetting('aiChatbot') ? '✅ ON' : '❌ OFF'],
-    ['👁️ Auto View Status',  db.getBotSetting('autoViewStatus') ? '✅ ON' : '❌ OFF'],
-    ['💚 Auto React Status', db.getBotSetting('autoReactStatus') ? '✅ ON' : '❌ OFF'],
-    ['🗑️ Anti Delete',       db.getBotSetting('antiDelete') ? '✅ ON' : '❌ OFF'],
-    ['✏️ Anti Edit',         db.getBotSetting('antiEdit') ? '✅ ON' : '❌ OFF'],
-    ['📞 Anti Call',         db.getBotSetting('antiCall') ? '✅ ON' : '❌ OFF'],
-    ['💤 Always Online',     db.getBotSetting('alwaysOnline') ? '✅ ON' : '❌ OFF'],
-    ['📖 Auto Read',         db.getBotSetting('autoRead') ? '✅ ON' : '❌ OFF'],
+    ['Mode',              mode === 'private' ? 'PRIVATE' : 'PUBLIC'],
+    ['Chatbot',           db.getBotSetting('aiChatbot') ? 'ON' : 'OFF'],
+    ['Auto View Status',  db.getBotSetting('autoViewStatus') ? 'ON' : 'OFF'],
+    ['Auto React Status', db.getBotSetting('autoReactStatus') ? 'ON' : 'OFF'],
+    ['Anti Delete',       db.getBotSetting('antiDelete') ? 'ON' : 'OFF'],
+    ['Anti Edit',         db.getBotSetting('antiEdit') ? 'ON' : 'OFF'],
+    ['Anti Call',         db.getBotSetting('antiCall') ? 'ON' : 'OFF'],
+    ['Always Online',     db.getBotSetting('alwaysOnline') ? 'ON' : 'OFF'],
+    ['Auto Read',         db.getBotSetting('autoRead') ? 'ON' : 'OFF'],
   ];
 
   const content =
-    `👤 *Owner:*    ${ownerName}\n` +
-    `🏷️ *Prefix:*   ${prefix}\n` +
-    `⏱️ *Uptime:*   ${getUptime()}\n` +
-    `💾 *RAM:*      ${(mem.rss / 1024 / 1024).toFixed(1)} MB\n` +
-    `📊 *Messages:* ${sessionState.messageCount}\n` +
+    `*Owner:*    ${ownerName}\n` +
+    `*Prefix:*   ${prefix}\n` +
+    `*Uptime:*   ${getUptime()}\n` +
+    `*RAM:*      ${(mem.rss / 1024 / 1024).toFixed(1)} MB\n` +
+    `*Messages:* ${sessionState.messageCount}\n` +
     flags.map(([k, v]) => `${k}: ${v}`).join('\n');
 
-  await sendFireboxCard(sock, from, msg, { title: `🔥 ${botName} Status`, content });
+  await sendFireboxCard(sock, from, msg, { title: `${botName} Status`, content });
 }
 
 async function pair(ctx) {
@@ -673,20 +673,20 @@ async function pair(ctx) {
   const botName = db.getBotSetting('botName') || 'Firebox';
   const panelUrl = `https://${process.env.REPL_SLUG || 'firebox'}.replit.app/pair`;
   const content =
-    `📱 *Bot Number:* +${botNum}\n` +
-    `⏱️ *Uptime:* ${getUptime()}\n` +
+    `*Bot Number:* +${botNum}\n` +
+    `*Uptime:* ${getUptime()}\n` +
     `*To deploy on a new number:*\n` +
-    `1️⃣ Open the bot's web panel\n` +
-    `2️⃣ Go to */pair* page\n` +
-    `3️⃣ Scan QR or enter phone number for pairing code\n` +
-    `4️⃣ Bot connects automatically!\n` +
+    `Open the bot's web panel\n` +
+    `Go to */pair* page\n` +
+    `Scan QR or enter phone number for pairing code\n` +
+    `Bot connects automatically!\n` +
     `*To save session:*\n` +
     `• Click *Export Session ID* on the panel\n` +
     `• Save it to deploy anywhere instantly`;
   await sendFireboxCard(sock, from, msg, {
-    title: `🔥 ${botName} Pairing`,
+    title: `${botName} Pairing`,
     content,
-    buttons: [{ text: '🌐 Open Panel', url: panelUrl }],
+    buttons: [{ text: 'Open Panel', url: panelUrl }],
   });
 }
 
@@ -694,12 +694,12 @@ async function repo(ctx) {
   const { sock, from, msg } = ctx;
   const panelUrl = `https://${process.env.REPL_SLUG || 'firebox'}.replit.app/pair`;
   const content =
-    `🔥 *Name:*     Firebox Bot\n` +
-    `🏷️ *Version:*  v2.0.0\n` +
-    `🤖 *Engine:*   @whiskeysockets/baileys\n` +
-    `💡 *Language:* Node.js\n` +
-    `🧠 *AI:*       Google Gemini 2.0 Flash\n` +
-    `📋 *Features:*\n` +
+    `*Name:*     Firebox Bot\n` +
+    `*Version:*  v2.0.0\n` +
+    `*Engine:*   @whiskeysockets/baileys\n` +
+    `*Language:* Node.js\n` +
+    `*AI:*       Google Gemini 2.0 Flash\n` +
+    `*Features:*\n` +
     `• 200+ commands across all categories\n` +
     `• AI chat, image generation, audio effects\n` +
     `• Group management & auto-mod\n` +
@@ -707,11 +707,11 @@ async function repo(ctx) {
     `• Ephoto360 image effects\n` +
     `• Bible & Quran verse lookup\n` +
     `• Session export for easy deployment\n` +
-    `_Powered by Firebox ❤️_`;
+    `_Powered by Firebox _`;
   await sendFireboxCard(sock, from, msg, {
-    title: '📦 Firebox Bot Info',
+    title: 'Firebox Bot Info',
     content,
-    buttons: [{ text: '🌐 Web Panel', url: panelUrl }],
+    buttons: [{ text: 'Web Panel', url: panelUrl }],
   });
 }
 
@@ -720,14 +720,14 @@ async function channel(ctx) {
   const link = db.getBotSetting('channelLink');
   if (!link) {
     return sendFireboxCard(sock, from, msg, {
-      title: '📢 Our Channel',
+      title: 'Our Channel',
       content: '_No channel link has been set yet. Ask the owner to configure it with .setchannel_',
     });
   }
   await sendFireboxCard(sock, from, msg, {
-    title: '📢 Follow Our Channel!',
-    content: `👇 Tap the button below to follow!\n_Stay updated with the latest news and updates._`,
-    buttons: [{ text: '📢 Join Channel', url: link }],
+    title: 'Follow Our Channel!',
+    content: `Tap the button below to follow!\n_Stay updated with the latest news and updates._`,
+    buttons: [{ text: 'Join Channel', url: link }],
   });
 }
 

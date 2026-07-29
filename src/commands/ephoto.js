@@ -7,15 +7,15 @@ if (!fs.existsSync(TMP)) fs.mkdirSync(TMP, { recursive: true });
 const { sendFireboxCard } = require('../card');
 
 async function send(sock, from, msg, text, title) {
-  return sendFireboxCard(sock, from, msg, { title: title || '✨ Firebox Effects', content: text });
+  return sendFireboxCard(sock, from, msg, { title: title || 'Firebox Effects', content: text });
 }
 
 async function sendImageFromUrl(sock, from, msg, url, caption) {
   const res = await axios.get(url, { responseType: 'arraybuffer', timeout: 30000 });
   const buf = Buffer.from(res.data);
   await sendFireboxCard(sock, from, msg, {
-    title: '✨ Image Effect',
-    content: caption || '✅ Effect applied!',
+    title: 'Image Effect',
+    content: caption || 'Effect applied!',
     media: { type: 'image', buffer: buf, mimetype: 'image/jpeg' },
   });
 }
@@ -39,8 +39,8 @@ async function pollinationsImage(prompt, width = 800, height = 400) {
 
 async function handleEphotoCmd(ctx, label, ephotoSlug, pollinationsPrompt, params = {}) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, `✨ *${label}*\n\nUsage: \`.${ctx.command} <text>\`\nExample: \`.${ctx.command} Firebox\``);
-  await send(sock, from, msg, `✨ Creating *${label}* effect for "_${text}_"...`);
+  if (!text) return send(sock, from, msg, `*${label}*\n\nUsage: \`.${ctx.command} <text>\`\nExample: \`.${ctx.command} Firebox\``);
+  await send(sock, from, msg, `Creating *${label}* effect for "_${text}_"...`);
   try {
     let imgBuf;
     try {
@@ -51,12 +51,12 @@ async function handleEphotoCmd(ctx, label, ephotoSlug, pollinationsPrompt, param
       imgBuf = await pollinationsImage(`${pollinationsPrompt}: "${text}", high quality, 4K, professional design`);
     }
     await sendFireboxCard(sock, from, msg, {
-      title: `✨ ${label}`,
-      content: `✅ Effect applied!\n\n📝 *Text:* _"${text}"_`,
+      title: `${label}`,
+      content: `Effect applied!\n\n*Text:* _"${text}"_`,
       media: { type: 'image', buffer: imgBuf, mimetype: 'image/jpeg' },
     });
   } catch (err) {
-    await send(sock, from, msg, `❌ Effect failed: ${err.message}`, `✨ ${label}`);
+    await send(sock, from, msg, `Effect failed: ${err.message}`, `${label}`);
   }
 }
 

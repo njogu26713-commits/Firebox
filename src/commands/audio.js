@@ -14,7 +14,7 @@ if (!fs.existsSync(TMP)) fs.mkdirSync(TMP, { recursive: true });
 const { sendFireboxCard } = require('../card');
 
 async function send(sock, from, msg, text, title) {
-  return sendFireboxCard(sock, from, msg, { title: title || '🎵 Firebox Audio', content: text });
+  return sendFireboxCard(sock, from, msg, { title: title || 'Firebox Audio', content: text });
 }
 
 async function downloadQuoted(sock, msg) {
@@ -54,71 +54,71 @@ async function applyEffect(sock, msg, from, inputBuf, filter) {
 async function bass(ctx) {
   const { sock, from, msg } = ctx;
   const buf = await downloadQuoted(sock, msg);
-  if (!buf) return send(sock, from, msg, '🎵 *Bass Boost*\nReply to an audio/video message with `.bass`\nBoosts low frequencies for a punchy bass sound.');
-  await send(sock, from, msg, '🎵 Applying bass boost...');
+  if (!buf) return send(sock, from, msg, '*Bass Boost*\nReply to an audio/video message with `.bass`\nBoosts low frequencies for a punchy bass sound.');
+  await send(sock, from, msg, 'Applying bass boost...');
   try { await applyEffect(sock, msg, from, buf, '-af "bass=g=20,volume=1.5"'); }
-  catch (e) { await send(sock, from, msg, `❌ Failed: ${e.message}`); }
+  catch (e) { await send(sock, from, msg, `Failed: ${e.message}`); }
 }
 
 async function blown(ctx) {
   const { sock, from, msg } = ctx;
   const buf = await downloadQuoted(sock, msg);
-  if (!buf) return send(sock, from, msg, '💥 *Blown Speaker*\nReply to an audio/video message with `.blown`\nMakes audio sound like a blown-out speaker.');
-  await send(sock, from, msg, '💥 Applying blown speaker effect...');
+  if (!buf) return send(sock, from, msg, '*Blown Speaker*\nReply to an audio/video message with `.blown`\nMakes audio sound like a blown-out speaker.');
+  await send(sock, from, msg, 'Applying blown speaker effect...');
   try { await applyEffect(sock, msg, from, buf, '-af "acrusher=level_in=4:level_out=1:bits=8:mode=log:aa=1"'); }
-  catch (e) { await send(sock, from, msg, `❌ Failed: ${e.message}`); }
+  catch (e) { await send(sock, from, msg, `Failed: ${e.message}`); }
 }
 
 async function deep(ctx) {
   const { sock, from, msg } = ctx;
   const buf = await downloadQuoted(sock, msg);
-  if (!buf) return send(sock, from, msg, '🎤 *Deep Voice*\nReply to an audio/voice message with `.deep`\nMakes the voice sound deeper and slower.');
-  await send(sock, from, msg, '🎤 Applying deep voice effect...');
+  if (!buf) return send(sock, from, msg, '*Deep Voice*\nReply to an audio/voice message with `.deep`\nMakes the voice sound deeper and slower.');
+  await send(sock, from, msg, 'Applying deep voice effect...');
   try { await applyEffect(sock, msg, from, buf, '-af "asetrate=44100*0.75,aresample=44100,atempo=1.25"'); }
-  catch (e) { await send(sock, from, msg, `❌ Failed: ${e.message}`); }
+  catch (e) { await send(sock, from, msg, `Failed: ${e.message}`); }
 }
 
 async function earrape(ctx) {
   const { sock, from, msg } = ctx;
   const buf = await downloadQuoted(sock, msg);
-  if (!buf) return send(sock, from, msg, '📢 *Earrape*\nReply to an audio/video message with `.earrape`\n⚠️ Warning: Extremely loud!');
-  await send(sock, from, msg, '📢 Applying earrape effect... 🔊');
+  if (!buf) return send(sock, from, msg, '*Earrape*\nReply to an audio/video message with `.earrape`\nWarning: Extremely loud!');
+  await send(sock, from, msg, 'Applying earrape effect... ');
   try { await applyEffect(sock, msg, from, buf, '-af "acrusher=level_in=8:level_out=1:bits=8:mode=log,volume=15"'); }
-  catch (e) { await send(sock, from, msg, `❌ Failed: ${e.message}`); }
+  catch (e) { await send(sock, from, msg, `Failed: ${e.message}`); }
 }
 
 async function reverseAudio(ctx) {
   const { sock, from, msg } = ctx;
   const buf = await downloadQuoted(sock, msg);
   if (!buf) return null;
-  await send(sock, from, msg, '🔄 Reversing audio...');
+  await send(sock, from, msg, 'Reversing audio...');
   try { await applyEffect(sock, msg, from, buf, '-af "areverse"'); }
-  catch (e) { await send(sock, from, msg, `❌ Failed: ${e.message}`); }
+  catch (e) { await send(sock, from, msg, `Failed: ${e.message}`); }
   return true;
 }
 
 async function robot(ctx) {
   const { sock, from, msg } = ctx;
   const buf = await downloadQuoted(sock, msg);
-  if (!buf) return send(sock, from, msg, '🤖 *Robot Voice*\nReply to an audio/voice message with `.robot`\nGives the voice a robotic metallic sound.');
-  await send(sock, from, msg, '🤖 Applying robot voice effect...');
+  if (!buf) return send(sock, from, msg, '*Robot Voice*\nReply to an audio/voice message with `.robot`\nGives the voice a robotic metallic sound.');
+  await send(sock, from, msg, 'Applying robot voice effect...');
   try { await applyEffect(sock, msg, from, buf, '-af "aeval=\'0.5*val(0)+0.5*sin(2*PI*440/44100*n)\':c=same"'); }
-  catch (e) { await send(sock, from, msg, `❌ Failed: ${e.message}`); }
+  catch (e) { await send(sock, from, msg, `Failed: ${e.message}`); }
 }
 
 async function tomp3(ctx) {
   const { sock, from, msg } = ctx;
   const buf = await downloadQuoted(sock, msg);
-  if (!buf) return send(sock, from, msg, '🎵 *Convert to MP3*\nReply to any audio/video message with `.tomp3`\nConverts and sends it back as an MP3 file.');
-  await send(sock, from, msg, '🎵 Converting to MP3...');
+  if (!buf) return send(sock, from, msg, '*Convert to MP3*\nReply to any audio/video message with `.tomp3`\nConverts and sends it back as an MP3 file.');
+  await send(sock, from, msg, 'Converting to MP3...');
   try { await applyEffect(sock, msg, from, buf, '-vn -acodec libmp3lame -ab 192k'); }
-  catch (e) { await send(sock, from, msg, `❌ Failed: ${e.message}`); }
+  catch (e) { await send(sock, from, msg, `Failed: ${e.message}`); }
 }
 
 async function toptt(ctx) {
   const { sock, from, msg, text } = ctx;
-  if (!text) return send(sock, from, msg, '🔊 *Text to Speech*\nUsage: `.toptt <text>`\nExample: `.toptt Hello world, how are you?`\n_Converts text to a voice note._');
-  await send(sock, from, msg, '🔊 Generating speech...');
+  if (!text) return send(sock, from, msg, '*Text to Speech*\nUsage: `.toptt <text>`\nExample: `.toptt Hello world, how are you?`\n_Converts text to a voice note._');
+  await send(sock, from, msg, 'Generating speech...');
   try {
     const encoded = encodeURIComponent(text.slice(0, 200));
     const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encoded}&tl=en&client=tw-ob`;
@@ -128,17 +128,17 @@ async function toptt(ctx) {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
     });
     await sock.sendMessage(from, { audio: Buffer.from(res.data), mimetype: 'audio/mpeg', ptt: true }, { quoted: msg });
-  } catch (e) { await send(sock, from, msg, `❌ TTS failed: ${e.message}`); }
+  } catch (e) { await send(sock, from, msg, `TTS failed: ${e.message}`); }
 }
 
 async function volaudio(ctx) {
   const { sock, from, msg, args } = ctx;
   const buf = await downloadQuoted(sock, msg);
-  if (!buf) return send(sock, from, msg, '🔊 *Volume Boost*\nReply to an audio/video message with `.volaudio [level]`\nExample: `.volaudio 3` (1-10x, default 2x)');
+  if (!buf) return send(sock, from, msg, '*Volume Boost*\nReply to an audio/video message with `.volaudio [level]`\nExample: `.volaudio 3` (1-10x, default 2x)');
   const vol = Math.min(Math.max(parseFloat(args[0]) || 2, 0.1), 10);
-  await send(sock, from, msg, `🔊 Boosting volume by *${vol}x*...`);
+  await send(sock, from, msg, `Boosting volume by *${vol}x*...`);
   try { await applyEffect(sock, msg, from, buf, `-af "volume=${vol}"`); }
-  catch (e) { await send(sock, from, msg, `❌ Failed: ${e.message}`); }
+  catch (e) { await send(sock, from, msg, `Failed: ${e.message}`); }
 }
 
 module.exports = { bass, blown, deep, earrape, reverseAudio, robot, tomp3, toptt, volaudio };
