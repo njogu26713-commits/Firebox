@@ -16,12 +16,11 @@ function getUptime() {
 async function ping(ctx) {
   const { sock, from, msg } = ctx;
   const start = performance.now();
-  const sentMsg = await sock.sendMessage(from, { text: 'Pinging...' }, { quoted: msg });
+  await sock.sendMessage(from, { text: 'Pinging...' }, { quoted: msg });
   const ms = (performance.now() - start).toFixed(2);
-  await sendFireboxCard(sock, from, msg, {
-    title: 'Ping',
-    content: `${f.bold('Pong!')}\n*Speed:* ${f.mono(ms + 'ms')}\n*Uptime:* ${getUptime()}\n*Version:* v2.0.0`,
-  });
+  await sock.sendMessage(from, {
+    text: `Firebox ${f.bold('Pong!')} Speed: ${f.mono(ms + 'ms')}`
+  }, { quoted: msg });
 }
 
 async function info(ctx) {
