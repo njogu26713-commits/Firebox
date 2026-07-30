@@ -53,11 +53,10 @@ async function sendFireboxCard(sock, from, msg, opts = {}) {
   const version    = 'v2.0.0';
   const uptime     = getUptime();
 
-  // Footer: short label only — the full URL can't generate a link preview inside
-  // an interactiveMessage footer, so we keep it clean here. The channel link is
-  // already accessible via the "📢 View Channel" CTA button added below.
-  const footerText = footer !== undefined ? footer
-    : channelLink ? '📢 Follow our channel' : '';
+  // Footer: caller-supplied text only — no channel link here since it can't
+  // generate a preview inside an interactiveMessage footer anyway. The channel
+  // is already accessible via the "📢 View Channel" CTA button.
+  const footerText = footer !== undefined ? footer : '';
   const baseOpts   = (!noQuote && msg) ? { quoted: msg } : {};
 
   /* ── Build CTA buttons ─────────────────────────────────────────────────── */
