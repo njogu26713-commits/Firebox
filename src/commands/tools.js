@@ -156,7 +156,14 @@ async function getpp(ctx) {
   const jid = target.replace(/:\d+@/, '@');
 
   try {
-    const ppUrl = await sock.profilePictureUrl(jid, 'image');
+    // Try full-quality first, fall back to preview thumbnail
+    let ppUrl;
+    try {
+      ppUrl = await sock.profilePictureUrl(jid, 'image');
+    } catch (_) {
+      ppUrl = await sock.profilePictureUrl(jid, 'preview');
+    }
+
     if (!ppUrl || typeof ppUrl !== 'string' || !ppUrl.startsWith('http')) {
       return send(sock, from, msg, 'That user has no profile picture set.');
     }
@@ -169,14 +176,14 @@ async function getpp(ctx) {
     });
   } catch (err) {
     const msg2 = err.message || '';
-    const reason = msg2.includes('not-authorized') || msg2.includes('404')
+    const reason = msg2.includes('not-authorized') || msg2.includes('403')
       ? 'Their privacy settings block profile picture access.'
-      : msg2.includes('item-not-found')
-        ? 'That number is not on WhatsApp or has no profile picture set.'
+      : msg2.includes('item-not-found') || msg2.includes('404')
+        ? 'Could not find a profile picture — they may have none set, or their privacy is set to Nobody.'
         : msg2.includes('timed') || msg2.includes('timeout')
           ? 'Request timed out. Try again.'
-          : `Could not fetch picture (${msg2})`;
-    await send(sock, from, msg, `${reason}`, 'Profile Picture');
+          : `Could not fetch picture — ${msg2}`;
+    await send(sock, from, msg, reason, 'Profile Picture');
   }
 }
 
