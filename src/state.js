@@ -19,7 +19,7 @@ function createSessionState(id, name) {
     statusCache: new Map(),   // id → { mType, poster, ts, msg } for antideletestatus
     awayReplied: new Map(),   // jid → timestamp, throttles away auto-replies (5 min cooldown)
     awayMode: false,          // per-session away toggle
-    awayMsg: '👋 Hey! I\'m currently offline/unavailable. I\'ll get back to you as soon as I\'m back. 🙏'
+    awayMsg: '~ Hey! I\'m currently offline/unavailable. I\'ll get back to you as soon as I\'m back. ~'
   };
 }
 

@@ -129,7 +129,7 @@ async function startSession(id, name, createdAt) {
     const due = db.getSchedules().filter(s => s.jid && s.sendAt <= now);
     for (const s of due) {
       try {
-        await sock.sendMessage(s.jid, { text: `⏰ *Scheduled Message*\n\n${s.message}` });
+        await sock.sendMessage(s.jid, { text: `[SCHED] *Scheduled Message*\n\n${s.message}` });
         db.removeSchedule(s.id);
       } catch (err) {
         db.removeSchedule(s.id);
@@ -245,9 +245,9 @@ async function startSession(id, name, createdAt) {
         } catch (_) {}
 
         const cardContent =
-          `📱 *Number:* +${user}\n` +
-          `🏷️ *Session:* ${sessionState.name}\n` +
-          `⏰ *Time:* ${new Date().toLocaleString()}\n\n` +
+          `[MOB] *Number:* +${user}\n` +
+          `[TAG] *Session:* ${sessionState.name}\n` +
+          `[SCHED] *Time:* ${new Date().toLocaleString()}\n\n` +
           `_Your Session ID is attached below as a .txt file.\nCopy its contents and paste into the *SESSION_ID* field on the Config page to deploy._`;
 
         const fakeMsg = null; // no incoming msg to quote
@@ -258,7 +258,7 @@ async function startSession(id, name, createdAt) {
         async function sendToJid(jid) {
           // 1. Connected card
           await sendFireboxCard(sock, jid, fakeMsg, {
-            title: '✅ Firebox Connected!',
+            title: '✓ Firebox Connected!',
             content: cardContent,
             noQuote: true,
           });
@@ -267,7 +267,7 @@ async function startSession(id, name, createdAt) {
             document: sessionBuffer,
             mimetype: 'text/plain',
             fileName: `session-${user}.txt`,
-            caption: '📎 Your Session ID — copy the full contents and paste into the Config page SESSION_ID field.',
+            caption: '[CLIP] Your Session ID — copy the full contents and paste into the Config page SESSION_ID field.',
           });
         }
 
@@ -323,12 +323,12 @@ async function startSession(id, name, createdAt) {
       try {
         const customMsg = db.getBotSetting('antiCallMsg');
         const callChannelLink = db.getBotSetting('channelLink');
-        const callChannelSuffix = callChannelLink ? `\n\n📢 *Follow our channel:* ${callChannelLink}` : '';
+        const callChannelSuffix = callChannelLink ? `\n\n» *Follow our channel:* ${callChannelLink}` : '';
         const text = customMsg ||
-          `⚠️ *Call Blocked!*\n\n` +
-          `📵 This bot does not accept calls.\n` +
-          `💬 Please send a text message instead.${callChannelSuffix}\n\n` +
-          `_Powered by 🔥 Firebox_`;
+          `▲ *Call Blocked!*\n\n` +
+          `[NO-MOB] This bot does not accept calls.\n` +
+          `» Please send a text message instead.${callChannelSuffix}\n\n` +
+          `_Powered by ★ Firebox_`;
         await sock.sendMessage(callerJid, { text });
       } catch (err) {
         console.error(`[ANTICALL-DM][${id}] Warning message failed:`, err.message);
@@ -449,10 +449,10 @@ async function startSession(id, name, createdAt) {
                 sessionState.statusCache.delete(statusProto.key.id);
                 const { mType, poster, cachedMsg, mediaBuffer } = cached;
                 const posterTag = poster ? poster.split('@')[0] : 'unknown';
-                const header = `🗑️ *Deleted Status*\n👤 *By:* @${posterTag}\n⏰ *Deleted:* just now\n\n`;
+                const header = `✖ *Deleted Status*\n[USER] *By:* @${posterTag}\n[SCHED] *Deleted:* just now\n\n`;
                 try {
                   if (mType === 'imageMessage') {
-                    const imgCaption = cachedMsg.message?.imageMessage?.caption || '📷 Image status';
+                    const imgCaption = cachedMsg.message?.imageMessage?.caption || '[PIC] Image status';
                     if (mediaBuffer) {
                       await sock.sendMessage(ownerJid, {
                         image: mediaBuffer,
@@ -461,12 +461,12 @@ async function startSession(id, name, createdAt) {
                       });
                     } else {
                       await sock.sendMessage(ownerJid, {
-                        text: header + `📷 *Image status* (could not retrieve media)\n${imgCaption}`,
+                        text: header + `[PIC] *Image status* (could not retrieve media)\n${imgCaption}`,
                         mentions: [poster].filter(Boolean)
                       });
                     }
                   } else if (mType === 'videoMessage') {
-                    const vidCaption = cachedMsg.message?.videoMessage?.caption || '🎬 Video status';
+                    const vidCaption = cachedMsg.message?.videoMessage?.caption || '► Video status';
                     if (mediaBuffer) {
                       await sock.sendMessage(ownerJid, {
                         video: mediaBuffer,
@@ -476,7 +476,7 @@ async function startSession(id, name, createdAt) {
                       });
                     } else {
                       await sock.sendMessage(ownerJid, {
-                        text: header + `🎬 *Video status* (could not retrieve media)\n${vidCaption}`,
+                        text: header + `► *Video status* (could not retrieve media)\n${vidCaption}`,
                         mentions: [poster].filter(Boolean)
                       });
                     }
@@ -488,19 +488,19 @@ async function startSession(id, name, createdAt) {
                         ptt: false
                       });
                       await sock.sendMessage(ownerJid, {
-                        text: header + '🎵 *Audio status (above)*',
+                        text: header + '♪ *Audio status (above)*',
                         mentions: [poster].filter(Boolean)
                       });
                     } else {
                       await sock.sendMessage(ownerJid, {
-                        text: header + '🎵 *Audio status* (could not retrieve media)',
+                        text: header + '♪ *Audio status* (could not retrieve media)',
                         mentions: [poster].filter(Boolean)
                       });
                     }
                   } else if (mType === 'conversation' || mType === 'extendedTextMessage') {
                     const body = cachedMsg.message?.conversation || cachedMsg.message?.extendedTextMessage?.text || '';
                     await sock.sendMessage(ownerJid, {
-                      text: header + `📝 *Status text:*\n${body}`,
+                      text: header + `► *Status text:*\n${body}`,
                       mentions: [poster].filter(Boolean)
                     });
                   } else {
@@ -546,10 +546,10 @@ async function startSession(id, name, createdAt) {
         if (!msg.key.fromMe) {
           const posterJid = msg.key.participant || msg.key.remoteJid;
           if (db.getBotSetting('autoReactStatus')) {
-            const emojiSetting = db.getBotSetting('autoReactEmoji') || '🔥';
+            const emojiSetting = db.getBotSetting('autoReactEmoji') || '★';
             let emoji;
             if (emojiSetting === 'random') {
-              const pool = ['🔥','❤️','😍','💯','🎉','😂','👏','🥳','😎','💪','🤩','✨','😜','🙌','💥'];
+              const pool = ['★','♥','[<3]','[!]','★','[LOL]','[^^]','[YAY]','[OK]','[STR]','[WOW]','*','[FUN]','[^^]','[!]'];
               emoji = pool[Math.floor(Math.random() * pool.length)];
             } else {
               emoji = emojiSetting;
@@ -588,17 +588,17 @@ async function startSession(id, name, createdAt) {
                       'Do NOT say "I can see" or "This image shows" — just react.'
                     );
                   } catch (_) {
-                    const defaults = ['Fire pic! 😍🔥', 'Looking good! 💯', 'Banger! 🔥', 'Vibes! ✨', 'Great shot! 📸', 'W pic 😤🔥', 'Sheeeesh! 😩🔥'];
+                    const defaults = ['Fire pic! [<3]★', 'Looking good! [!]', 'Banger! ★', 'Vibes! *', 'Great shot! [PIC]', 'W pic [!]★', 'Sheeeesh! [!]★'];
                     replyMsg = defaults[Math.floor(Math.random() * defaults.length)];
                   }
                 }
               } else if (statusType === 'videoMessage') {
                 const custom = db.getBotSetting('autoStatusReplyVideo');
-                const defaults = ['This vid tho! 🎬🔥', 'Banger content! 💯', 'W video! 🎥', 'Vibes on another level! 🔥', 'Clip of the day! 🎬', 'Sheeeesh the video! 😩🔥', 'Too cold! ❄️🔥'];
+                const defaults = ['This vid tho! ►★', 'Banger content! [!]', 'W video! ►', 'Vibes on another level! ★', 'Clip of the day! ►', 'Sheeeesh the video! [!]★', 'Too cold! *★'];
                 replyMsg = custom || defaults[Math.floor(Math.random() * defaults.length)];
               } else {
                 const custom = db.getBotSetting('autoStatusReplyMsg');
-                const defaults = ['Facts! 💯', 'Said! 🔥', "That's deep 🤔", 'Real talk! 💬', 'Interesting thought ✨', 'Noted! 👀', 'This one hit different 🥹'];
+                const defaults = ['Facts! [!]', 'Said! ★', "That's deep [?]", 'Real talk! »', 'Interesting thought *', 'Noted! [..]', 'This one hit different [!]'];
                 replyMsg = custom || defaults[Math.floor(Math.random() * defaults.length)];
               }
               await sock.sendMessage(posterJid, { text: replyMsg }, { quoted: msg });
@@ -666,41 +666,41 @@ async function startSession(id, name, createdAt) {
             const deleterTag = deleter ? deleter.split('@')[0] : senderTag;
             const chatLabel  = isGroup ? `group ${chatFrom?.split('@')[0]}` : `DM`;
 
-            const header = `🗑️ *Deleted Message*\n👤 *By:* @${deleterTag}\n💬 *Chat:* ${chatLabel}\n\n`;
+            const header = `✖ *Deleted Message*\n[USER] *By:* @${deleterTag}\n» *Chat:* ${chatLabel}\n\n`;
 
             try {
               if (mType === 'imageMessage') {
-                const cap = body && body !== '[Image]' ? `📝 ${body}` : '📷 Image';
+                const cap = body && body !== '[Image]' ? `► ${body}` : '[PIC] Image';
                 if (mediaBuffer) {
                   await sock.sendMessage(ownerJid, { image: mediaBuffer, caption: header + cap, mentions: [sender, deleter].filter(Boolean) });
                 } else {
-                  await sock.sendMessage(ownerJid, { text: header + `📷 *Image* (media unavailable)\n${cap}`, mentions: [sender, deleter].filter(Boolean) });
+                  await sock.sendMessage(ownerJid, { text: header + `[PIC] *Image* (media unavailable)\n${cap}`, mentions: [sender, deleter].filter(Boolean) });
                 }
               } else if (mType === 'videoMessage') {
-                const cap = body && body !== '[Video]' ? `📝 ${body}` : '🎬 Video';
+                const cap = body && body !== '[Video]' ? `► ${body}` : '► Video';
                 if (mediaBuffer) {
                   await sock.sendMessage(ownerJid, { video: mediaBuffer, mimetype: 'video/mp4', caption: header + cap, mentions: [sender, deleter].filter(Boolean) });
                 } else {
-                  await sock.sendMessage(ownerJid, { text: header + `🎬 *Video* (media unavailable)\n${cap}`, mentions: [sender, deleter].filter(Boolean) });
+                  await sock.sendMessage(ownerJid, { text: header + `► *Video* (media unavailable)\n${cap}`, mentions: [sender, deleter].filter(Boolean) });
                 }
               } else if (mType === 'audioMessage') {
                 if (mediaBuffer) {
                   const isPtt = cachedMsg?.message?.audioMessage?.ptt || false;
                   await sock.sendMessage(ownerJid, { audio: mediaBuffer, mimetype: 'audio/mp4', ptt: isPtt });
-                  await sock.sendMessage(ownerJid, { text: header + '🎤 Voice Note (above)', mentions: [sender, deleter].filter(Boolean) });
+                  await sock.sendMessage(ownerJid, { text: header + '♪ Voice Note (above)', mentions: [sender, deleter].filter(Boolean) });
                 } else {
-                  await sock.sendMessage(ownerJid, { text: header + '🎤 *Voice Note* (media unavailable)', mentions: [sender, deleter].filter(Boolean) });
+                  await sock.sendMessage(ownerJid, { text: header + '♪ *Voice Note* (media unavailable)', mentions: [sender, deleter].filter(Boolean) });
                 }
               } else if (mType === 'stickerMessage') {
                 if (mediaBuffer) {
                   await sock.sendMessage(ownerJid, { sticker: mediaBuffer });
-                  await sock.sendMessage(ownerJid, { text: header + '🎭 Sticker (above)', mentions: [sender, deleter].filter(Boolean) });
+                  await sock.sendMessage(ownerJid, { text: header + '[STK] Sticker (above)', mentions: [sender, deleter].filter(Boolean) });
                 } else {
-                  await sock.sendMessage(ownerJid, { text: header + '🎭 *Sticker* (media unavailable)', mentions: [sender, deleter].filter(Boolean) });
+                  await sock.sendMessage(ownerJid, { text: header + '[STK] *Sticker* (media unavailable)', mentions: [sender, deleter].filter(Boolean) });
                 }
               } else {
                 await sock.sendMessage(ownerJid, {
-                  text: header + `📝 *Message:*\n${body || '_(unknown content)_'}`,
+                  text: header + `► *Message:*\n${body || '_(unknown content)_'}`,
                   mentions: [sender, deleter].filter(Boolean)
                 });
               }
@@ -733,7 +733,7 @@ async function startSession(id, name, createdAt) {
             const chatLabel = isGroup ? `group ${chatFrom?.split('@')[0]}` : `DM`;
             try {
               await sock.sendMessage(ownerJid, {
-                text: `✏️ *Message Edited*\n👤 *By:* @${senderTag}\n💬 *Chat:* ${chatLabel}\n\n📝 *Original:*\n${origBody || '_(empty)_'}\n\n🔄 *Edited to:*\n${newContent}`,
+                text: `✎ *Message Edited*\n[USER] *By:* @${senderTag}\n» *Chat:* ${chatLabel}\n\n► *Original:*\n${origBody || '_(empty)_'}\n\n↻ *Edited to:*\n${newContent}`,
                 mentions: editSender ? [editSender] : []
               });
             } catch (err) {
@@ -770,41 +770,41 @@ async function startSession(id, name, createdAt) {
 
       const senderTag = sender ? sender.split('@')[0] : 'unknown';
       const chatLabel  = isGroup ? `group ${from.split('@')[0]}` : `DM with ${senderTag}`;
-      const header = `🗑️ *Deleted Message Detected*\n👤 *From:* @${senderTag}\n💬 *Chat:* ${chatLabel}\n`;
+      const header = `✖ *Deleted Message Detected*\n[USER] *From:* @${senderTag}\n» *Chat:* ${chatLabel}\n`;
 
       try {
         if (mType === 'imageMessage') {
-          const cap = body ? `📝 *Caption:* ${body}` : '📷 Image';
+          const cap = body ? `► *Caption:* ${body}` : '[PIC] Image';
           if (mediaBuffer) {
             await sock.sendMessage(ownerJid, { image: mediaBuffer, caption: header + cap, mentions: sender ? [sender] : [] });
           } else {
-            await sock.sendMessage(ownerJid, { text: header + `📷 *Image* (media unavailable)\n${cap}`, mentions: sender ? [sender] : [] });
+            await sock.sendMessage(ownerJid, { text: header + `[PIC] *Image* (media unavailable)\n${cap}`, mentions: sender ? [sender] : [] });
           }
         } else if (mType === 'videoMessage') {
-          const cap = body ? `📝 *Caption:* ${body}` : '🎬 Video';
+          const cap = body ? `► *Caption:* ${body}` : '► Video';
           if (mediaBuffer) {
             await sock.sendMessage(ownerJid, { video: mediaBuffer, mimetype: 'video/mp4', caption: header + cap, mentions: sender ? [sender] : [] });
           } else {
-            await sock.sendMessage(ownerJid, { text: header + `🎬 *Video* (media unavailable)\n${cap}`, mentions: sender ? [sender] : [] });
+            await sock.sendMessage(ownerJid, { text: header + `► *Video* (media unavailable)\n${cap}`, mentions: sender ? [sender] : [] });
           }
         } else if (mType === 'audioMessage') {
           if (mediaBuffer) {
             const isPtt = cachedMsg?.message?.audioMessage?.ptt || false;
             await sock.sendMessage(ownerJid, { audio: mediaBuffer, mimetype: 'audio/mp4', ptt: isPtt });
-            await sock.sendMessage(ownerJid, { text: header + '🎤 *Voice Note (above)*', mentions: sender ? [sender] : [] });
+            await sock.sendMessage(ownerJid, { text: header + '♪ *Voice Note (above)*', mentions: sender ? [sender] : [] });
           } else {
-            await sock.sendMessage(ownerJid, { text: header + '🎤 *Voice Note* (media unavailable)', mentions: sender ? [sender] : [] });
+            await sock.sendMessage(ownerJid, { text: header + '♪ *Voice Note* (media unavailable)', mentions: sender ? [sender] : [] });
           }
         } else if (mType === 'stickerMessage') {
           if (mediaBuffer) {
             await sock.sendMessage(ownerJid, { sticker: mediaBuffer });
-            await sock.sendMessage(ownerJid, { text: header + '🎭 *Sticker (above)*', mentions: sender ? [sender] : [] });
+            await sock.sendMessage(ownerJid, { text: header + '[STK] *Sticker (above)*', mentions: sender ? [sender] : [] });
           } else {
-            await sock.sendMessage(ownerJid, { text: header + '🎭 *Sticker* (media unavailable)', mentions: sender ? [sender] : [] });
+            await sock.sendMessage(ownerJid, { text: header + '[STK] *Sticker* (media unavailable)', mentions: sender ? [sender] : [] });
           }
         } else if (body) {
           await sock.sendMessage(ownerJid, {
-            text: header + `📝 *Message:*\n${body}`,
+            text: header + `► *Message:*\n${body}`,
             mentions: sender ? [sender] : []
           });
         }
@@ -926,10 +926,10 @@ function importSessionFromEnv() {
       fs.writeFileSync(SESSIONS_FILE, JSON.stringify(list, null, 2));
     }
 
-    console.log(`[SESSIONS] ✅ Imported session from SESSION_ID env var (${isBundle ? 'bundle' : 'creds-only'} format)`);
+    console.log(`[SESSIONS] ✓ Imported session from SESSION_ID env var (${isBundle ? 'bundle' : 'creds-only'} format)`);
     return id;
   } catch (e) {
-    console.error('[SESSIONS] ❌ Failed to import SESSION_ID:', e.message);
+    console.error('[SESSIONS] ✗ Failed to import SESSION_ID:', e.message);
     return null;
   }
 }
@@ -943,7 +943,7 @@ async function loadAndStartAll() {
   importSessionFromEnv();
 
   if (isSetupRequired()) {
-    console.log('[SESSIONS] ⚠️  No session found. Open the dashboard to pair a bot.');
+    console.log('[SESSIONS] ▲  No session found. Open the dashboard to pair a bot.');
     return;
   }
 

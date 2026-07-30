@@ -52,20 +52,20 @@ if (!fs.existsSync(YTDLP_BIN)) {
   }
 
   if (installed) {
-    console.log('[SETUP] yt-dlp ready ✅');
+    console.log('[SETUP] yt-dlp ready ✓');
   } else {
     console.warn('[SETUP] yt-dlp could not be installed — .play/.video commands may not work');
   }
 } else {
-  console.log('[SETUP] yt-dlp ready ✅');
+  console.log('[SETUP] yt-dlp ready ✓');
 }
 const db = require('./src/database');
 const { startServer } = require('./src/server');
 const { loadAndStartAll } = require('./src/sessionManager');
 
-console.log('🔥 Firebox WhatsApp Bot v1.0.0');
+console.log('★ Firebox WhatsApp Bot v1.0.0');
 console.log('─────────────────────────────────');
-console.log('🌐 Dashboard: open the Preview tab to manage sessions\n');
+console.log('[WEB] Dashboard: open the Preview tab to manage sessions\n');
 
 // Initialize DB (connects to MongoDB, syncs data) then start everything
 db.initialize()

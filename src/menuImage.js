@@ -10,18 +10,18 @@ const CARD_RADIUS = 16;
 
 // Category definitions — icon, title, accent color, commands
 const CATS = [
-  { icon:'🤖', title:'AI Chat',      color:'#7c3aed', cmds:['.ai','.ask','.simi','.code','.translate','.story','.summarize','.analyze','.recipe','.teach','.doppleai','.deepseek'] },
-  { icon:'🎨', title:'AI Image',     color:'#db2777', cmds:['.generate','.dalle','.imagine'] },
-  { icon:'🎵', title:'Downloads',    color:'#059669', cmds:['.play','.video','.song','.tiktok','.instagram','.facebook','.twitter','.pinterest','.savestatus','.wallpaper','.apk','.mediafire'] },
-  { icon:'🔍', title:'Search',       color:'#0284c7', cmds:['.lyrics','.songinfo','.shazam','.weather','.define','.imdb','.yts'] },
-  { icon:'🛠️', title:'Tools',        color:'#d97706', cmds:['.sticker','.toimg','.vv','.tts','.read','.qrcode','.tinyurl','.getpp','.genpass','.calculate','.fancy','.emojimix'] },
-  { icon:'✨', title:'Fun & Games',  color:'#dc2626', cmds:['.joke','.fact','.quote','.memes','.8ball','.truth','.dare','.trivia','.dice','.coinflip','.compliment','.roast','.wyr','.riddle','.guess'] },
-  { icon:'🖼️', title:'Image FX',    color:'#9333ea', cmds:['.blur','.cartoon','.anime','.sketch','.neon','.glitch','.wasted','.wanted','.sepia','.invert','.watercolor','.oil','.fire','.snow','.rainbow','.vintage'] },
-  { icon:'🎵', title:'Audio FX',     color:'#0891b2', cmds:['.bass','.blown','.deep','.earrape','.robot','.reverseaudio','.tomp3','.toptt','.volaudio'] },
-  { icon:'👥', title:'Group',        color:'#16a34a', cmds:['.tagall','.hidetag','.tagadmin','.kick','.add','.promote','.demote','.mute','.unmute','.poll','.warn','.antilink','.setwelcome'] },
-  { icon:'🔵', title:'General',      color:'#2563eb', cmds:['.ping','.info','.owner','.runtime','.botstatus','.help','.pair','.repo'] },
-  { icon:'⛪', title:'Religion',     color:'#92400e', cmds:['.bible','.quran'] },
-  { icon:'💻', title:'Hacking',      color:'#15803d', cmds:['.iplookup','.whois','.dns','.hash','.checkpass','.b64encode','.b64decode','.cipher','.sslcheck','.numlookup','.scamalyze','.hack'] },
+  { icon:'[AI]', title:'AI Chat',      color:'#7c3aed', cmds:['.ai','.ask','.simi','.code','.translate','.story','.summarize','.analyze','.recipe','.teach','.doppleai','.deepseek'] },
+  { icon:'[ART]', title:'AI Image',     color:'#db2777', cmds:['.generate','.dalle','.imagine'] },
+  { icon:'♪', title:'Downloads',    color:'#059669', cmds:['.play','.video','.song','.tiktok','.instagram','.facebook','.twitter','.pinterest','.savestatus','.wallpaper','.apk','.mediafire'] },
+  { icon:'[?]', title:'Search',       color:'#0284c7', cmds:['.lyrics','.songinfo','.shazam','.weather','.define','.imdb','.yts'] },
+  { icon:'[#]', title:'Tools',        color:'#d97706', cmds:['.sticker','.toimg','.vv','.tts','.read','.qrcode','.tinyurl','.getpp','.genpass','.calculate','.fancy','.emojimix'] },
+  { icon:'*', title:'Fun & Games',  color:'#dc2626', cmds:['.joke','.fact','.quote','.memes','.8ball','.truth','.dare','.trivia','.dice','.coinflip','.compliment','.roast','.wyr','.riddle','.guess'] },
+  { icon:'[IMG]', title:'Image FX',    color:'#9333ea', cmds:['.blur','.cartoon','.anime','.sketch','.neon','.glitch','.wasted','.wanted','.sepia','.invert','.watercolor','.oil','.fire','.snow','.rainbow','.vintage'] },
+  { icon:'♪', title:'Audio FX',     color:'#0891b2', cmds:['.bass','.blown','.deep','.earrape','.robot','.reverseaudio','.tomp3','.toptt','.volaudio'] },
+  { icon:'[GRP]', title:'Group',        color:'#16a34a', cmds:['.tagall','.hidetag','.tagadmin','.kick','.add','.promote','.demote','.mute','.unmute','.poll','.warn','.antilink','.setwelcome'] },
+  { icon:'●', title:'General',      color:'#2563eb', cmds:['.ping','.info','.owner','.runtime','.botstatus','.help','.pair','.repo'] },
+  { icon:'+', title:'Religion',     color:'#92400e', cmds:['.bible','.quran'] },
+  { icon:'[>_]', title:'Hacking',      color:'#15803d', cmds:['.iplookup','.whois','.dns','.hash','.checkpass','.b64encode','.b64decode','.cipher','.sslcheck','.numlookup','.scamalyze','.hack'] },
 ];
 
 const TOTAL_CMDS = CATS.reduce((s, c) => s + c.cmds.length, 0);
@@ -223,7 +223,7 @@ async function generateMenuImage(botName, prefix, userNumber) {
   nameGrad.addColorStop(0.5, '#ffcc00');
   nameGrad.addColorStop(1, '#ff8c00');
   ctx.fillStyle    = nameGrad;
-  ctx.fillText(`🔥 ${(botName || 'FIREBOX').toUpperCase()} BOT`, PAD, 76);
+  ctx.fillText(`★ ${(botName || 'FIREBOX').toUpperCase()} BOT`, PAD, 76);
   ctx.shadowBlur   = 0;
   ctx.shadowColor  = 'transparent';
 
@@ -314,7 +314,7 @@ async function generateMenuImage(botName, prefix, userNumber) {
 
   if (userNumber) {
     ctx.fillStyle = 'rgba(255,255,255,0.18)';
-    const footRight = `👤 ${userNumber}`;
+    const footRight = `[USER] ${userNumber}`;
     const rw = ctx.measureText(footRight).width;
     ctx.fillText(footRight, W - PAD - rw, fy + 38);
   }

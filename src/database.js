@@ -264,14 +264,14 @@ function removeSchedulesBefore(timestamp) {
 // ── settings ──────────────────────────────────────────────────────────────────
 
 const SETTING_DEFAULTS = {
-  autoViewStatus: false, autoReactStatus: false, autoReactEmoji: '🔥',
-  autoStatusReply: false, autoStatusReplyMsg: 'Nice status! 🔥',
+  autoViewStatus: false, autoReactStatus: false, autoReactEmoji: '★',
+  autoStatusReply: false, autoStatusReplyMsg: 'Nice status! ★',
   autoReply: false, autoReplyMode: 'all',
-  autoReplyMsg: '👋 Hello! I am currently unavailable. I will get back to you soon.',
+  autoReplyMsg: '~ Hello! I am currently unavailable. I will get back to you soon.',
   aiChatbot: false, aiChatbotMode: 'dm', aiChatbotPersona: '', aiChatOpener: '', aiChatTargets: [],
   antiDelete: false, antiEdit: false, antiDeleteStatus: false,
   awayMode: false,
-  awayMsg: '👋 Hey! I\'m currently offline/unavailable. I\'ll get back to you as soon as I\'m back. 🙏',
+  awayMsg: '~ Hey! I\'m currently offline/unavailable. I\'ll get back to you as soon as I\'m back. ~',
 };
 
 function getBotSetting(key) {

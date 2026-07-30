@@ -34,7 +34,7 @@ function getUptime() {
 
 async function sendFireboxCard(sock, from, msg, opts = {}) {
   const {
-    title   = '🔥 Firebox',
+    title   = '★ Firebox',
     content = '',
     footer,
     buttons = [],
@@ -49,7 +49,7 @@ async function sendFireboxCard(sock, from, msg, opts = {}) {
 
   // Footer: show channel link text (matching screenshot template)
   const footerText = footer !== undefined ? footer
-    : channelLink ? `📢 Channel: ${channelLink}` : '';
+    : channelLink ? `» Channel: ${channelLink}` : '';
   const baseOpts   = (!noQuote && msg) ? { quoted: msg } : {};
 
   /* ── Build CTA buttons ─────────────────────────────────────────────────── */
@@ -58,7 +58,7 @@ async function sendFireboxCard(sock, from, msg, opts = {}) {
     nativeButtons.push({
       name: 'cta_url',
       buttonParamsJson: JSON.stringify({
-        display_text: '📢 View Channel',
+        display_text: '» View Channel',
         url: channelLink,
         merchant_url: channelLink,
       }),
@@ -80,7 +80,7 @@ async function sendFireboxCard(sock, from, msg, opts = {}) {
   /* ── Send media (if any) first ─────────────────────────────────────────── */
   let cardOpts = baseOpts;
   if (media) {
-    const mediaCap = media.caption || `🔥 *${botName}* — ${title}`;
+    const mediaCap = media.caption || `★ *${botName}* — ${title}`;
     try {
       let payload = {};
       switch (media.type) {
@@ -138,7 +138,7 @@ async function sendFireboxCard(sock, from, msg, opts = {}) {
     let text = `*${botName}*\n${bodyText}`;
     if (footerText) text += `\n\n${footerText}`;
     for (const btn of buttons) {
-      if (btn && btn.url) text += `\n🔗 *${btn.text}:* ${btn.url}`;
+      if (btn && btn.url) text += `\n→ *${btn.text}:* ${btn.url}`;
     }
     const mentionPayload = opts.mentions ? { mentions: opts.mentions } : {};
     await sock.sendMessage(from, { text, ...mentionPayload }, cardOpts);

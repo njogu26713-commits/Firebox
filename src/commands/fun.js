@@ -175,7 +175,7 @@ async function trailer(ctx) {
       const videoId = match[1];
       await send(sock, from, msg,
         `*Trailer: ${text}*\n` +
-        `▶https://www.youtube.com/watch?v=${videoId}\n` +
+        `►https://www.youtube.com/watch?v=${videoId}\n` +
         `_Open the link to watch the trailer_`,
         'Movie Trailer');
     } else {

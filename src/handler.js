@@ -39,7 +39,7 @@ async function handlePendingPrompt(sock, msg, from, sender, body, sessionState) 
     await handleMessage(sock, { ...msg, message: { conversation: chosen } }, process.env.PREFIX || '.', sessionState);
   } else {
     const fullCmd = `${entry.cmdPrefix}${chosen}`;
-    await sock.sendMessage(from, { text: `🔄 _${fullCmd}_` }, { quoted: msg });
+    await sock.sendMessage(from, { text: `↻ _${fullCmd}_` }, { quoted: msg });
     await handleMessage(sock, { ...msg, message: { conversation: fullCmd } }, process.env.PREFIX || '.', sessionState);
   }
 
@@ -157,9 +157,9 @@ async function handleMessage(sock, msg, prefix, sessionState) {
     if (Date.now() - lastReplied > DEAD_COOLDOWN) {
       if (!sessionState.deadReplied) sessionState.deadReplied = new Map();
       const channelLink = db.getBotSetting('channelLink');
-      const channelSuffix = channelLink ? `\n\n📢 *Follow our channel while you wait:*\n${channelLink}` : '';
+      const channelSuffix = channelLink ? `\n\n» *Follow our channel while you wait:*\n${channelLink}` : '';
       const deadMsg = settings.deadMsg ||
-        `💀 *Bot is currently dead / offline.*\n\n_Please try again later or contact the owner._${channelSuffix}`;
+        `[DEAD] *Bot is currently dead / offline.*\n\n_Please try again later or contact the owner._${channelSuffix}`;
       await sock.sendMessage(from, { text: deadMsg }, { quoted: msg });
       sessionState.deadReplied.set(from, Date.now());
     }
@@ -172,8 +172,8 @@ async function handleMessage(sock, msg, prefix, sessionState) {
     const lastReplied = sessionState.awayReplied.get(from) || 0;
     if (Date.now() - lastReplied > AWAY_COOLDOWN) {
       const awayChannelLink = db.getBotSetting('channelLink');
-      const awayChannelSuffix = awayChannelLink ? `\n\n📢 *Follow our channel:* ${awayChannelLink}` : '';
-      const awayMsg = sessionState.awayMsg || `👋 Hey! I'm currently offline/unavailable. I'll get back to you as soon as I'm back. 🙏${awayChannelSuffix}`;
+      const awayChannelSuffix = awayChannelLink ? `\n\n» *Follow our channel:* ${awayChannelLink}` : '';
+      const awayMsg = sessionState.awayMsg || `~ Hey! I'm currently offline/unavailable. I'll get back to you as soon as I'm back. ~${awayChannelSuffix}`;
       console.log(`[AWAY][${sessionState.id}] Sending to ${from?.split('@')[0]}: ${awayMsg.slice(0, 30)}`);
       await sock.sendMessage(from, { text: awayMsg }, { quoted: msg });
       sessionState.awayReplied.set(from, Date.now());
@@ -191,7 +191,7 @@ async function handleMessage(sock, msg, prefix, sessionState) {
     if (trivia && body?.toLowerCase().trim() === trivia.answer.toLowerCase().trim()) {
       db.clearTrivia(from);
       await sock.sendMessage(from, {
-        text: `🎉 *Correct!* @${sender.split('@')[0]} got it right!\n✅ The answer was: *${trivia.answer}*`,
+        text: `★ *Correct!* @${sender.split('@')[0]} got it right!\n✓ The answer was: *${trivia.answer}*`,
         mentions: [sender]
       }, { quoted: msg });
     }
@@ -266,7 +266,7 @@ async function handleMessage(sock, msg, prefix, sessionState) {
         const mode = settings.autoReplyMode || 'all';
         const shouldReply = mode === 'all' || (mode === 'dm' && !isGroup) || (mode === 'group' && isGroup);
         if (shouldReply) {
-          const replyMsg = settings.autoReplyMsg || '👋 Hello! I am currently unavailable.';
+          const replyMsg = settings.autoReplyMsg || '~ Hello! I am currently unavailable.';
           await sock.sendMessage(from, { text: replyMsg }, { quoted: msg });
         }
       }
@@ -278,7 +278,7 @@ async function handleMessage(sock, msg, prefix, sessionState) {
 
   // ── Private mode gate ─────────────────────────────────────────────────────
   if (!isOwner && settings.botMode === 'private') {
-    await sock.sendMessage(from, { text: '🔒 *Bot is in private mode.*\nOnly the owner can use commands.' }, { quoted: msg });
+    await sock.sendMessage(from, { text: '[LOCK] *Bot is in private mode.*\nOnly the owner can use commands.' }, { quoted: msg });
     return;
   }
 
@@ -305,7 +305,7 @@ async function handleMessage(sock, msg, prefix, sessionState) {
       if (ownerNumber) {
         try {
           await sock.sendMessage(ownerNumber + '@s.whatsapp.net', {
-            text: `⚠️ *Firebox Alert: Coins Depleted!*\n\nThe bot has run out of coins and is now suspended.\n\n💡 Top up via the dashboard.\n\n_Last command: .${command}_`
+            text: `▲ *Firebox Alert: Coins Depleted!*\n\nThe bot has run out of coins and is now suspended.\n\n► Top up via the dashboard.\n\n_Last command: .${command}_`
           });
         } catch (_) {}
       }
@@ -724,40 +724,40 @@ async function handleMessage(sock, msg, prefix, sessionState) {
     // ── COIN COMMANDS ─────────────────────────────────────────────────────────
     case 'coins': {
       const coinData = db.getCoins();
-      const icon = coinData.balance > 200 ? '🟢' : coinData.balance > 50 ? '🟡' : '🔴';
+      const icon = coinData.balance > 200 ? '●' : coinData.balance > 50 ? '◑' : '○';
       await sock.sendMessage(from, {
-        text: `🪙 *Coin Balance*\n\n` +
+        text: `$ *Coin Balance*\n\n` +
               `${icon} *Balance:* ${coinData.balance} coins\n` +
-              `📊 *Total Spent:* ${coinData.totalSpent} coins\n\n` +
-              `💡 *Costs:* AI = 5 | Downloads = 3 | Regular = 1\n` +
+              `[#] *Total Spent:* ${coinData.totalSpent} coins\n\n` +
+              `► *Costs:* AI = 5 | Downloads = 3 | Regular = 1\n` +
               `_Top up via the dashboard_`
       }, { quoted: msg });
       return;
     }
 
     case 'setcoins': {
-      if (!isOwner) return sock.sendMessage(from, { text: '❌ Owner only!' }, { quoted: msg });
+      if (!isOwner) return sock.sendMessage(from, { text: '✗ Owner only!' }, { quoted: msg });
       const amt = parseInt(args[0]);
-      if (isNaN(amt) || amt < 0) return sock.sendMessage(from, { text: '❌ Usage: .setcoins <amount>' }, { quoted: msg });
+      if (isNaN(amt) || amt < 0) return sock.sendMessage(from, { text: '✗ Usage: .setcoins <amount>' }, { quoted: msg });
       const newBal = db.setCoins(amt);
       await sock.sendMessage(from, {
-        text: `✅ *Coins Set!*\n\n💰 Balance: *${newBal} coins*`
+        text: `✓ *Coins Set!*\n\n$ Balance: *${newBal} coins*`
       }, { quoted: msg });
       return;
     }
 
     case 'coinhistory': {
-      if (!isOwner) return sock.sendMessage(from, { text: '❌ Owner only!' }, { quoted: msg });
+      if (!isOwner) return sock.sendMessage(from, { text: '✗ Owner only!' }, { quoted: msg });
       const coinData = db.getCoins();
       const recent = coinData.history.slice(0, 10);
-      if (!recent.length) return sock.sendMessage(from, { text: '🪙 No coin history yet.' }, { quoted: msg });
+      if (!recent.length) return sock.sendMessage(from, { text: '$ No coin history yet.' }, { quoted: msg });
       const lines = recent.map(h => {
         const t = new Date(h.ts).toLocaleTimeString();
-        const icon = h.type === 'add' ? '➕' : h.type === 'set' ? '🔧' : '➖';
+        const icon = h.type === 'add' ? '+' : h.type === 'set' ? '[=]' : '-';
         return `${icon} ${h.type === 'spend' ? '-' : '+'}${h.amount} — ${h.note} (${t})`;
       }).join('\n');
       await sock.sendMessage(from, {
-        text: `🪙 *Coin History (last 10)*\n\n${lines}\n\n💰 *Current:* ${coinData.balance} coins`
+        text: `$ *Coin History (last 10)*\n\n${lines}\n\n$ *Current:* ${coinData.balance} coins`
       }, { quoted: msg });
       return;
     }
