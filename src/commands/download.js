@@ -7,7 +7,7 @@ const { exec, execSync } = require('child_process');
 const { promisify } = require('util');
 const execAsync = promisify(exec);
 const tlsAgent = new https.Agent({ rejectUnauthorized: false });
-const YTDLP = '/home/runner/workspace/.pythonlibs/bin/yt-dlp';
+const YTDLP = path.join(__dirname, '../../bin/yt-dlp');
 const FFMPEG = (() => {
   try { return execSync('which ffmpeg', { encoding: 'utf8' }).trim(); } catch { return 'ffmpeg'; }
 })();
