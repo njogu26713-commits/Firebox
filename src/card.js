@@ -24,6 +24,12 @@
 
 const db = require('./database');
 
+// Applies a Unicode combining underline (U+0332) to each character so the
+// title renders with a visible underline in WhatsApp.
+function underline(str) {
+  return str.split('').map(c => c + '\u0332').join('');
+}
+
 function getUptime() {
   const s = Math.floor(process.uptime());
   const h = Math.floor(s / 3600);
@@ -114,8 +120,8 @@ async function sendFireboxCard(sock, from, msg, opts = {}) {
     cardOpts = {};
   }
 
-  // Body: bold command title on its own line, then the content beneath it
-  const bodyText = title ? `*${title}*\n\n${content}` : content;
+  // Body: bold + underlined title on its own line, then the content beneath it
+  const bodyText = title ? `*${underline(title)}*\n\n${content}` : content;
 
   /* ── Try interactive message ───────────────────────────────────────────── */
   try {
