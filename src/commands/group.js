@@ -415,14 +415,26 @@ async function setwelcome(ctx) {
   await send(sock, from, msg, `Welcome message set!\nPreview:\n${text.replace('{name}', 'NewMember').replace('{group}', 'This Group')}`);
 }
 
+async function goodbye(ctx) {
+  const { sock, from, msg, text } = ctx;
+  if (!await requireGroup(ctx)) return;
+  const admins = await requireAdmin(ctx);
+  if (!admins) return;
+  const val = text?.toLowerCase();
+  if (val !== 'on' && val !== 'off') return send(sock, from, msg, 'Usage: .goodbye on/off');
+  db.setGroup(from, { goodbye: val === 'on' ? 1 : 0 });
+  await send(sock, from, msg, `Goodbye messages are now *${val === 'on' ? 'ON' : 'OFF'}*`);
+}
+
 async function setgoodbye(ctx) {
   const { sock, from, msg, text } = ctx;
   if (!await requireGroup(ctx)) return;
   const admins = await requireAdmin(ctx);
   if (!admins) return;
   if (!text) return send(sock, from, msg, 'Usage: .setgoodbye <message>\nUse {name} for member name');
-  db.setGroup(from, { goodbyeMsg: text });
-  await send(sock, from, msg, `Goodbye message set!`);
+  // setting the message also enables goodbye automatically
+  db.setGroup(from, { goodbyeMsg: text, goodbye: 1 });
+  await send(sock, from, msg, `Goodbye message set and enabled!`);
 }
 
 // ─── INFO ────────────────────────────────────────────────────────────────────
@@ -576,7 +588,11 @@ async function checkAntiLink(sock, msg, from, sender, isOwner) {
 async function handleGroupParticipantUpdate(sock, update) {
   const { id, participants, action } = update;
   const grp = db.getGroup(id);
-  if (!grp.welcome) return;
+
+  // welcome and goodbye are independent flags — check each before acting
+  if (action !== 'add' && action !== 'remove') return;
+  if (action === 'add'    && !grp.welcome) return;
+  if (action === 'remove' && !grp.goodbye) return;
 
   let metadata;
   try { metadata = await sock.groupMetadata(id); } catch { return; }
@@ -598,7 +614,7 @@ async function handleGroupParticipantUpdate(sock, update) {
     } else if (action === 'remove') {
       const goodbyeMsg = grp.goodbyeMsg
         ? grp.goodbyeMsg.replace('{name}', `@${name}`)
-        : `Goodbye @${name}! We'll miss you. `;
+        : `Goodbye @${name}! We'll miss you.`;
       await sendFireboxCard(sock, id, null, {
         title: 'Goodbye',
         content: goodbyeMsg,
@@ -1203,7 +1219,7 @@ module.exports = {
   warn, listwarn, resetwarn,
   antiban, antilink, anticall,
   antibadword, addword, removeword, listwords,
-  welcome, setwelcome, setgoodbye,
+  welcome, setwelcome, goodbye, setgoodbye,
   groupinfo,
   antibot, antidemote, antiforeign, antiforward, antigroupmention,
   antilinkgc, antimessage, antisticker, antitag, antitagadmin,

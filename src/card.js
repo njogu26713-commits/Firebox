@@ -53,9 +53,11 @@ async function sendFireboxCard(sock, from, msg, opts = {}) {
   const version    = 'v2.0.0';
   const uptime     = getUptime();
 
-  // Footer: show channel link text (matching screenshot template)
+  // Footer: short label only — the full URL can't generate a link preview inside
+  // an interactiveMessage footer, so we keep it clean here. The channel link is
+  // already accessible via the "📢 View Channel" CTA button added below.
   const footerText = footer !== undefined ? footer
-    : channelLink ? `📢 Channel: ${channelLink}` : '';
+    : channelLink ? '📢 Follow our channel' : '';
   const baseOpts   = (!noQuote && msg) ? { quoted: msg } : {};
 
   /* ── Build CTA buttons ─────────────────────────────────────────────────── */
@@ -146,6 +148,9 @@ async function sendFireboxCard(sock, from, msg, opts = {}) {
     for (const btn of buttons) {
       if (btn && btn.url) text += `\n→ *${btn.text}:* ${btn.url}`;
     }
+    // In plain-text mode the channel link goes on its own line so WhatsApp
+    // renders it as a "View Channel" preview card instead of inline raw text.
+    if (channelLink) text += `\n\n${channelLink}`;
     const mentionPayload = opts.mentions ? { mentions: opts.mentions } : {};
     await sock.sendMessage(from, { text, ...mentionPayload }, cardOpts);
   }

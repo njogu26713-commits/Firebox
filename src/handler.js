@@ -651,6 +651,7 @@ async function handleMessage(sock, msg, prefix, sessionState) {
     case 'listwords': case 'lw':           return group.listwords(ctx);
     case 'welcome':                        return group.welcome(ctx);
     case 'setwelcome':                     return group.setwelcome(ctx);
+    case 'goodbye':                        return group.goodbye(ctx);
     case 'setgoodbye':                     return group.setgoodbye(ctx);
     case 'groupinfo': case 'ginfo':        return group.groupinfo(ctx);
     case 'antibot':                        return group.antibot(ctx);

@@ -292,7 +292,7 @@ function getAllSettings() {
 // ── groups ────────────────────────────────────────────────────────────────────
 
 const GROUP_DEFAULTS = {
-  antilink: 0, welcome: 0, muted: 0,
+  antilink: 0, welcome: 0, goodbye: 0, muted: 0,
   anticall: 0, antidelete: 0, antiedit: 0, antibot: 0, antiforeign: 0,
   antibadword: 0, antiban: 0,
   welcomeMsg: '', goodbyeMsg: '',
