@@ -736,11 +736,16 @@ async function channel(ctx) {
       content: '_No channel link has been set yet. Ask the owner to configure it with .setchannel_',
     });
   }
-  await sendFireboxCard(sock, from, msg, {
-    title: 'Follow Our Channel!',
-    content: `Tap the button below to follow!\n_Stay updated with the latest news and updates._`,
-    buttons: [{ text: 'Join Channel', url: link }],
-  });
+
+  // Send the link as plain text so WhatsApp clients render the native
+  // "View Channel" preview card. Link previews (including the official
+  // WhatsApp channel card) only trigger when the URL appears in the
+  // message body — not inside interactive-message button params.
+  await sock.sendMessage(
+    from,
+    { text: `*Follow Our Channel!*\n_Stay updated with the latest news and updates._\n\n${link}` },
+    { quoted: msg }
+  );
 }
 
 module.exports = { ping, ping2, menu, help, info, owner, runtime, botstatus, pair, repo, channel };

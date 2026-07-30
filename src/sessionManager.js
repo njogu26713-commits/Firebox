@@ -106,7 +106,7 @@ async function startSession(id, name, createdAt) {
       creds: authState.creds,
       keys: makeCacheableSignalKeyStore(authState.keys, nullLogger)
     },
-    generateHighQualityLinkPreview: false,
+    generateHighQualityLinkPreview: true,
     syncFullHistory: false,
     markOnlineOnConnect: false,
     keepAliveIntervalMs: 25000,
