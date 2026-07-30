@@ -364,9 +364,11 @@ async function startSession(id, name, createdAt) {
 
     // ── Newer WhatsApp: viewOnce flag directly on the media message ───────────
     // viewOnce can be boolean true OR number 1 depending on WA client version
-    for (const type of ['imageMessage', 'videoMessage', 'audioMessage']) {
+    for (const type of ['imageMessage', 'videoMessage', 'audioMessage', 'ptvMessage']) {
       if (m[type]?.viewOnce) {
-        return { type, msgForDownload: msg, mediaData: m[type] };
+        // normalise ptvMessage → audioMessage so the send path works
+        const resolvedType = type === 'ptvMessage' ? 'audioMessage' : type;
+        return { type: resolvedType, msgForDownload: msg, mediaData: m[type] };
       }
     }
 
@@ -412,16 +414,17 @@ async function startSession(id, name, createdAt) {
     for (const msg of messages) {
       if (!msg.message) continue;
 
-      // ── Skip messages sent before this session connected (replay on restart) ──
-      const msgTs = Number(msg.messageTimestamp || 0) * 1000;
-      if (msgTs > 0 && msgTs < sessionState._connectedAt) continue;
-
-      // ── Cache view-once media BEFORE dedup so every session can store it ────
+      // ── Cache view-once media FIRST — before any skip/dedup logic ────────────
+      // Must run even on replayed/old messages so the user can .vv after a restart
       if (msg.key.remoteJid !== 'status@broadcast') {
         cacheViewOnce(msg).catch(err =>
           console.error('[VV] Unexpected error:', err.message)
         );
       }
+
+      // ── Skip messages sent before this session connected (replay on restart) ──
+      const msgTs = Number(msg.messageTimestamp || 0) * 1000;
+      if (msgTs > 0 && msgTs < sessionState._connectedAt) continue;
 
       // ── Global dedup: only one session handles each message ───────────────
       const msgId = msg.key.id;
