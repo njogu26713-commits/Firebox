@@ -49,7 +49,7 @@ async function sendFireboxCard(sock, from, msg, opts = {}) {
 
   // Footer: show channel link text (matching screenshot template)
   const footerText = footer !== undefined ? footer
-    : channelLink ? `» Channel: ${channelLink}` : '';
+    : channelLink ? `📢 Channel: ${channelLink}` : '';
   const baseOpts   = (!noQuote && msg) ? { quoted: msg } : {};
 
   /* ── Build CTA buttons ─────────────────────────────────────────────────── */
@@ -58,7 +58,7 @@ async function sendFireboxCard(sock, from, msg, opts = {}) {
     nativeButtons.push({
       name: 'cta_url',
       buttonParamsJson: JSON.stringify({
-        display_text: '» View Channel',
+        display_text: '📢 View Channel',
         url: channelLink,
         merchant_url: channelLink,
       }),
