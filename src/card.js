@@ -47,7 +47,9 @@ async function sendFireboxCard(sock, from, msg, opts = {}) {
   const version    = 'v2.0.0';
   const uptime     = getUptime();
 
-  const footerText = footer || '';
+  // Footer: show channel link text (matching screenshot template)
+  const footerText = footer !== undefined ? footer
+    : channelLink ? `📢 Channel: ${channelLink}` : '';
   const baseOpts   = (!noQuote && msg) ? { quoted: msg } : {};
 
   /* ── Build CTA buttons ─────────────────────────────────────────────────── */
@@ -112,15 +114,18 @@ async function sendFireboxCard(sock, from, msg, opts = {}) {
     cardOpts = {};
   }
 
+  // Body: bold command title on its own line, then the content beneath it
+  const bodyText = title ? `*${title}*\n\n${content}` : content;
+
   /* ── Try interactive message ───────────────────────────────────────────── */
   try {
     await sock.sendMessage(from, {
       interactiveMessage: {
         header: {
-          title: title,
+          title: botName,          // bot/brand name in header (matches screenshot)
           hasMediaAttachment: false,
         },
-        body:   { text: content },
+        body:   { text: bodyText },
         footer: { text: footerText },
         nativeFlowMessage: {
           buttons: nativeButtons,
@@ -130,9 +135,8 @@ async function sendFireboxCard(sock, from, msg, opts = {}) {
     }, cardOpts);
   } catch (_) {
     /* ── Fallback: premium rich text ─────────────────────────────────────── */
-    let text = `*${title}*\n\n${content}`;
-    if (footerText) text += `\n\n_${footerText}_`;
-    if (channelLink) text += `\n\n📢 *Channel:* ${channelLink}`;
+    let text = `*${botName}*\n${bodyText}`;
+    if (footerText) text += `\n\n${footerText}`;
     for (const btn of buttons) {
       if (btn && btn.url) text += `\n🔗 *${btn.text}:* ${btn.url}`;
     }
