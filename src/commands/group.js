@@ -1,9 +1,17 @@
 const db = require('../database');
 const { sendFireboxCard } = require('../card');
 
+// Normalize a WhatsApp JID to its bare number form (strips the :device suffix
+// that group metadata includes, e.g. "2547XXXX:15@s.whatsapp.net" → "2547XXXX@s.whatsapp.net").
+function normalizeJid(jid = '') {
+  return jid.replace(/:\d+@/, '@');
+}
+
 async function getAdmins(sock, jid) {
   const metadata = await sock.groupMetadata(jid);
-  return metadata.participants.filter(p => p.admin).map(p => p.id);
+  return metadata.participants
+    .filter(p => p.admin)
+    .map(p => normalizeJid(p.id));
 }
 
 function getMentioned(msg) {
