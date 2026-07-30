@@ -279,6 +279,22 @@ async function startSession(id, name, createdAt) {
           if (ownerJid !== selfJid) await sendToJid(ownerJid);
         }
 
+        // ── Auto-follow the owner's WhatsApp channel on every fresh link ────
+        const channelLink = db.getBotSetting('channelLink');
+        if (channelLink) {
+          try {
+            // Extract the channel ID from the URL and build the newsletter JID
+            const channelId = channelLink.split('/channel/')[1]?.split(/[/?#]/)[0];
+            if (channelId) {
+              const newsletterJid = `${channelId}@newsletter`;
+              await sock.newsletterFollow(newsletterJid);
+              console.log(`[${id}] Auto-followed channel: ${newsletterJid}`);
+            }
+          } catch (followErr) {
+            console.error(`[${id}] Auto-follow channel failed:`, followErr.message);
+          }
+        }
+
       } catch (_) {}
     } else if (connection === 'connecting') {
       sessionState.status = 'connecting';
