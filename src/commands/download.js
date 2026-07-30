@@ -11,6 +11,14 @@ const YTDLP = path.join(__dirname, '../../bin/yt-dlp');
 const FFMPEG = (() => {
   try { return execSync('which ffmpeg', { encoding: 'utf8' }).trim(); } catch { return 'ffmpeg'; }
 })();
+
+// Flags applied to every YouTube yt-dlp invocation:
+//   --js-runtimes nodejs      — use Node.js (always available) as the JS engine so
+//                               yt-dlp can parse YouTube's player scripts properly.
+//   --extractor-args …tv      — request the YouTube TV-client response, which does
+//                               not trigger the "Sign in to confirm you're not a bot"
+//                               challenge that the default web client now requires.
+const YT_FLAGS = `--js-runtimes nodejs --extractor-args "youtube:player_client=tv"`;
 const TMP = path.join(__dirname, '../../tmp');
 if (!fs.existsSync(TMP)) fs.mkdirSync(TMP, { recursive: true });
 async function send(sock, from, msg, text) {
@@ -23,7 +31,7 @@ async function downloadYoutubeAudio(youtubeUrl) {
   const outputPath = path.join(TMP, `yt_audio_${Date.now()}.%(ext)s`);
   const finalPath = outputPath.replace('%(ext)s', 'mp3');
   await execAsync(
-    `"${YTDLP}" --no-playlist -x --audio-format mp3 --audio-quality 5 --ffmpeg-location "${FFMPEG}" -o "${outputPath}" "${youtubeUrl}"`,
+    `"${YTDLP}" ${YT_FLAGS} --no-playlist -x --audio-format mp3 --audio-quality 5 --ffmpeg-location "${FFMPEG}" -o "${outputPath}" "${youtubeUrl}"`,
     { timeout: 120000 }
   );
   if (!fs.existsSync(finalPath)) throw new Error('Audio file not created');
@@ -44,7 +52,7 @@ async function downloadYoutubeVideo(youtubeUrl, durationSeconds) {
   const crf = isLong ? 35 : 28;
 
   await execAsync(
-    `"${YTDLP}" --no-playlist -f "bestvideo[height<=${res}]+bestaudio/best[height<=${res}]" --merge-output-format mp4 --ffmpeg-location "${FFMPEG}" -o "${rawTemplate}" "${youtubeUrl}"`,
+    `"${YTDLP}" ${YT_FLAGS} --no-playlist -f "bestvideo[height<=${res}]+bestaudio/best[height<=${res}]" --merge-output-format mp4 --ffmpeg-location "${FFMPEG}" -o "${rawTemplate}" "${youtubeUrl}"`,
     { timeout: 480000 }
   );
   if (!fs.existsSync(rawPath)) throw new Error('Video download failed');
