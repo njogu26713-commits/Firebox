@@ -13,24 +13,8 @@ const FFMPEG = (() => {
 })();
 const TMP = path.join(__dirname, '../../tmp');
 if (!fs.existsSync(TMP)) fs.mkdirSync(TMP, { recursive: true });
-const { sendFireboxCard } = require('../card');
-
-async function send(sock, from, msg, text, title) {
-  return sendFireboxCard(sock, from, msg, { title: title || 'Firebox Download', content: text });
-}
-
-async function sendButtons(sock, from, msg, text, buttons, sender, prefix, sessionState) {
-  const nums = ['', '', ''];
-  const lines = buttons.map((b, i) => `  *${i + 1}.* ${b.label}`).join('\n');
-  await sock.sendMessage(from, {
-    text: `${text}\n*Quick replies — send ${buttons.map((_, i) => i + 1).join(' or ')}:*\n${lines}`
-  }, { quoted: msg });
-  sessionState.pendingPrompts.set(sender, {
-    type: 'cmd',
-    cmdPrefix: prefix,
-    prompts: buttons.map(b => b.id.startsWith(prefix) ? b.id.slice(prefix.length) : b.id),
-    expiresAt: Date.now() + 5 * 60 * 1000
-  });
+async function send(sock, from, msg, text) {
+  return sock.sendMessage(from, { text }, { quoted: msg });
 }
 
 // ─── YOUTUBE ─────────────────────────────────────────────────────────────────
@@ -85,18 +69,16 @@ async function downloadYoutubeVideo(youtubeUrl, durationSeconds) {
 }
 
 async function youtubeAudio(ctx) {
-  const { sock, from, msg, text, sender, prefix, sessionState } = ctx;
+  const { sock, from, msg, text } = ctx;
   if (!text) return send(sock, from, msg, 'Usage: .play <song name>\nExample: .play Shape of You');
 
   try {
-    await send(sock, from, msg, `Searching for *${text}*...`);
+    await send(sock, from, msg, 'Downloading...');
     const results = await ytSearch(text);
     if (!results.videos.length) return send(sock, from, msg, 'No results found!');
 
     const video = results.videos[0];
     if (video.seconds > 600) return send(sock, from, msg, 'Song is too long! Maximum 10 minutes.');
-
-    await send(sock, from, msg, `*Downloading...*\n${video.title}\n${video.timestamp}\n${Number(video.views).toLocaleString()} views`);
 
     const audioBuffer = await downloadYoutubeAudio(`https://www.youtube.com/watch?v=${video.videoId}`);
 
@@ -106,36 +88,22 @@ async function youtubeAudio(ctx) {
       fileName: `${video.title}.mp3`,
       ptt: false
     }, { quoted: msg });
-
-    await sendButtons(sock, from, msg,
-      `*${video.title}*\nWhat would you like next?`,
-      [
-        { id: `.video ${text}`,  label: 'Get Video' },
-        { id: `.lyrics ${text}`, label: 'Get Lyrics' },
-      ],
-      sender, prefix, sessionState
-    );
   } catch (err) {
     await send(sock, from, msg, `Download failed: ${err.message}`);
   }
 }
 
 async function youtubeVideo(ctx) {
-  const { sock, from, msg, text, sender, prefix, sessionState } = ctx;
+  const { sock, from, msg, text } = ctx;
   if (!text) return send(sock, from, msg, 'Usage: .video <video name>\nExample: .video Never Gonna Give You Up');
 
   try {
-    await send(sock, from, msg, `Searching for *${text}*...`);
+    await send(sock, from, msg, 'Downloading...');
     const results = await ytSearch(text);
     if (!results.videos.length) return send(sock, from, msg, 'No results found!');
 
     const video = results.videos[0];
     if (video.seconds > 600) return send(sock, from, msg, 'Video too long! Maximum 10 minutes.');
-
-    const waitNote = video.seconds > 300
-      ? '_Long video — this may take 3–5 minutes, please wait... _'
-      : '_This may take up to a minute..._';
-    await send(sock, from, msg, `*Downloading...*\n${video.title}\n${video.timestamp}\n${waitNote}`);
 
     const videoBuffer = await downloadYoutubeVideo(`https://www.youtube.com/watch?v=${video.videoId}`, video.seconds);
 
@@ -144,15 +112,6 @@ async function youtubeVideo(ctx) {
       caption: `*${video.title}*`,
       mimetype: 'video/mp4'
     }, { quoted: msg });
-
-    await sendButtons(sock, from, msg,
-      `*${video.title}*\nWhat would you like next?`,
-      [
-        { id: `.play ${text}`,   label: 'Get Audio' },
-        { id: `.lyrics ${text}`, label: 'Get Lyrics' },
-      ],
-      sender, prefix, sessionState
-    );
   } catch (err) {
     await send(sock, from, msg, `Download failed: ${err.message}`);
   }
