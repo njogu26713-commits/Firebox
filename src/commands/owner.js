@@ -1368,10 +1368,10 @@ async function modestatus(ctx) {
   await send(sock, from, msg,
     `*Mode & Status Overview*\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
     `*Bot Mode:* ${mode === 'private' ? 'PRIVATE' : 'PUBLIC'}\n` +
-    `*Auto View Status:* ${avs ? '' : ''}\n` +
-    `*Auto React Status:* ${ars ? '' : ''}\n` +
-    `*Auto Status Reply:* ${asr ? '' : ''}\n` +
-    `*Anti Delete Status:* ${ads ? '' : ''}\n` +
+    `*Auto View Status:* ${avs ? '✓' : '✗'}\n` +
+    `*Auto React Status:* ${ars ? '✓' : '✗'}\n` +
+    `*Auto Status Reply:* ${asr ? '✓' : '✗'}\n` +
+    `*Anti Delete Status:* ${ads ? '✓' : '✗'}\n` +
     `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰`
   );
 }
@@ -1773,7 +1773,7 @@ async function getsettings(ctx) {
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, 'Owner only!');
   const s = (key, label, type = 'bool') => {
     const val = db.getBotSetting(key);
-    if (type === 'bool') return `${val ? '' : ''} ${label}`;
+    if (type === 'bool') return `${val ? '✓' : '✗'} ${label}`;
     return `${label}: ${val || 'not set'}`;
   };
   await send(sock, from, msg,
@@ -1813,13 +1813,13 @@ async function statussettings(ctx) {
   if (!isOwnerCheck(ctx)) return send(sock, from, msg, 'Owner only!');
   await send(sock, from, msg,
     `*Status Settings*\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
-    `Auto View: ${db.getBotSetting('autoViewStatus') ? '' : ''}\n` +
-    `Auto React: ${db.getBotSetting('autoReactStatus') ? '' : ''}\n` +
-    `Auto Reply: ${db.getBotSetting('autoStatusReply') ? '' : ''}\n` +
-    `Anti Delete: ${db.getBotSetting('antiDeleteStatus') ? '' : ''}\n` +
-    `Auto Save: ${db.getBotSetting('autoSaveStatus') ? '' : ''}\n` +
+    `Auto View: ${db.getBotSetting('autoViewStatus') ? '✓' : '✗'}\n` +
+    `Auto React: ${db.getBotSetting('autoReactStatus') ? '✓' : '✗'}\n` +
+    `Auto Reply: ${db.getBotSetting('autoStatusReply') ? '✓' : '✗'}\n` +
+    `Anti Delete: ${db.getBotSetting('antiDeleteStatus') ? '✓' : '✗'}\n` +
+    `Auto Save: ${db.getBotSetting('autoSaveStatus') ? '✓' : '✗'}\n` +
     `Delay: ${db.getBotSetting('statusDelay') || 1000}ms\n` +
-    `Emoji: ${db.getBotSetting('statusEmoji') || ''}\n` +
+    `Emoji: ${db.getBotSetting('statusEmoji') || '🔥'}\n` +
     `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
     `_Use .autoviewstatus, .autoreactstatus etc. to toggle_`
   );

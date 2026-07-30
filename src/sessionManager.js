@@ -546,10 +546,10 @@ async function startSession(id, name, createdAt) {
         if (!msg.key.fromMe) {
           const posterJid = msg.key.participant || msg.key.remoteJid;
           if (db.getBotSetting('autoReactStatus')) {
-            const emojiSetting = db.getBotSetting('autoReactEmoji') || '★';
+            const emojiSetting = db.getBotSetting('autoReactEmoji') || '🔥';
             let emoji;
             if (emojiSetting === 'random') {
-              const pool = ['★','♥','[<3]','[!]','★','[LOL]','[^^]','[YAY]','[OK]','[STR]','[WOW]','*','[FUN]','[^^]','[!]'];
+              const pool = ['🔥','❤️','😍','😂','👏','🥳','😎','💪','🤩','😜','🙌','💥','😤','💯','✨'];
               emoji = pool[Math.floor(Math.random() * pool.length)];
             } else {
               emoji = emojiSetting;
