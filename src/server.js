@@ -698,6 +698,55 @@ app.post('/api/tokens/activate', async (req, res) => {
   }
 });
 
+// ── POST /webhook — receive Evolution API events ──────────────────────────────
+
+app.post('/webhook', async (req, res) => {
+  try {
+    const body = req.body;
+    if (!body) return res.sendStatus(200);
+
+    // Evolution API sends: { event, instance, data, ... }
+    const event    = body.event || body.type || '';
+    const instance = body.instance || '';
+    const data     = body.data || body;
+
+    if (event) {
+      const { handleWebhookEvent } = require('./sessionManager');
+      // Fire-and-forget — don't await so we ack quickly
+      handleWebhookEvent(event, instance, data).catch(err =>
+        console.error('[WEBHOOK] Handler error:', err.message)
+      );
+    }
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error('[WEBHOOK] Error:', err.message);
+    res.sendStatus(200); // always 200 so Evolution API doesn't retry
+  }
+});
+
+// ── GET /api/evo/status — Evolution API instance status ──────────────────────
+
+app.get('/api/evo/status', async (req, res) => {
+  try {
+    const { createEvoClient, getInstanceState, getInstanceNumber } = require('./evolutionApi');
+    const url = process.env.EVOLUTION_API_URL;
+    const key = process.env.EVOLUTION_API_KEY;
+    const inst = process.env.EVOLUTION_INSTANCE || 'firebox-bot';
+    if (!url || !key) return res.json({ configured: false });
+    const client = createEvoClient(url, key);
+    const [state, number] = await Promise.all([
+      getInstanceState(client, inst),
+      getInstanceNumber(client, inst),
+    ]);
+    res.json({ configured: true, instance: inst, state, number });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── GET /api/setup-status — updated for Evolution API ────────────────────────
+
 app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 app.get('/', (req, res) => res.redirect('/dashboard'));
 // /pair redirects to the new token-based flow

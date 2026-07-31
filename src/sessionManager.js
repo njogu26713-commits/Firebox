@@ -1,34 +1,47 @@
-const {
-  makeWASocket,
-  useMultiFileAuthState,
-  DisconnectReason,
-  fetchLatestBaileysVersion,
-  makeCacheableSignalKeyStore,
-  downloadMediaMessage,
-  downloadContentFromMessage,
-  getContentType
-} = require('@whiskeysockets/baileys');
-const { openRouterVision } = require('./openrouter');
-const pino = require('pino');
-const { Boom } = require('@hapi/boom');
+/**
+ * Session Manager — Evolution API edition
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Replaces the Baileys-based session manager with an Evolution API adapter.
+ * The public interface (sessions, addSession, removeSession, requestPairingCode,
+ * waitForPairingReady, loadAndStartAll) is preserved so the rest of the codebase
+ * doesn't need to change.
+ */
+
+'use strict';
+
 const path = require('path');
-const fs = require('fs');
+const fs   = require('fs');
+
+const {
+  createSockAdapter,
+  createEvoClient,
+  ensureInstance,
+  getInstanceState,
+  getInstanceNumber,
+  setupWebhook,
+  getQrCode,
+} = require('./evolutionApi');
 
 const { createSessionState, addActivity } = require('./state');
 const db = require('./database');
-const { sendFireboxCard } = require('./card');
+
+// ── Config ────────────────────────────────────────────────────────────────────
+
+const EVO_API_URL  = process.env.EVOLUTION_API_URL  || '';
+const EVO_API_KEY  = process.env.EVOLUTION_API_KEY  || '';
+const EVO_INSTANCE = process.env.EVOLUTION_INSTANCE || 'firebox-bot';
+const PREFIX       = process.env.PREFIX || '.';
 
 const SESSIONS_FILE = path.join(__dirname, '../data/sessions.json');
-const SESSION_BASE  = path.join(__dirname, '../session');
-const PREFIX        = process.env.PREFIX || '.';
 
-const sessions = new Map(); // id -> sessionState
+// Singleton session map — one entry per Evolution API instance
+const sessions = new Map();
 
-// Global dedup cache — prevents two sessions in the same group from both replying
-const _handledMsgIds = new Map(); // msgId -> timestamp
-const DEDUP_TTL = 60 * 1000; // 60 seconds
+// Global dedup cache
+const _handledMsgIds = new Map();
+const DEDUP_TTL = 60 * 1000;
 
-// ── persistence ──────────────────────────────────────────────────────────────
+// ── persistence helpers ────────────────────────────────────────────────────────
 
 function loadSessionList() {
   try {
@@ -41,897 +54,200 @@ function saveSessionList() {
   const list = [...sessions.values()].map(s => ({
     id: s.id, name: s.name, createdAt: s.createdAt
   }));
-  fs.writeFileSync(SESSIONS_FILE, JSON.stringify(list, null, 2));
+  try { fs.writeFileSync(SESSIONS_FILE, JSON.stringify(list, null, 2)); } catch {}
 }
 
-// ── migrate legacy single-session if needed ───────────────────────────────────
+// ── build / update the sessionState for the single Evolution API instance ─────
 
-function migrateLegacySession() {
-  const legacyCreds = path.join(SESSION_BASE, 'creds.json');
-  if (!fs.existsSync(legacyCreds)) return null;
-
-  const id = 'sess_legacy';
-  const destDir = path.join(SESSION_BASE, id);
-  if (fs.existsSync(destDir)) return id; // already migrated
-
-  fs.mkdirSync(destDir, { recursive: true });
-  const files = fs.readdirSync(SESSION_BASE).filter(
-    f => !fs.statSync(path.join(SESSION_BASE, f)).isDirectory()
-  );
-  for (const f of files) {
-    fs.copyFileSync(path.join(SESSION_BASE, f), path.join(destDir, f));
-  }
-  console.log('[SESSIONS] Migrated legacy session → sess_legacy');
-  return id;
-}
-
-// ── start one WhatsApp session ────────────────────────────────────────────────
-
-async function startSession(id, name, createdAt) {
-  let sessionState = sessions.get(id);
-  if (!sessionState) {
-    sessionState = createSessionState(id, name);
-    sessionState.createdAt = createdAt || Date.now();
-    sessionState.awayMode = db.getBotSetting('awayMode') || false;
-    sessionState.awayMsg = db.getBotSetting('awayMsg') || sessionState.awayMsg;
-    sessions.set(id, sessionState);
-  } else {
-    sessionState.status = 'connecting';
-  }
-
-  const sessionDir = path.join(SESSION_BASE, id);
-  if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
-
-  const { state: authState, saveCreds } = await useMultiFileAuthState(sessionDir);
-
-  // Cache the WA version — fetchLatestBaileysVersion() hits a remote server every call.
-  // Re-fetch only once every 6 hours so reconnects don't add network latency.
-  if (!startSession._cachedVersion || Date.now() - startSession._versionTs > 6 * 60 * 60 * 1000) {
-    try {
-      const result = await fetchLatestBaileysVersion();
-      startSession._cachedVersion = result.version;
-      startSession._versionTs = Date.now();
-    } catch (_) {
-      if (!startSession._cachedVersion) startSession._cachedVersion = [2, 3000, 1015901307];
-    }
-  }
-  const version = startSession._cachedVersion;
-
-  const nullLogger = pino({ level: 'silent' }, { write: () => {} });
-
-  const sock = makeWASocket({
-    version,
-    logger: nullLogger,
-    auth: {
-      creds: authState.creds,
-      keys: makeCacheableSignalKeyStore(authState.keys, nullLogger)
-    },
-    generateHighQualityLinkPreview: true,
-    syncFullHistory: false,
-    markOnlineOnConnect: false,
-    keepAliveIntervalMs: 25000,
-    connectTimeoutMs: 60000,
-    retryRequestDelayMs: 250,
-    maxMsgRetryCount: 5
-  });
-
-  sessionState.sock = sock;
-
-  sock.ev.on('creds.update', saveCreds);
-
-  // ── scheduler ──
-  const schedulerInterval = setInterval(async () => {
-    // Daily coin auto-refill — runs once per day regardless of session state
-    db.checkAndApplyDailyRefill();
-
-    if (sessionState.status !== 'connected') return;
-    const now = Date.now();
-    const due = db.getSchedules().filter(s => s.jid && s.sendAt <= now);
-    for (const s of due) {
-      try {
-        await sock.sendMessage(s.jid, { text: `[SCHED] *Scheduled Message*\n\n${s.message}` });
-        db.removeSchedule(s.id);
-      } catch (err) {
-        db.removeSchedule(s.id);
-      }
-    }
-  }, 30000);
-
-  if (!sessionState._reconnectDelay) sessionState._reconnectDelay = 3000;
-  if (!sessionState._440Delay) sessionState._440Delay = 10000;
-  if (!sessionState._connectedAt) sessionState._connectedAt = 0;
-
-  sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
-    // Mark socket as having received at least one update — safe to request pairing code now
-    sessionState._socketInitialized = true;
-
-    if (qr) {
-      sessionState.qr = qr;
-      sessionState.pairingCode = null;
-    }
-
-    if (connection === 'close') {
-      clearInterval(schedulerInterval);
-      sessionState.status = 'disconnected';
-      sessionState.number = null;
-      sessionState.qr = null;
-      sessionState.sock = null;
-
-      // If the session was intentionally removed, do not reconnect
-      if (sessionState._removed) {
-        console.log(`[${id}] Session was removed — skipping reconnect.`);
-        return;
-      }
-
-      const code = new Boom(lastDisconnect?.error)?.output?.statusCode;
-
-      if (code === DisconnectReason.loggedOut || code === DisconnectReason.forbidden) {
-        console.log(`[${id}] Logged out (code ${code}). Removing session.`);
-        sessions.delete(id);
-        saveSessionList();
-      } else if (code === DisconnectReason.connectionReplaced) {
-        // Another active connection took over — use a separate 440 backoff so a
-        // brief successful reconnect doesn't reset it back to 3s.
-        const delay = sessionState._440Delay;
-        sessionState._440Delay = Math.min(delay * 2, 300000); // cap at 5 min
-        // Stagger per session index to prevent simultaneous reconnect storms
-        const sessionIndex = [...sessions.keys()].indexOf(id);
-        const stagger = (sessionIndex >= 0 ? sessionIndex : 0) * 5000;
-        const totalDelay = delay + stagger;
-        console.log(`[${id}] Connection replaced (440) — waiting ${Math.round(totalDelay/1000)}s before retry...`);
-        sessionState.status = 'connecting';
-        setTimeout(() => startSession(id, sessionState.name, sessionState.createdAt), totalDelay);
-      } else if (code === DisconnectReason.restartRequired) {
-        // Server asked for immediate restart
-        sessionState._reconnectDelay = 3000;
-        console.log(`[${id}] Restart required — reconnecting in 3s...`);
-        sessionState.status = 'connecting';
-        setTimeout(() => startSession(id, sessionState.name, sessionState.createdAt), 3000);
-      } else if (code === DisconnectReason.badSession) {
-        // Corrupted session — clear signal keys and re-auth
-        console.log(`[${id}] Bad session — clearing signal keys and reconnecting...`);
-        const sessionDir = path.join(SESSION_BASE, id);
-        try {
-          const files = fs.readdirSync(sessionDir).filter(f =>
-            f.startsWith('session-') || f.startsWith('sender-key-') || f.startsWith('identity-key-')
-          );
-          for (const f of files) fs.unlinkSync(path.join(sessionDir, f));
-          console.log(`[${id}] Cleared ${files.length} stale key file(s).`);
-        } catch (_) {}
-        sessionState._reconnectDelay = 5000;
-        sessionState.status = 'connecting';
-        setTimeout(() => startSession(id, sessionState.name, sessionState.createdAt), 5000);
-      } else {
-        // All other codes: reconnect with mild backoff
-        const delay = sessionState._reconnectDelay || 3000;
-        sessionState._reconnectDelay = Math.min(delay * 1.5, 30000);
-        console.log(`[${id}] Reconnecting in ${Math.round(delay/1000)}s... (code ${code})`);
-        sessionState.status = 'connecting';
-        setTimeout(() => startSession(id, sessionState.name, sessionState.createdAt), delay);
-      }
-    } else if (connection === 'open') {
-      const user = sock.user?.id?.split(':')[0];
-      sessionState.status = 'connected';
-      sessionState._connectedAt = Date.now();
-      sessionState._reconnectDelay = 3000; // reset general backoff on successful connect
-      // Only reset 440 backoff if we've been stable for at least 60 seconds
-      setTimeout(() => {
-        if (sessionState.status === 'connected' && Date.now() - sessionState._connectedAt >= 60000) {
-          sessionState._440Delay = 30000;
-        }
-      }, 60000);
-      sessionState.number = user;
-      sessionState.qr = null;
-      sessionState.pairingCode = null;
-      console.log(`[${id}] Connected! +${user}`);
-      // Wait 5 s for the socket to fully settle so the channel button renders
-      await new Promise(r => setTimeout(r, 5000));
-      try {
-        const selfJid = sock.user?.id;
-
-        // ── Generate base64 session export ──────────────────────────────────
-        let sessionIdStr = '_Could not export session_';
-        try {
-          const sessionDir = path.join(SESSION_BASE, id);
-          const files = fs.readdirSync(sessionDir);
-          const bundle = {};
-          for (const file of files) {
-            const filePath = path.join(sessionDir, file);
-            if (fs.statSync(filePath).isFile()) {
-              bundle[file] = fs.readFileSync(filePath, 'utf8');
-            }
-          }
-          sessionIdStr = Buffer.from(JSON.stringify(bundle)).toString('base64');
-        } catch (_) {}
-
-        const cardContent =
-          `[MOB] *Number:* +${user}\n` +
-          `[TAG] *Session:* ${sessionState.name}\n` +
-          `[SCHED] *Time:* ${new Date().toLocaleString()}\n\n` +
-          `_Your Session ID is attached below as a .txt file.\nCopy its contents and paste into the *SESSION_ID* field on the Config page to deploy._`;
-
-        const fakeMsg = null; // no incoming msg to quote
-
-        // ── Session ID as a downloadable document ────────────────────────────
-        const sessionBuffer = Buffer.from(sessionIdStr, 'utf8');
-
-        async function sendToJid(jid) {
-          // 1. Connected card
-          await sendFireboxCard(sock, jid, fakeMsg, {
-            title: '✓ Firebox Connected!',
-            content: cardContent,
-            noQuote: true,
-          });
-          // 2. Session ID as a .txt document (no size limit issue)
-          await sock.sendMessage(jid, {
-            document: sessionBuffer,
-            mimetype: 'text/plain',
-            fileName: `session-${user}.txt`,
-            caption: '[CLIP] Your Session ID — copy the full contents and paste into the Config page SESSION_ID field.',
-          });
-        }
-
-        if (selfJid) await sendToJid(selfJid);
-
-        const ownerNumber = process.env.OWNER_NUMBER;
-        if (ownerNumber) {
-          const ownerJid = ownerNumber + '@s.whatsapp.net';
-          if (ownerJid !== selfJid) await sendToJid(ownerJid);
-        }
-
-        // ── Auto-follow the owner's WhatsApp channel on every fresh link ────
-        const channelLink = db.getBotSetting('channelLink');
-        if (channelLink) {
-          try {
-            // Extract the channel ID from the URL and build the newsletter JID
-            const channelId = channelLink.split('/channel/')[1]?.split(/[/?#]/)[0];
-            if (channelId) {
-              const newsletterJid = `${channelId}@newsletter`;
-              await sock.newsletterFollow(newsletterJid);
-              console.log(`[${id}] Auto-followed channel: ${newsletterJid}`);
-            }
-          } catch (followErr) {
-            console.error(`[${id}] Auto-follow channel failed:`, followErr.message);
-          }
-        }
-
-      } catch (_) {}
-    } else if (connection === 'connecting') {
-      sessionState.status = 'connecting';
-    }
-  });
-
-  // ── Anti-call DM: reject + warn on private calls ─────────────────────────
-  sock.ev.on('call', async (calls) => {
-    for (const call of calls) {
-      if (call.status !== 'offer') continue; // only act on incoming offers
-      const callerJid = call.from;
-      const isDM = callerJid.endsWith('@s.whatsapp.net');
-
-      // Only handle DM calls here; group calls are handled per-group via .anticall
-      if (!isDM) continue;
-
-      const anticallDm = db.getBotSetting('anticallDm');
-      if (!anticallDm) continue; // DM anticall is off
-
-      try {
-        await sock.rejectCall(call.id, callerJid);
-        console.log(`[ANTICALL-DM][${id}] Rejected DM call from ${callerJid.split('@')[0]}`);
-      } catch (err) {
-        console.error(`[ANTICALL-DM][${id}] Reject failed:`, err.message);
-      }
-      try {
-        const customMsg = db.getBotSetting('antiCallMsg');
-        const callChannelLink = db.getBotSetting('channelLink');
-        const callChannelSuffix = callChannelLink ? `\n\n» *Follow our channel:* ${callChannelLink}` : '';
-        const text = customMsg ||
-          `▲ *Call Blocked!*\n\n` +
-          `[NO-MOB] This bot does not accept calls.\n` +
-          `» Please send a text message instead.${callChannelSuffix}\n\n` +
-          `_Powered by ★ Firebox_`;
-        await sock.sendMessage(callerJid, { text });
-      } catch (err) {
-        console.error(`[ANTICALL-DM][${id}] Warning message failed:`, err.message);
-      }
-    }
-  });
-
-  const MSG_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-  const VIEW_ONCE_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
-
-  // Unwrap view-once wrappers — returns { type, msgForDownload, mediaData } or null
-  function extractViewOnce(msg) {
-    const m = msg.message;
-    if (!m) return null;
-
-    // ── Wrapped format (viewOnceMessage / V2 / V2Extension) ──────────────────
-    const wrapped =
-      m.viewOnceMessage?.message ||
-      m.viewOnceMessageV2?.message ||
-      m.viewOnceMessageV2Extension?.message;
-    if (wrapped) {
-      const type = getContentType(wrapped);
-      if (['imageMessage', 'videoMessage', 'audioMessage'].includes(type)) {
-        return { type, msgForDownload: { ...msg, message: wrapped }, mediaData: wrapped[type] };
-      }
-    }
-
-    // ── Ephemeral / device-sent — recurse one level ───────────────────────────
-    if (m.ephemeralMessage?.message)
-      return extractViewOnce({ ...msg, message: m.ephemeralMessage.message });
-    if (m.deviceSentMessage?.message)
-      return extractViewOnce({ ...msg, message: m.deviceSentMessage.message });
-
-    // ── Newer WhatsApp: viewOnce flag directly on the media message ───────────
-    // viewOnce can be boolean true OR number 1 depending on WA client version
-    for (const type of ['imageMessage', 'videoMessage', 'audioMessage', 'ptvMessage']) {
-      if (m[type]?.viewOnce) {
-        // normalise ptvMessage → audioMessage so the send path works
-        const resolvedType = type === 'ptvMessage' ? 'audioMessage' : type;
-        return { type: resolvedType, msgForDownload: msg, mediaData: m[type] };
-      }
-    }
-
+async function startEvoSession(id, name, createdAt) {
+  if (!EVO_API_URL || !EVO_API_KEY) {
+    console.error('[EVO] EVOLUTION_API_URL / EVOLUTION_API_KEY not set — cannot start.');
     return null;
   }
 
-  async function cacheViewOnce(msg) {
-    if (!msg.message) return;
-    const result = extractViewOnce(msg);
-    if (!result) return;
-
-    const { type, msgForDownload, mediaData } = result;
-    const id = msg.key.id;
-    if (sessionState.viewOnceCache.get(id)?.buffer) return; // already cached
-
-    console.log(`[VV] Detected view-once id=${id} type=${type} — downloading...`);
-    try {
-      const buffer = await downloadMediaMessage(
-        msgForDownload,
-        'buffer',
-        {},
-        { reuploadRequest: sock.updateMediaMessage }
-      );
-      sessionState.viewOnceCache.set(id, {
-        buffer, type,
-        mimetype: mediaData?.mimetype,
-        ptt: mediaData?.ptt || false,
-        sender: msg.key.participant || msg.key.remoteJid,
-        ts: Date.now()
-      });
-      console.log(`[VV] Cached view-once id=${id} type=${type} size=${buffer.length}b`);
-      setTimeout(() => sessionState.viewOnceCache.delete(id), VIEW_ONCE_CACHE_TTL);
-    } catch (err) {
-      console.error(`[VV] Download failed id=${id}:`, err.message);
-    }
+  let sessionState = sessions.get(id);
+  if (!sessionState) {
+    sessionState = createSessionState(id, name || EVO_INSTANCE);
+    sessionState.createdAt = createdAt || Date.now();
+    sessionState.awayMode  = db.getBotSetting('awayMode')  || false;
+    sessionState.awayMsg   = db.getBotSetting('awayMsg')   || sessionState.awayMsg;
+    sessions.set(id, sessionState);
   }
 
-  sock.ev.on('messages.upsert', async ({ messages, type }) => {
-    if (type !== 'notify') return;
-    const { handleMessage } = require('./handler');
-    // getContentType is already imported at top level
+  sessionState.status = 'connecting';
 
-    for (const msg of messages) {
-      if (!msg.message) continue;
+  const client = createEvoClient(EVO_API_URL, EVO_API_KEY);
 
-      // ── Cache view-once media FIRST — before any skip/dedup logic ────────────
-      // Must run even on replayed/old messages so the user can .vv after a restart
-      if (msg.key.remoteJid !== 'status@broadcast') {
-        cacheViewOnce(msg).catch(err =>
-          console.error('[VV] Unexpected error:', err.message)
+  // ── Ensure the instance exists on the Evolution API server ───────────────
+  await ensureInstance(EVO_API_URL, EVO_API_KEY, EVO_INSTANCE);
+
+  // ── Set up webhook so Evolution API pushes events to us ──────────────────
+  const webhookUrl = buildWebhookUrl();
+  if (webhookUrl) {
+    await setupWebhook(client, EVO_INSTANCE, webhookUrl);
+  } else {
+    console.warn('[EVO] WEBHOOK_URL not set — incoming messages will not arrive. Set WEBHOOK_URL env var.');
+  }
+
+  // ── Check current connection state ───────────────────────────────────────
+  await refreshSessionState(sessionState, client);
+
+  // ── Attach sock adapter ──────────────────────────────────────────────────
+  const userNumber = await getInstanceNumber(client, EVO_INSTANCE);
+  const sock = createSockAdapter(EVO_INSTANCE, EVO_API_URL, EVO_API_KEY, userNumber);
+  sessionState.sock   = sock;
+  sessionState.number = userNumber;
+
+  // ── Start scheduler ──────────────────────────────────────────────────────
+  if (!sessionState._schedulerInterval) {
+    sessionState._schedulerInterval = setInterval(async () => {
+      db.checkAndApplyDailyRefill();
+      if (sessionState.status !== 'connected') return;
+      const now = Date.now();
+      const due = db.getSchedules().filter(s => s.jid && s.sendAt <= now);
+      for (const s of due) {
+        try {
+          await sock.sendMessage(s.jid, {
+            text: `[SCHED] *Scheduled Message*\n\n${s.message}`
+          });
+          db.removeSchedule(s.id);
+        } catch (_) {
+          db.removeSchedule(s.id);
+        }
+      }
+    }, 30000);
+  }
+
+  // ── Poll Evolution API every 15s to sync connection state ────────────────
+  if (!sessionState._pollInterval) {
+    sessionState._pollInterval = setInterval(async () => {
+      if (sessionState._removed) return;
+      await refreshSessionState(sessionState, client);
+
+      // Update sock user if number was just resolved
+      if (!sessionState.sock.user && sessionState.number) {
+        sessionState.sock = createSockAdapter(
+          EVO_INSTANCE, EVO_API_URL, EVO_API_KEY, sessionState.number
         );
       }
+    }, 15000);
+  }
 
-      // ── Skip messages sent before this session connected (replay on restart) ──
-      const msgTs = Number(msg.messageTimestamp || 0) * 1000;
-      if (msgTs > 0 && msgTs < sessionState._connectedAt) continue;
-
-      // ── Global dedup: only one session handles each message ───────────────
-      const msgId = msg.key.id;
-      if (msgId) {
-        if (_handledMsgIds.has(msgId)) continue; // another session already handled it
-        _handledMsgIds.set(msgId, Date.now());
-        setTimeout(() => _handledMsgIds.delete(msgId), DEDUP_TTL);
-      }
-
-      if (msg.key.remoteJid === 'status@broadcast') {
-        const statusProto = msg.message?.protocolMessage;
-        const statusProtoType = statusProto?.type;
-
-        // ── Detect deleted status (REVOKE on status@broadcast) ──────────────
-        if ((statusProtoType === 0 || statusProtoType === 'REVOKE') && statusProto?.key?.id) {
-          if (db.getBotSetting('antiDeleteStatus')) {
-            const ownerNumber = process.env.OWNER_NUMBER;
-            if (ownerNumber) {
-              const ownerJid = ownerNumber + '@s.whatsapp.net';
-              const cached = sessionState.statusCache.get(statusProto.key.id);
-              if (cached) {
-                sessionState.statusCache.delete(statusProto.key.id);
-                const { mType, poster, cachedMsg, mediaBuffer } = cached;
-                const posterTag = poster ? poster.split('@')[0] : 'unknown';
-                const header = `✖ *Deleted Status*\n[USER] *By:* @${posterTag}\n[SCHED] *Deleted:* just now\n\n`;
-                try {
-                  if (mType === 'imageMessage') {
-                    const imgCaption = cachedMsg.message?.imageMessage?.caption || '[PIC] Image status';
-                    if (mediaBuffer) {
-                      await sock.sendMessage(ownerJid, {
-                        image: mediaBuffer,
-                        caption: header + imgCaption,
-                        mentions: [poster].filter(Boolean)
-                      });
-                    } else {
-                      await sock.sendMessage(ownerJid, {
-                        text: header + `[PIC] *Image status* (could not retrieve media)\n${imgCaption}`,
-                        mentions: [poster].filter(Boolean)
-                      });
-                    }
-                  } else if (mType === 'videoMessage') {
-                    const vidCaption = cachedMsg.message?.videoMessage?.caption || '► Video status';
-                    if (mediaBuffer) {
-                      await sock.sendMessage(ownerJid, {
-                        video: mediaBuffer,
-                        mimetype: 'video/mp4',
-                        caption: header + vidCaption,
-                        mentions: [poster].filter(Boolean)
-                      });
-                    } else {
-                      await sock.sendMessage(ownerJid, {
-                        text: header + `► *Video status* (could not retrieve media)\n${vidCaption}`,
-                        mentions: [poster].filter(Boolean)
-                      });
-                    }
-                  } else if (mType === 'audioMessage') {
-                    if (mediaBuffer) {
-                      await sock.sendMessage(ownerJid, {
-                        audio: mediaBuffer,
-                        mimetype: 'audio/mp4',
-                        ptt: false
-                      });
-                      await sock.sendMessage(ownerJid, {
-                        text: header + '♪ *Audio status (above)*',
-                        mentions: [poster].filter(Boolean)
-                      });
-                    } else {
-                      await sock.sendMessage(ownerJid, {
-                        text: header + '♪ *Audio status* (could not retrieve media)',
-                        mentions: [poster].filter(Boolean)
-                      });
-                    }
-                  } else if (mType === 'conversation' || mType === 'extendedTextMessage') {
-                    const body = cachedMsg.message?.conversation || cachedMsg.message?.extendedTextMessage?.text || '';
-                    await sock.sendMessage(ownerJid, {
-                      text: header + `► *Status text:*\n${body}`,
-                      mentions: [poster].filter(Boolean)
-                    });
-                  } else {
-                    await sock.sendMessage(ownerJid, {
-                      text: header + `_[${mType || 'Unknown type'}]_`,
-                      mentions: [poster].filter(Boolean)
-                    });
-                  }
-                } catch (err) {
-                  console.error(`[${id}] Anti-delete-status error:`, err.message);
-                }
-              }
-            }
-          }
-          continue;
-        }
-
-        // ── Cache status for antideletestatus ────────────────────────────────
-        if (!msg.key.fromMe && msg.message) {
-          const mType = getContentType(msg.message);
-          const poster = msg.key.participant || msg.key.remoteJid;
-          if (mType && mType !== 'protocolMessage') {
-            const entry = { mType, poster, ts: Date.now(), cachedMsg: msg, mediaBuffer: null };
-            sessionState.statusCache.set(msg.key.id, entry);
-            setTimeout(() => sessionState.statusCache.delete(msg.key.id), 24 * 60 * 60 * 1000);
-            // Pre-download media buffer only when antiDeleteStatus is on — saves bandwidth otherwise
-            if (['imageMessage', 'videoMessage', 'audioMessage'].includes(mType) && db.getBotSetting('antiDeleteStatus')) {
-              (async () => {
-                try {
-                  const buf = await downloadMediaMessage(msg, 'buffer', {}, { reuploadRequest: sock.updateMediaMessage });
-                  entry.mediaBuffer = buf;
-                } catch (e) {
-                  console.error(`[${id}] Status media pre-download failed:`, e.message);
-                }
-              })();
-            }
-          }
-        }
-
-        if (db.getBotSetting('autoViewStatus')) {
-          try { await sock.readMessages([msg.key]); } catch (_) {}
-        }
-        if (!msg.key.fromMe) {
-          const posterJid = msg.key.participant || msg.key.remoteJid;
-          if (db.getBotSetting('autoReactStatus')) {
-            const emojiSetting = db.getBotSetting('autoReactEmoji') || '🔥';
-            let emoji;
-            if (emojiSetting === 'random') {
-              const pool = ['🔥','❤️','😍','😂','👏','🥳','😎','💪','🤩','😜','🙌','💥','😤','💯','✨'];
-              emoji = pool[Math.floor(Math.random() * pool.length)];
-            } else {
-              emoji = emojiSetting;
-            }
-            try {
-              await sock.sendMessage(posterJid, { react: { text: emoji, key: msg.key } });
-              const sType = getContentType(msg.message) || 'unknown';
-              db.recordStatusReact(posterJid, emoji, sType);
-            } catch (_) {}
-          }
-          if (db.getBotSetting('autoStatusReply')) {
-            try {
-              const statusType = getContentType(msg.message) || '';
-              let replyMsg;
-
-              if (statusType === 'imageMessage') {
-                const custom = db.getBotSetting('autoStatusReplyImg');
-                if (custom) {
-                  replyMsg = custom;
-                } else {
-                  // Try AI vision — read the meme/image and reply smartly
-                  try {
-                    const imgData = msg.message.imageMessage;
-                    const stream = await downloadContentFromMessage(imgData, 'image');
-                    const chunks = [];
-                    for await (const chunk of stream) chunks.push(chunk);
-                    const imgBuffer = Buffer.concat(chunks);
-                    const mimeType = imgData.mimetype || 'image/jpeg';
-                    replyMsg = await openRouterVision(
-                      imgBuffer,
-                      mimeType,
-                      'This is a WhatsApp status image (could be a meme, quote, photo, or selfie). ' +
-                      'React to it exactly like a close friend would in ONE short casual sentence — ' +
-                      'if it has text or a meme caption, engage with that directly. ' +
-                      'Be genuine and natural, max 12 words, add 1 fitting emoji. ' +
-                      'Do NOT say "I can see" or "This image shows" — just react.'
-                    );
-                  } catch (_) {
-                    const defaults = ['Fire pic! [<3]★', 'Looking good! [!]', 'Banger! ★', 'Vibes! *', 'Great shot! [PIC]', 'W pic [!]★', 'Sheeeesh! [!]★'];
-                    replyMsg = defaults[Math.floor(Math.random() * defaults.length)];
-                  }
-                }
-              } else if (statusType === 'videoMessage') {
-                const custom = db.getBotSetting('autoStatusReplyVideo');
-                const defaults = ['This vid tho! ►★', 'Banger content! [!]', 'W video! ►', 'Vibes on another level! ★', 'Clip of the day! ►', 'Sheeeesh the video! [!]★', 'Too cold! *★'];
-                replyMsg = custom || defaults[Math.floor(Math.random() * defaults.length)];
-              } else {
-                const custom = db.getBotSetting('autoStatusReplyMsg');
-                const defaults = ['Facts! [!]', 'Said! ★', "That's deep [?]", 'Real talk! »', 'Interesting thought *', 'Noted! [..]', 'This one hit different [!]'];
-                replyMsg = custom || defaults[Math.floor(Math.random() * defaults.length)];
-              }
-              await sock.sendMessage(posterJid, { text: replyMsg }, { quoted: msg });
-            } catch (_) {}
-          }
-        }
-        continue;
-      }
-
-      // ── cache every message (including bot's own) for anti-delete/edit ──
-      {
-        const m = msg.message;
-        const mType = getContentType(m);
-        const sender = msg.key.participant || msg.key.remoteJid;
-        const from   = msg.key.remoteJid;
-
-        // Only cache real content messages (not protocol/revoke/edit wrappers)
-        const skipTypes = ['protocolMessage', 'reactionMessage', 'pollUpdateMessage', 'editedMessage'];
-        if (mType && !skipTypes.includes(mType)) {
-          const body =
-            mType === 'conversation'           ? m.conversation :
-            mType === 'extendedTextMessage'    ? m.extendedTextMessage?.text :
-            mType === 'imageMessage'           ? (m.imageMessage?.caption || '[Image]') :
-            mType === 'videoMessage'           ? (m.videoMessage?.caption || '[Video]') :
-            mType === 'documentMessage'        ? (m.documentMessage?.fileName || '[Document]') :
-            mType === 'audioMessage'           ? '[Voice Note]' :
-            mType === 'stickerMessage'         ? '[Sticker]' : `[${mType}]`;
-
-          const msgEntry = { body, mType, sender, from, ts: Date.now(), msg, mediaBuffer: null };
-          sessionState.messageCache.set(msg.key.id, msgEntry);
-          setTimeout(() => sessionState.messageCache.delete(msg.key.id), MSG_CACHE_TTL);
-          // Pre-download media only when antiDelete is on — saves bandwidth otherwise
-          if (['imageMessage', 'videoMessage', 'audioMessage', 'stickerMessage'].includes(mType) && db.getBotSetting('antiDelete')) {
-            (async () => {
-              try {
-                const buf = await downloadMediaMessage(msg, 'buffer', {}, { reuploadRequest: sock.updateMediaMessage });
-                msgEntry.mediaBuffer = buf;
-              } catch (e) {
-                console.error(`[${id}] Msg media pre-download failed:`, e.message);
-              }
-            })();
-          }
-        }
-      }
-
-      // ── anti-delete + anti-edit: both arrive via protocolMessage ─────────
-      const ownerNumber = process.env.OWNER_NUMBER;
-      if (ownerNumber) {
-        const ownerJid = ownerNumber + '@s.whatsapp.net';
-        const m = msg.message;
-        const proto = m?.protocolMessage;
-        const protoType = proto?.type;
-
-        // ── DELETE: protocolMessage type 0 = REVOKE (delete for everyone) ──
-        if ((protoType === 0 || protoType === 'REVOKE') && proto?.key?.id) {
-          const deletedId = proto.key.id;
-          const cached = sessionState.messageCache.get(deletedId);
-
-          if (cached && db.getBotSetting('antiDelete')) {
-            sessionState.messageCache.delete(deletedId);
-            const { body, mType, sender, from: chatFrom, msg: cachedMsg, mediaBuffer } = cached;
-            const deleter    = msg.key.participant || msg.key.remoteJid;
-            const isGroup    = chatFrom?.endsWith('@g.us');
-            const senderTag  = sender  ? sender.split('@')[0]  : 'unknown';
-            const deleterTag = deleter ? deleter.split('@')[0] : senderTag;
-            const chatLabel  = isGroup ? `group ${chatFrom?.split('@')[0]}` : `DM`;
-
-            const header = `✖ *Deleted Message*\n[USER] *By:* @${deleterTag}\n» *Chat:* ${chatLabel}\n\n`;
-
-            try {
-              if (mType === 'imageMessage') {
-                const cap = body && body !== '[Image]' ? `► ${body}` : '[PIC] Image';
-                if (mediaBuffer) {
-                  await sock.sendMessage(ownerJid, { image: mediaBuffer, caption: header + cap, mentions: [sender, deleter].filter(Boolean) });
-                } else {
-                  await sock.sendMessage(ownerJid, { text: header + `[PIC] *Image* (media unavailable)\n${cap}`, mentions: [sender, deleter].filter(Boolean) });
-                }
-              } else if (mType === 'videoMessage') {
-                const cap = body && body !== '[Video]' ? `► ${body}` : '► Video';
-                if (mediaBuffer) {
-                  await sock.sendMessage(ownerJid, { video: mediaBuffer, mimetype: 'video/mp4', caption: header + cap, mentions: [sender, deleter].filter(Boolean) });
-                } else {
-                  await sock.sendMessage(ownerJid, { text: header + `► *Video* (media unavailable)\n${cap}`, mentions: [sender, deleter].filter(Boolean) });
-                }
-              } else if (mType === 'audioMessage') {
-                if (mediaBuffer) {
-                  const isPtt = cachedMsg?.message?.audioMessage?.ptt || false;
-                  await sock.sendMessage(ownerJid, { audio: mediaBuffer, mimetype: 'audio/mp4', ptt: isPtt });
-                  await sock.sendMessage(ownerJid, { text: header + '♪ Voice Note (above)', mentions: [sender, deleter].filter(Boolean) });
-                } else {
-                  await sock.sendMessage(ownerJid, { text: header + '♪ *Voice Note* (media unavailable)', mentions: [sender, deleter].filter(Boolean) });
-                }
-              } else if (mType === 'stickerMessage') {
-                if (mediaBuffer) {
-                  await sock.sendMessage(ownerJid, { sticker: mediaBuffer });
-                  await sock.sendMessage(ownerJid, { text: header + '[STK] Sticker (above)', mentions: [sender, deleter].filter(Boolean) });
-                } else {
-                  await sock.sendMessage(ownerJid, { text: header + '[STK] *Sticker* (media unavailable)', mentions: [sender, deleter].filter(Boolean) });
-                }
-              } else {
-                await sock.sendMessage(ownerJid, {
-                  text: header + `► *Message:*\n${body || '_(unknown content)_'}`,
-                  mentions: [sender, deleter].filter(Boolean)
-                });
-              }
-            } catch (err) {
-              console.error(`[${id}] Anti-delete error:`, err.message);
-            }
-          }
-        }
-
-        // ── EDIT: protocolMessage type 14 or editedMessage wrapper ─────────
-        const isEditProto = (protoType === 14 || protoType === 'REVOKE_V2' || String(protoType) === '14') && proto?.key;
-        const editedMsg   = m?.editedMessage;
-
-        if (isEditProto || editedMsg) {
-          const originalKey = isEditProto ? proto.key?.id : editedMsg?.key?.id;
-          const cached = originalKey ? sessionState.messageCache.get(originalKey) : null;
-
-          const newContent = isEditProto
-            ? (proto.editedMessage?.conversation ||
-               proto.editedMessage?.extendedTextMessage?.text ||
-               proto.editedMessage?.imageMessage?.caption ||
-               proto.editedMessage?.videoMessage?.caption || '')
-            : (editedMsg?.message?.conversation ||
-               editedMsg?.message?.extendedTextMessage?.text || '');
-
-          if (newContent && cached && cached.body !== newContent && db.getBotSetting('antiEdit')) {
-            const { body: origBody, from: chatFrom, sender: editSender } = cached;
-            const isGroup   = chatFrom?.endsWith('@g.us');
-            const senderTag = editSender ? editSender.split('@')[0] : 'unknown';
-            const chatLabel = isGroup ? `group ${chatFrom?.split('@')[0]}` : `DM`;
-            try {
-              await sock.sendMessage(ownerJid, {
-                text: `✎ *Message Edited*\n[USER] *By:* @${senderTag}\n» *Chat:* ${chatLabel}\n\n► *Original:*\n${origBody || '_(empty)_'}\n\n↻ *Edited to:*\n${newContent}`,
-                mentions: editSender ? [editSender] : []
-              });
-            } catch (err) {
-              console.error(`[${id}] Anti-edit error:`, err.message);
-            }
-            if (originalKey) {
-              sessionState.messageCache.set(originalKey, { ...cached, body: newContent });
-            }
-          }
-        }
-      }
-
-      try {
-        await handleMessage(sock, msg, PREFIX, sessionState);
-      } catch (err) {
-        console.error(`[${id}] Error:`, err.message);
-      }
-    }
-  });
-
-  // ── anti-delete: catch message deletions ────────────────────────────────
-  sock.ev.on('messages.delete', async ({ keys }) => {
-    const ownerNumber = process.env.OWNER_NUMBER;
-    if (!ownerNumber) return;
-    const ownerJid = ownerNumber + '@s.whatsapp.net';
-
-    for (const key of keys) {
-      const cached = sessionState.messageCache.get(key.id);
-      if (!cached) continue;
-      sessionState.messageCache.delete(key.id);
-
-      const { body, mType, sender, from, msg: cachedMsg, mediaBuffer } = cached;
-      const isGroup = from.endsWith('@g.us');
-
-      const senderTag = sender ? sender.split('@')[0] : 'unknown';
-      const chatLabel  = isGroup ? `group ${from.split('@')[0]}` : `DM with ${senderTag}`;
-      const header = `✖ *Deleted Message Detected*\n[USER] *From:* @${senderTag}\n» *Chat:* ${chatLabel}\n`;
-
-      try {
-        if (mType === 'imageMessage') {
-          const cap = body ? `► *Caption:* ${body}` : '[PIC] Image';
-          if (mediaBuffer) {
-            await sock.sendMessage(ownerJid, { image: mediaBuffer, caption: header + cap, mentions: sender ? [sender] : [] });
-          } else {
-            await sock.sendMessage(ownerJid, { text: header + `[PIC] *Image* (media unavailable)\n${cap}`, mentions: sender ? [sender] : [] });
-          }
-        } else if (mType === 'videoMessage') {
-          const cap = body ? `► *Caption:* ${body}` : '► Video';
-          if (mediaBuffer) {
-            await sock.sendMessage(ownerJid, { video: mediaBuffer, mimetype: 'video/mp4', caption: header + cap, mentions: sender ? [sender] : [] });
-          } else {
-            await sock.sendMessage(ownerJid, { text: header + `► *Video* (media unavailable)\n${cap}`, mentions: sender ? [sender] : [] });
-          }
-        } else if (mType === 'audioMessage') {
-          if (mediaBuffer) {
-            const isPtt = cachedMsg?.message?.audioMessage?.ptt || false;
-            await sock.sendMessage(ownerJid, { audio: mediaBuffer, mimetype: 'audio/mp4', ptt: isPtt });
-            await sock.sendMessage(ownerJid, { text: header + '♪ *Voice Note (above)*', mentions: sender ? [sender] : [] });
-          } else {
-            await sock.sendMessage(ownerJid, { text: header + '♪ *Voice Note* (media unavailable)', mentions: sender ? [sender] : [] });
-          }
-        } else if (mType === 'stickerMessage') {
-          if (mediaBuffer) {
-            await sock.sendMessage(ownerJid, { sticker: mediaBuffer });
-            await sock.sendMessage(ownerJid, { text: header + '[STK] *Sticker (above)*', mentions: sender ? [sender] : [] });
-          } else {
-            await sock.sendMessage(ownerJid, { text: header + '[STK] *Sticker* (media unavailable)', mentions: sender ? [sender] : [] });
-          }
-        } else if (body) {
-          await sock.sendMessage(ownerJid, {
-            text: header + `► *Message:*\n${body}`,
-            mentions: sender ? [sender] : []
-          });
-        }
-      } catch (err) {
-        console.error(`[${id}] Anti-delete forward error:`, err.message);
-      }
-    }
-  });
-
-  sock.ev.on('group-participants.update', async (update) => {
-    const { handleGroupParticipantUpdate } = require('./commands/group');
-    try {
-      await handleGroupParticipantUpdate(sock, update);
-    } catch (err) {
-      console.error(`[${id}] Group update error:`, err.message);
-    }
-  });
-
+  console.log(`[EVO] Session '${id}' initialised — status: ${sessionState.status}`);
   return sessionState;
 }
 
-// ── public API ────────────────────────────────────────────────────────────────
+async function refreshSessionState(sessionState, client) {
+  const rawState = await getInstanceState(client, EVO_INSTANCE);
+  const prevStatus = sessionState.status;
+
+  if (rawState === 'open') {
+    sessionState.status = 'connected';
+    sessionState.qr = null;
+    sessionState.pairingCode = null;
+    if (!sessionState.number) {
+      sessionState.number = await getInstanceNumber(client, EVO_INSTANCE);
+    }
+    if (prevStatus !== 'connected') {
+      console.log(`[EVO] Instance '${EVO_INSTANCE}' connected — ${sessionState.number}`);
+    }
+  } else if (rawState === 'connecting') {
+    sessionState.status = 'connecting';
+  } else {
+    // close / unknown — try to fetch QR
+    sessionState.status = 'disconnected';
+    try {
+      const qr = await getQrCode(client, EVO_INSTANCE);
+      if (qr) sessionState.qr = qr;
+    } catch (_) {}
+  }
+}
+
+function buildWebhookUrl() {
+  if (process.env.WEBHOOK_URL) return process.env.WEBHOOK_URL;
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}/webhook`;
+  }
+  if (process.env.RAILWAY_STATIC_URL) {
+    return `${process.env.RAILWAY_STATIC_URL}/webhook`;
+  }
+  if (process.env.REPLIT_DEV_DOMAIN) {
+    return `https://${process.env.REPLIT_DEV_DOMAIN}/webhook`;
+  }
+  return null;
+}
+
+// ── public API — preserves original interface ─────────────────────────────────
 
 async function addSession(name) {
   const id = 'sess_' + Date.now();
-  const sessionState = await startSession(id, name || `Session ${sessions.size + 1}`);
+  const sessionState = await startEvoSession(id, name || `Session ${sessions.size + 1}`);
   saveSessionList();
   return sessionState;
 }
 
 function removeSession(id) {
   const s = sessions.get(id);
-  if (s) s._removed = true;
-  if (s?.sock) { try { s.sock.end(new Error('removed')); } catch {} }
+  if (s) {
+    s._removed = true;
+    if (s._schedulerInterval) clearInterval(s._schedulerInterval);
+    if (s._pollInterval)      clearInterval(s._pollInterval);
+  }
   sessions.delete(id);
   saveSessionList();
-
-  const sessionDir = path.join(SESSION_BASE, id);
-  if (fs.existsSync(sessionDir)) {
-    fs.rmSync(sessionDir, { recursive: true, force: true });
-  }
 }
 
 async function requestPairingCode(id, number) {
-  const s = sessions.get(id);
-  if (!s?.sock) throw new Error('Session socket not ready');
-  if (s.status === 'connected') throw new Error('Already connected');
-  const clean = number.replace(/[^0-9]/g, '');
-  const code = await s.sock.requestPairingCode(clean);
-  const formatted = code.match(/.{1,4}/g).join('-');
-  s.pairingCode = formatted;
-  return formatted;
+  if (!EVO_API_URL || !EVO_API_KEY) throw new Error('Evolution API not configured');
+  const client = createEvoClient(EVO_API_URL, EVO_API_KEY);
+  const clean = String(number).replace(/[^0-9]/g, '');
+
+  try {
+    const { data } = await client.post(`/instance/connect/${EVO_INSTANCE}`);
+    // If Evolution API returns a pairing code directly
+    if (data?.code) {
+      const formatted = data.code.match(/.{1,4}/g)?.join('-') || data.code;
+      const s = sessions.get(id);
+      if (s) { s.pairingCode = formatted; s._socketInitialized = true; }
+      return formatted;
+    }
+  } catch (_) {}
+
+  // Try pairing code endpoint
+  try {
+    const { data } = await client.post(`/instance/pairingCode/${EVO_INSTANCE}`, {
+      phoneNumber: clean,
+    });
+    const code = data?.code || data?.pairingCode;
+    if (code) {
+      const formatted = code.match(/.{1,4}/g)?.join('-') || code;
+      const s = sessions.get(id);
+      if (s) { s.pairingCode = formatted; s._socketInitialized = true; }
+      return formatted;
+    }
+    throw new Error('No pairing code returned by Evolution API');
+  } catch (e) {
+    console.error('[EVO] requestPairingCode failed:', e?.response?.data || e.message);
+    throw new Error(e?.response?.data?.message || e.message);
+  }
 }
 
-// Wait until the Baileys socket has received its first connection.update — meaning it has
-// reached WhatsApp's servers and is ready to accept a pairing code request.
 async function waitForPairingReady(id, timeoutMs = 25000) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const s = sessions.get(id);
     if (!s) throw new Error('Session not found');
     if (s.status === 'connected') throw new Error('Session is already connected');
-    // Once the socket has emitted its first connection.update it has reached WA servers
-    if (s.sock && s._socketInitialized) return s;
-    await new Promise(r => setTimeout(r, 250));
+    // For Evolution API, we're ready as soon as the session is created
+    s._socketInitialized = true;
+    return s;
   }
-  throw new Error('Timed out waiting for WhatsApp connection — please try again');
+  throw new Error('Timed out waiting for Evolution API session');
 }
-
-// ── Check if setup is required (no session configured yet) ────────────────────
 
 function isSetupRequired() {
-  // Has any session directory with creds on disk?
-  if (fs.existsSync(SESSION_BASE)) {
-    for (const entry of fs.readdirSync(SESSION_BASE)) {
-      const credsPath = path.join(SESSION_BASE, entry, 'creds.json');
-      if (fs.existsSync(credsPath)) return false;
-    }
-  }
-
-  return true;
-}
-
-// ── Import session from SESSION_ID env var (FIREBOX-BOT: / FOXY-BOT: / plain base64) ──
-function importSessionFromEnv() {
-  const raw = process.env.SESSION_ID;
-  if (!raw || raw.trim() === '') return null;
-
-  try {
-    // Strip known prefixes
-    let b64 = raw.trim();
-    for (const prefix of ['FIREBOX-BOT:', 'FOXY-BOT:', 'FIREBOX:', 'FOXY:']) {
-      if (b64.startsWith(prefix)) { b64 = b64.slice(prefix.length); break; }
-    }
-
-    const decoded = JSON.parse(Buffer.from(b64, 'base64').toString('utf8'));
-    const id = 'sess_env';
-    const sessionDir = path.join(SESSION_BASE, id);
-
-    // Detect format: bundle (keys are filenames like "creds.json") vs raw creds object
-    const isBundle = typeof decoded === 'object' && decoded !== null && 'creds.json' in decoded;
-
-    if (isBundle) {
-      // Full bundle — write each file
-      if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
-      for (const [filename, content] of Object.entries(decoded)) {
-        fs.writeFileSync(path.join(sessionDir, filename), typeof content === 'string' ? content : JSON.stringify(content));
-      }
-    } else {
-      // Creds-only format (from pair.js) — write as creds.json
-      if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
-      fs.writeFileSync(path.join(sessionDir, 'creds.json'), JSON.stringify(decoded, null, 2));
-    }
-
-    // Register in sessions list if not already present
-    const list = loadSessionList();
-    if (!list.find(s => s.id === id)) {
-      list.push({ id, name: 'ENV Session', createdAt: Date.now() });
-      fs.writeFileSync(SESSIONS_FILE, JSON.stringify(list, null, 2));
-    }
-
-    console.log(`[SESSIONS] ✓ Imported session from SESSION_ID env var (${isBundle ? 'bundle' : 'creds-only'} format)`);
-    return id;
-  } catch (e) {
-    console.error('[SESSIONS] ✗ Failed to import SESSION_ID:', e.message);
-    return null;
-  }
+  // With Evolution API, setup is required only if API URL is not configured
+  return !EVO_API_URL || !EVO_API_KEY;
 }
 
 async function loadAndStartAll() {
@@ -939,36 +255,239 @@ async function loadAndStartAll() {
     fs.mkdirSync(path.join(__dirname, '../data'), { recursive: true });
   }
 
-  // Import from SESSION_ID env var if set
-  importSessionFromEnv();
-
   if (isSetupRequired()) {
-    console.log('[SESSIONS] ▲  No session found. Open the dashboard to pair a bot.');
+    console.log('[EVO] ▲  EVOLUTION_API_URL / EVOLUTION_API_KEY not set. Configure in environment variables.');
     return;
   }
 
-  const list = loadSessionList();
+  // Always start a single session mapped to the configured Evolution API instance
+  const id = 'sess_evo_' + EVO_INSTANCE.replace(/[^a-z0-9]/gi, '_');
 
-  // Remove any orphan session directories not in the active list
-  const knownIds = new Set(list.map(s => s.id));
-  if (fs.existsSync(SESSION_BASE)) {
-    for (const entry of fs.readdirSync(SESSION_BASE)) {
-      if (!entry.startsWith('sess_')) continue;
-      if (!knownIds.has(entry)) {
-        try {
-          fs.rmSync(path.join(SESSION_BASE, entry), { recursive: true, force: true });
-          console.log(`[SESSIONS] Removed orphan session dir: ${entry}`);
-        } catch (_) {}
-      }
-    }
+  console.log(`[EVO] Starting session for instance '${EVO_INSTANCE}'...`);
+  await startEvoSession(id, EVO_INSTANCE, Date.now());
+  saveSessionList();
+}
+
+// ── Incoming webhook handler (called from server.js) ─────────────────────────
+
+async function handleWebhookEvent(event, instanceName, data) {
+  // Route to the right session
+  const sessionState = [...sessions.values()].find(s =>
+    s.name === instanceName || s.id.includes(instanceName.replace(/[^a-z0-9]/gi, '_'))
+  ) || [...sessions.values()][0];
+
+  if (!sessionState) {
+    console.warn(`[EVO] No session found for webhook instance '${instanceName}'`);
+    return;
   }
 
-  console.log(`[SESSIONS] Starting ${list.length} session(s)...`);
-  for (let i = 0; i < list.length; i++) {
-    const { id, name, createdAt } = list[i];
-    if (i > 0) await new Promise(r => setTimeout(r, 3000));
-    await startSession(id, name, createdAt);
+  if (!sessionState.sock) {
+    const userNumber = sessionState.number;
+    sessionState.sock = createSockAdapter(EVO_INSTANCE, EVO_API_URL, EVO_API_KEY, userNumber);
+  }
+
+  const sock = sessionState.sock;
+
+  switch (event) {
+    case 'connection.update':
+    case 'CONNECTION_UPDATE': {
+      const state = data?.state || data?.connection;
+      if (state === 'open') {
+        sessionState.status = 'connected';
+        sessionState.qr = null;
+        sessionState.pairingCode = null;
+        if (data?.instance?.ownerJid) {
+          sessionState.number = data.instance.ownerJid.split('@')[0].split(':')[0];
+          sessionState.sock = createSockAdapter(EVO_INSTANCE, EVO_API_URL, EVO_API_KEY, sessionState.number);
+        }
+        console.log(`[EVO] Connected! +${sessionState.number}`);
+      } else if (state === 'close' || state === 'refused') {
+        sessionState.status = 'disconnected';
+        sessionState.number = null;
+        console.log(`[EVO] Disconnected.`);
+      } else if (state === 'connecting') {
+        sessionState.status = 'connecting';
+      }
+      break;
+    }
+
+    case 'qrcode.updated':
+    case 'QRCODE_UPDATED': {
+      const qr = data?.qrcode?.base64 || data?.base64 || data?.qrcode;
+      if (qr) {
+        sessionState.qr = qr;
+        sessionState.pairingCode = null;
+        console.log('[EVO] QR code updated.');
+      }
+      break;
+    }
+
+    case 'messages.upsert':
+    case 'MESSAGES_UPSERT': {
+      const { handleMessage } = require('./handler');
+      const messages = Array.isArray(data) ? data : (data?.messages || [data]);
+
+      for (const msg of messages) {
+        if (!msg?.message && !msg?.messageType) continue;
+
+        // Normalize message format to Baileys-compatible structure
+        const normalizedMsg = normalizeMessage(msg);
+        if (!normalizedMsg) continue;
+
+        // Skip our own sent messages (fromMe)
+        if (normalizedMsg.key.fromMe) continue;
+
+        // Dedup
+        const msgId = normalizedMsg.key.id;
+        if (msgId) {
+          if (_handledMsgIds.has(msgId)) continue;
+          _handledMsgIds.set(msgId, Date.now());
+          setTimeout(() => _handledMsgIds.delete(msgId), DEDUP_TTL);
+        }
+
+        sessionState.messageCount++;
+
+        try {
+          await handleMessage(sock, normalizedMsg, PREFIX, sessionState);
+        } catch (err) {
+          console.error(`[EVO] handleMessage error:`, err.message);
+        }
+      }
+      break;
+    }
+
+    case 'messages.delete':
+    case 'MESSAGES_DELETE': {
+      // Anti-delete: forward deleted messages to owner
+      const ownerNumber = process.env.OWNER_NUMBER;
+      if (!ownerNumber) break;
+      const ownerJid = ownerNumber + '@s.whatsapp.net';
+      const keys = Array.isArray(data) ? data : (data?.keys || []);
+      for (const key of keys) {
+        const cached = sessionState.messageCache?.get(key.id);
+        if (!cached || !db.getBotSetting('antiDelete')) continue;
+        sessionState.messageCache.delete(key.id);
+        const { body, mType, sender, from, mediaBuffer } = cached;
+        const senderTag = sender ? sender.split('@')[0] : 'unknown';
+        const isGroup   = from?.endsWith('@g.us');
+        const chatLabel = isGroup ? `group ${from?.split('@')[0]}` : `DM with ${senderTag}`;
+        const header    = `✖ *Deleted Message*\n[USER] *By:* @${senderTag}\n» *Chat:* ${chatLabel}\n\n`;
+        try {
+          if (['imageMessage', 'videoMessage', 'audioMessage', 'stickerMessage'].includes(mType) && mediaBuffer) {
+            const mediaSendPayload =
+              mType === 'imageMessage'   ? { image: mediaBuffer, caption: header + (body || '[Image]') } :
+              mType === 'videoMessage'   ? { video: mediaBuffer, mimetype: 'video/mp4', caption: header + (body || '[Video]') } :
+              mType === 'audioMessage'   ? { audio: mediaBuffer, mimetype: 'audio/mp4', ptt: false } :
+              mType === 'stickerMessage' ? { sticker: mediaBuffer } : null;
+            if (mediaSendPayload) await sock.sendMessage(ownerJid, mediaSendPayload);
+          } else if (body) {
+            await sock.sendMessage(ownerJid, {
+              text: header + `► *Message:*\n${body}`,
+              mentions: sender ? [sender] : [],
+            });
+          }
+        } catch (err) {
+          console.error('[EVO] anti-delete forward error:', err.message);
+        }
+      }
+      break;
+    }
+
+    case 'group-participants.update':
+    case 'GROUP_PARTICIPANTS_UPDATE': {
+      const { handleGroupParticipantUpdate } = require('./commands/group');
+      try {
+        await handleGroupParticipantUpdate(sock, data);
+      } catch (err) {
+        console.error('[EVO] Group participant update error:', err.message);
+      }
+      break;
+    }
+
+    case 'call':
+    case 'CALL': {
+      const calls = Array.isArray(data) ? data : [data];
+      for (const call of calls) {
+        if (call?.status !== 'offer') continue;
+        const callerJid = call.from || call.chatId;
+        const isDM = callerJid?.endsWith('@s.whatsapp.net');
+        if (!isDM) continue;
+        if (!db.getBotSetting('anticallDm')) continue;
+        const customMsg = db.getBotSetting('antiCallMsg');
+        const channelLink = db.getBotSetting('channelLink');
+        const channelSuffix = channelLink ? `\n\n» *Follow our channel:* ${channelLink}` : '';
+        const text = customMsg ||
+          `▲ *Call Blocked!*\n\n[NO-MOB] This bot does not accept calls.\n` +
+          `» Please send a text message instead.${channelSuffix}\n\n_Powered by ★ Firebox_`;
+        try { await sock.sendMessage(callerJid, { text }); } catch (_) {}
+      }
+      break;
+    }
+
+    default:
+      // Ignore other events silently
+      break;
   }
 }
 
-module.exports = { sessions, addSession, startSession, removeSession, requestPairingCode, waitForPairingReady, loadAndStartAll };
+// ── Normalize Evolution API message to Baileys-compatible format ───────────────
+
+function normalizeMessage(data) {
+  if (!data) return null;
+
+  // If it already has a Baileys-format key, use it directly
+  if (data.key && data.message) {
+    return {
+      key: {
+        id:          data.key.id,
+        remoteJid:   data.key.remoteJid,
+        fromMe:      data.key.fromMe || false,
+        participant: data.key.participant,
+      },
+      message:          data.message,
+      messageTimestamp: data.messageTimestamp || Math.floor(Date.now() / 1000),
+      pushName:         data.pushName || '',
+    };
+  }
+
+  // Evolution API v2 format
+  const key = {
+    id:          data.key?.id || data.id || '',
+    remoteJid:   data.key?.remoteJid || data.remoteJid || data.from || '',
+    fromMe:      data.key?.fromMe || data.fromMe || false,
+    participant: data.key?.participant || data.participant || undefined,
+  };
+
+  const messageType = data.messageType || 'conversation';
+  let message = data.message || {};
+
+  // If Evolution API sends a flattened structure, rebuild the message object
+  if (Object.keys(message).length === 0) {
+    if (data.body) {
+      message = { conversation: data.body };
+    } else if (messageType === 'conversation' && data.body) {
+      message = { conversation: data.body };
+    }
+  }
+
+  if (!key.remoteJid || !key.id) return null;
+
+  return {
+    key,
+    message,
+    messageTimestamp: data.messageTimestamp || Math.floor(Date.now() / 1000),
+    pushName:         data.pushName || data.senderName || '',
+  };
+}
+
+module.exports = {
+  sessions,
+  addSession,
+  startSession: startEvoSession,
+  removeSession,
+  requestPairingCode,
+  waitForPairingReady,
+  loadAndStartAll,
+  handleWebhookEvent,
+  isSetupRequired,
+};

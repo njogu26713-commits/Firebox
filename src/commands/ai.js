@@ -1,5 +1,5 @@
 const { openRouterPrompt, openRouterChat, openRouterVision } = require('../openrouter');
-const { downloadContentFromMessage, getContentType } = require('@whiskeysockets/baileys');
+const { getContentType, downloadMediaBuffer } = require('../mediaCompat');
 const { sendFireboxCard } = require('../card');
 
 const PROMPT_TTL = 5 * 60 * 1000;
@@ -41,12 +41,11 @@ async function sendWithPrompts(sock, from, msg, sessionState, sender, header, ra
   }
 }
 
-async function downloadImageBuffer(sock, message, type) {
-  const mediaMsg = message[type];
-  const stream = await downloadContentFromMessage(mediaMsg, 'image');
-  const chunks = [];
-  for await (const chunk of stream) chunks.push(chunk);
-  return { buffer: Buffer.concat(chunks), mimeType: mediaMsg.mimetype || 'image/jpeg' };
+async function downloadImageBuffer(sock, msg, targetMessage) {
+  // targetMessage is the message content object (msg.message or quotedMsg)
+  const mediaData = targetMessage.imageMessage;
+  const buffer = await downloadMediaBuffer(sock, msg, targetMessage);
+  return { buffer, mimeType: mediaData?.mimetype || 'image/jpeg' };
 }
 
 async function chat(ctx) {
@@ -66,8 +65,8 @@ async function chat(ctx) {
     try {
       await sock.sendPresenceUpdate('composing', from);
       const { buffer, mimeType } = hasDirectImage
-        ? await downloadImageBuffer(sock, message, 'imageMessage')
-        : await downloadImageBuffer(sock, quotedMsg, 'imageMessage');
+        ? await downloadImageBuffer(sock, msg, message)
+        : await downloadImageBuffer(sock, msg, quotedMsg);
       const raw = await openRouterVision(buffer, mimeType, prompt);
       await send(sock, from, msg, `*Firebox AI Vision*\n${raw}`);
     } catch (err) {

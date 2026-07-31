@@ -2,7 +2,7 @@ const axios = require('axios');
 const QRCode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
-const { getContentType, downloadContentFromMessage } = require('@whiskeysockets/baileys');
+const { getContentType } = require('../mediaCompat');
 
 const TMP = path.join(__dirname, '../../tmp');
 if (!fs.existsSync(TMP)) fs.mkdirSync(TMP, { recursive: true });
@@ -812,11 +812,8 @@ async function readImage(ctx) {
 
   const tmpPath = path.join(TMP, `ocr_${Date.now()}.jpg`);
   try {
-    const media = target.message.imageMessage;
-    const stream = await downloadContentFromMessage(media, 'image');
-    const chunks = [];
-    for await (const chunk of stream) chunks.push(chunk);
-    const buffer = Buffer.concat(chunks);
+    const fakeMsg = quoted ? { key: msg.key, message: quoted.message } : msg;
+    const buffer = await sock.downloadMediaMessage(fakeMsg);
     fs.writeFileSync(tmpPath, buffer);
 
     const { createWorker } = require('tesseract.js');

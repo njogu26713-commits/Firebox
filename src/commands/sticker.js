@@ -1,4 +1,4 @@
-const { downloadContentFromMessage, getContentType } = require('@whiskeysockets/baileys');
+const { getContentType } = require('../mediaCompat');
 const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
@@ -13,18 +13,10 @@ async function send(sock, from, msg, text, title) {
 const TMP = path.join(__dirname, '../../tmp');
 if (!fs.existsSync(TMP)) fs.mkdirSync(TMP, { recursive: true });
 
-async function downloadMedia(message, type) {
-  const mediaType = type === 'imageMessage' ? 'image'
-    : type === 'videoMessage' ? 'video'
-    : type === 'stickerMessage' ? 'sticker'
-    : null;
-  if (!mediaType) return null;
-
-  const media = message[type];
-  const stream = await downloadContentFromMessage(media, mediaType);
-  const chunks = [];
-  for await (const chunk of stream) chunks.push(chunk);
-  return Buffer.concat(chunks);
+async function downloadMedia(sock, msg, message, type) {
+  if (!['imageMessage', 'videoMessage', 'stickerMessage'].includes(type)) return null;
+  const buffer = await sock.downloadMediaMessage({ key: msg.key, message });
+  return buffer;
 }
 
 function getTargetMessage(msg, quoted) {
@@ -48,7 +40,7 @@ async function makeSticker(ctx) {
   const tmpOut = path.join(TMP, `stk_out_${Date.now()}.webp`);
 
   try {
-    const buffer = await downloadMedia(target.message, type);
+    const buffer = await downloadMedia(sock, msg, target.message, type);
     if (!buffer) throw new Error('Could not download media');
     fs.writeFileSync(tmpIn, buffer);
 
@@ -90,7 +82,7 @@ async function stickerToImage(ctx) {
   const tmpOut = path.join(TMP, `toimg_out_${Date.now()}.png`);
 
   try {
-    const buffer = await downloadMedia(target.message, type);
+    const buffer = await downloadMedia(sock, msg, target.message, type);
     if (!buffer) throw new Error('Could not download sticker');
     fs.writeFileSync(tmpIn, buffer);
     await execAsync(`ffmpeg -i "${tmpIn}" "${tmpOut}" -y`);

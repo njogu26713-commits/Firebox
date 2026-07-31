@@ -1,70 +1,58 @@
 # FireBox Bot
 
-A multi-purpose WhatsApp bot built with Node.js using the Baileys library. Provides a web dashboard for managing bot sessions, an activation/licence system, group management, AI chat, media tools, and more.
+Multi-purpose WhatsApp bot built with Node.js. Uses **Evolution API** (REST + webhooks) as its WhatsApp transport layer instead of the Baileys library directly.
 
-## How to run
+## Architecture
 
-```
+- **Transport:** Evolution API — a separate REST service that manages the WhatsApp connection. The bot communicates with it over HTTP.
+- **Incoming messages:** Evolution API POSTs webhook events to `/webhook` on this server.
+- **Outgoing messages:** The bot calls Evolution API REST endpoints (`/message/sendText`, `/message/sendMedia`, etc.).
+- **Dashboard:** Express web UI served at port 5000.
+
+## Key files
+
+| File | Purpose |
+|---|---|
+| `index.js` | Entry point — starts DB, web server, session manager |
+| `src/evolutionApi.js` | Evolution API adapter — all REST calls + sock-compatible interface |
+| `src/sessionManager.js` | Session lifecycle, webhook event routing |
+| `src/handler.js` | Message parser and command dispatcher |
+| `src/server.js` | Express server — dashboard + `/webhook` endpoint |
+| `src/commands/` | All bot command modules |
+| `src/mediaCompat.js` | `getContentType` helper (replaces Baileys import) |
+
+## Running
+
+```bash
 node index.js
 ```
 
-The bot starts on **port 5000**. Open the Preview tab to access the dashboard.
+The server listens on port 5000.
 
-## Project structure
+## Required environment variables
 
-```
-index.js              — entry point: DB init → server → sessions
-src/
-  server.js           — Express web server + all API routes (port 5000)
-  sessionManager.js   — Baileys WhatsApp session lifecycle management
-  database.js         — JSON-file storage (optional MongoDB sync)
-  handler.js          — WhatsApp message handler + command routing
-  mpesa.js            — M-Pesa Daraja STK push integration
-  card.js             — Styled WhatsApp message cards
-  commands/           — Individual bot command modules
-public/
-  dashboard.html      — Main bot dashboard
-  activate.html       — Licence activation / reconnect page
-  get-token.html      — Generate a new activation token
-  admin.html          — Admin panel
-  config.html         — Bot configuration
-data/                 — JSON storage files (auto-created)
-session/              — Baileys session credential files
-```
+| Variable | Description |
+|---|---|
+| `EVOLUTION_API_URL` | Base URL of your Evolution API server |
+| `EVOLUTION_API_KEY` | Evolution API global API key (set as a Secret) |
+| `EVOLUTION_INSTANCE` | Instance name in Evolution API (e.g. `firebox-bot`) |
+| `WEBHOOK_URL` | Public URL this bot is reachable at + `/webhook` (e.g. `https://your-app.up.railway.app/webhook`) |
+| `OWNER_NUMBER` | WhatsApp number with country code, no `+` |
+| `OWNER_NAME` | Your name shown in bot responses |
+| `PREFIX` | Command prefix (default: `.`) |
 
-## Activation / Licence system
+Optional:
+- `GEMINI_API_KEY` — Google Gemini for AI commands
+- `RAPIDAPI_KEY` — Various API commands
+- `DEEPAI_KEY` — Image generation
 
-Tokens are permanent licences tied to one WhatsApp number:
+## Evolution API setup
 
-1. **Get Token** (`/get-token`) — Enter a WhatsApp number; a token is generated and permanently locked to it.
-2. **Activate** (`/activate`) — Enter the token:
-   - If **active** (paid, not expired): generates a new pairing code immediately — no payment.
-   - If **inactive / expired**: choose a plan, pay via M-Pesa, then get a pairing code.
-3. **Renewal**: enter the same token after expiry — pay again to extend the same licence.
-
-Token status lifecycle: `inactive → active → expired / suspended`
-
-Background job runs every 5 minutes to expire active tokens past their `expiresAt` and remove their sessions.
-
-## Environment variables
-
-| Variable | Required | Description |
-|---|---|---|
-| `OWNER_NUMBER` | Yes | WhatsApp number with country code, no `+` (e.g. `254712345678`) |
-| `OWNER_NAME` | No | Name shown in bot responses |
-| `PREFIX` | No | Command prefix (default `.`) |
-| `TZ` | No | Timezone (default `Africa/Nairobi`) |
-| `GEMINI_API_KEY` | No | Google Gemini AI key (for AI commands) |
-| `RAPIDAPI_KEY` | No | RapidAPI key (for various API commands) |
-| `DEEPAI_KEY` | No | DeepAI key (for image generation) |
-| `MONGODB_URI` | No | MongoDB connection string (falls back to JSON files) |
-| `MPESA_CONSUMER_KEY` | No | Daraja API consumer key |
-| `MPESA_CONSUMER_SECRET` | No | Daraja API consumer secret |
-| `MPESA_SHORTCODE` | No | M-Pesa shortcode |
-| `MPESA_PASSKEY` | No | M-Pesa passkey |
-| `MPESA_TEST_MODE` | No | Set `true` to auto-confirm payments without real M-Pesa |
-| `SESSION_ID` | No | Base64 session bundle to import on startup |
+1. Deploy Evolution API separately (Railway, Docker, VPS).
+2. Set `EVOLUTION_API_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE`, and `WEBHOOK_URL` in environment variables.
+3. Start the bot — it will auto-create the Evolution API instance and register the webhook.
+4. Open the dashboard, go to **Pair** to connect your WhatsApp via QR or pairing code (managed through Evolution API).
 
 ## User preferences
 
-- Keep the project's existing structure and stack.
+- Keep existing project structure; do not restructure.

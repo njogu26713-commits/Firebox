@@ -1,4 +1,21 @@
-const { getContentType } = require('@whiskeysockets/baileys');
+// getContentType — local implementation (no longer depends on Baileys)
+function getContentType(message) {
+  if (!message || typeof message !== 'object') return undefined;
+  const keys = Object.keys(message);
+  const order = [
+    'imageMessage', 'videoMessage', 'audioMessage', 'stickerMessage',
+    'documentMessage', 'extendedTextMessage', 'conversation',
+    'buttonsResponseMessage', 'listResponseMessage', 'interactiveResponseMessage',
+    'reactionMessage', 'protocolMessage', 'pollUpdateMessage', 'editedMessage',
+    'contactMessage', 'locationMessage', 'liveLocationMessage',
+    'viewOnceMessage', 'viewOnceMessageV2', 'viewOnceMessageV2Extension',
+    'ephemeralMessage', 'deviceSentMessage', 'ptvMessage',
+  ];
+  for (const t of order) {
+    if (keys.includes(t)) return t;
+  }
+  return keys[0];
+}
 const general  = require('./commands/general');
 const ai       = require('./commands/ai');
 const sticker  = require('./commands/sticker');

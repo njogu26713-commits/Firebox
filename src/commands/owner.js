@@ -254,7 +254,7 @@ async function tostatus(ctx) {
   const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
   if (!quoted) return send(sock, from, msg, 'Reply to an image or video with *.tostatus* [caption]');
 
-  const { downloadContentFromMessage, getContentType } = require('@whiskeysockets/baileys');
+  const { getContentType } = require('../mediaCompat');
   const type = getContentType(quoted);
 
   if (!['imageMessage', 'videoMessage'].includes(type)) {
@@ -263,11 +263,9 @@ async function tostatus(ctx) {
 
   try {
     await send(sock, from, msg, 'Posting to status...');
-    const mediaType = type === 'imageMessage' ? 'image' : 'video';
-    const stream = await downloadContentFromMessage(quoted[type], mediaType);
-    const chunks = [];
-    for await (const chunk of stream) chunks.push(chunk);
-    const buffer = Buffer.concat(chunks);
+    const stanzaId = msg.message?.extendedTextMessage?.contextInfo?.stanzaId;
+    const fakeMsg = { key: { id: stanzaId || msg.key.id, remoteJid: from, fromMe: false }, message: quoted };
+    const buffer = await sock.downloadMediaMessage(fakeMsg);
 
     const caption = text || '';
     const payload = type === 'imageMessage'
@@ -1133,7 +1131,7 @@ async function toviewonce(ctx) {
 
 async function vv2(ctx) {
   const { sock, from, msg, sessionState } = ctx;
-  const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+  // downloadMediaMessage is provided by the sock adapter
 
   const ctxInfo =
     msg.message?.extendedTextMessage?.contextInfo ||
@@ -1184,12 +1182,7 @@ async function vv2(ctx) {
       message: quotedMsg
     };
 
-    const buffer = await downloadMediaMessage(
-      fakeMsg,
-      'buffer',
-      {},
-      { reuploadRequest: sock.updateMediaMessage }
-    );
+    const buffer = await sock.downloadMediaMessage(fakeMsg);
 
     const mediaData = quotedMsg[mediaType];
     const caption   = '*View-once revealed (VV2)*';
