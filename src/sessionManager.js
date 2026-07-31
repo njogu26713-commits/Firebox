@@ -229,21 +229,29 @@ async function requestPairingCode(id, number) {
     console.warn('[EVO] requestPairingCode failed:', e?.response?.data || e.message);
   }
 
-  // Pairing code not supported by this Evolution API version — fall back to QR code
+  // Pairing code not supported by this Evolution API version — fall back to QR code.
+  // Restart the instance first to guarantee a fresh QR is generated.
+  console.log('[EVO] Pairing code unavailable — restarting instance for fresh QR code.');
   try {
-    const { data } = await client.get(`/instance/connect/${EVO_INSTANCE}`);
-    const qr = data?.base64 || data?.qrcode?.base64 || data?.qrcode;
-    if (qr) {
-      const s = sessions.get(id);
-      if (s) { s.qr = qr; s._socketInitialized = true; }
-      console.log('[EVO] Pairing code unavailable — falling back to QR code.');
-      return null; // caller checks session.qr
-    }
-  } catch (e) {
-    console.error('[EVO] QR fallback failed:', e?.response?.data || e.message);
+    await client.post(`/instance/restart/${EVO_INSTANCE}`);
+  } catch (_) {}
+
+  // Poll for the QR code (Evolution API needs a moment to generate it after restart)
+  for (let attempt = 0; attempt < 8; attempt++) {
+    await new Promise(r => setTimeout(r, 1500));
+    try {
+      const { data } = await client.get(`/instance/connect/${EVO_INSTANCE}`);
+      const qr = data?.base64 || data?.qrcode?.base64 || data?.qrcode;
+      if (qr) {
+        const s = sessions.get(id);
+        if (s) { s.qr = qr; s._socketInitialized = true; }
+        console.log('[EVO] Fresh QR code obtained.');
+        return null; // caller checks session.qr
+      }
+    } catch (_) {}
   }
 
-  throw new Error('Could not obtain pairing code or QR code from Evolution API. Ensure the instance is in connecting state.');
+  throw new Error('Could not obtain a QR code from Evolution API. Ensure the instance is in connecting state.');
 }
 
 async function waitForPairingReady(id, timeoutMs = 25000) {

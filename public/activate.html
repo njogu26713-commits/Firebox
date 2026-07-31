@@ -555,7 +555,14 @@
         <!-- QR code fallback (shown when pairing code not available) -->
         <div class="result-code-wrap" id="result-qr-wrap" style="display:none;">
           <div class="result-code-label">Scan QR Code</div>
-          <img id="result-qr-img" src="" alt="QR Code" style="width:200px;height:200px;margin:12px auto;display:block;border-radius:8px;" />
+          <div style="position:relative;width:200px;margin:12px auto;">
+            <img id="result-qr-img" src="" alt="QR Code" style="width:200px;height:200px;display:block;border-radius:8px;" />
+            <div id="qr-overlay" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.65);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;">
+              <div style="color:#fff;font-size:.8rem;font-weight:600;">QR expired</div>
+              <button onclick="refreshQR()" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:.78rem;cursor:pointer;">🔄 Refresh</button>
+            </div>
+          </div>
+          <div id="qr-timer" style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:4px;">QR refreshes in <span id="qr-countdown">20</span>s</div>
           <div class="result-code-hint">
             Open WhatsApp → Linked Devices → Link a Device → scan this QR code
           </div>
@@ -1089,6 +1096,7 @@
         document.getElementById('result-qr-wrap').style.display   = '';
         document.getElementById('result-qr-img').src              = result.qrImage;
         document.getElementById('copy-btn').style.display         = 'none';
+        startQRCountdown();
       }
 
       showStage('result');
@@ -1106,6 +1114,53 @@
       }
       showError(result.error || 'Activation failed — please try again');
       setStatus('dot-err', 'var(--red)', 'Activation failed');
+    }
+  }
+
+  /* ── QR code auto-refresh ───────────────────────────────────── */
+  let _qrTimer = null;
+
+  function startQRCountdown() {
+    clearInterval(_qrTimer);
+    let secs = 18; // start countdown slightly under 20s so QR never fully expires
+    const el = document.getElementById('qr-countdown');
+    if (el) el.textContent = secs;
+    _qrTimer = setInterval(() => {
+      secs--;
+      if (el) el.textContent = Math.max(secs, 0);
+      if (secs <= 0) {
+        clearInterval(_qrTimer);
+        refreshQR();
+      }
+    }, 1000);
+  }
+
+  async function refreshQR() {
+    const img = document.getElementById('result-qr-img');
+    const overlay = document.getElementById('qr-overlay');
+    const timerEl = document.getElementById('qr-countdown');
+    if (overlay) overlay.style.display = 'none';
+    if (timerEl) timerEl.textContent = '…';
+    try {
+      const r = await fetch('/api/qr');
+      const data = await r.json();
+      if (data.connected) {
+        clearInterval(_qrTimer);
+        setStatus('dot-on', 'var(--green)', '✅ WhatsApp connected!');
+        toast('✅ WhatsApp connected!', 'success');
+        if (timerEl) timerEl.parentElement.style.display = 'none';
+        return;
+      }
+      if (data.qrImage && img) {
+        img.src = data.qrImage;
+        startQRCountdown();
+      } else {
+        if (overlay) overlay.style.display = 'flex';
+        toast('Could not refresh QR — tap Refresh to retry', 'error');
+      }
+    } catch (e) {
+      if (overlay) overlay.style.display = 'flex';
+      toast('Network error refreshing QR', 'error');
     }
   }
 

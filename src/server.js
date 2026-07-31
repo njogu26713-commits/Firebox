@@ -99,6 +99,25 @@ app.delete('/api/sessions/:id', (req, res) => {
   }
 });
 
+// ── GET /api/qr — fetch a fresh QR code on demand ────────────────────────────
+
+app.get('/api/qr', async (req, res) => {
+  try {
+    const { sessions, requestPairingCode } = require('./sessionManager');
+    const first = [...sessions.values()][0];
+    if (!first) return res.status(503).json({ error: 'No session available' });
+    if (first.status === 'connected') return res.json({ connected: true });
+
+    // requestPairingCode will restart instance + poll for fresh QR
+    await requestPairingCode(first.id, first.number || '');
+    const qrImage = first.qr || null;
+    if (!qrImage) return res.status(503).json({ error: 'QR not yet available — please retry' });
+    res.json({ qrImage });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── POST /api/sessions/:id/pairing ────────────────────────────────────────────
 
 app.post('/api/sessions/:id/pairing', async (req, res) => {
