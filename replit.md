@@ -36,7 +36,7 @@ The server listens on port 5000.
 | `EVOLUTION_API_URL` | Base URL of your Evolution API server |
 | `EVOLUTION_API_KEY` | Evolution API global API key (set as a Secret) |
 | `EVOLUTION_INSTANCE` | Instance name in Evolution API (e.g. `firebox-bot`) |
-| `WEBHOOK_URL` | Public URL this bot is reachable at + `/webhook` (e.g. `https://your-app.up.railway.app/webhook`) |
+| `WEBHOOK_URL` | Full webhook URL including path (e.g. `https://your-app.replit.dev/webhook`) — must end in `/webhook` |
 | `OWNER_NUMBER` | WhatsApp number with country code, no `+` |
 | `OWNER_NAME` | Your name shown in bot responses |
 | `PREFIX` | Command prefix (default: `.`) |
