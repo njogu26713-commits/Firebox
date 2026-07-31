@@ -225,11 +225,25 @@ async function requestPairingCode(id, number) {
       if (s) { s.pairingCode = formatted; s._socketInitialized = true; }
       return formatted;
     }
-    throw new Error('No pairing code returned by Evolution API');
   } catch (e) {
-    console.error('[EVO] requestPairingCode failed:', e?.response?.data || e.message);
-    throw new Error(e?.response?.data?.message || e.message);
+    console.warn('[EVO] requestPairingCode failed:', e?.response?.data || e.message);
   }
+
+  // Pairing code not supported by this Evolution API version — fall back to QR code
+  try {
+    const { data } = await client.get(`/instance/connect/${EVO_INSTANCE}`);
+    const qr = data?.base64 || data?.qrcode?.base64 || data?.qrcode;
+    if (qr) {
+      const s = sessions.get(id);
+      if (s) { s.qr = qr; s._socketInitialized = true; }
+      console.log('[EVO] Pairing code unavailable — falling back to QR code.');
+      return null; // caller checks session.qr
+    }
+  } catch (e) {
+    console.error('[EVO] QR fallback failed:', e?.response?.data || e.message);
+  }
+
+  throw new Error('Could not obtain pairing code or QR code from Evolution API. Ensure the instance is in connecting state.');
 }
 
 async function waitForPairingReady(id, timeoutMs = 25000) {

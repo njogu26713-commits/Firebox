@@ -620,8 +620,10 @@ app.post('/api/tokens/activate', async (req, res) => {
       db.updateActivationToken(raw, { sessionId: session.id });
 
       const plan = PLANS[tokenData.plan] || {};
+      const qrImage = sessions.get(session.id)?.qr || null;
       return res.json({
         code,
+        qrImage,
         phone:     tokenData.phone,
         sessionId: session.id,
         plan:      { id: plan.id || tokenData.plan, name: plan.name || tokenData.plan, badge: plan.badge || '' },
@@ -658,7 +660,7 @@ app.post('/api/tokens/activate', async (req, res) => {
     : null;
 
   try {
-    const { addSession, waitForPairingReady, requestPairingCode } = require('./sessionManager');
+    const { addSession, waitForPairingReady, requestPairingCode, sessions } = require('./sessionManager');
 
     // Remove old session for this token if present
     if (tokenData.sessionId) {
@@ -684,8 +686,10 @@ app.post('/api/tokens/activate', async (req, res) => {
       sessionId:   session.id,
     });
 
+    const qrImage = sessions.get(session.id)?.qr || null;
     res.json({
       code,
+      qrImage,
       phone:        tokenData.phone,
       sessionId:    session.id,
       plan:         { id: plan.id, name: plan.name, badge: plan.badge },

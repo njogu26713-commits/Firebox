@@ -544,11 +544,20 @@
 
       <!-- ─── STAGE 5: Result ───────────────────────────────── -->
       <div class="result-box" id="result-box">
-        <div class="result-code-wrap">
+        <!-- Pairing code (text) -->
+        <div class="result-code-wrap" id="result-code-wrap">
           <div class="result-code-label">WhatsApp Pairing Code</div>
           <div class="result-code-digits" id="result-code">—</div>
           <div class="result-code-hint">
             Open WhatsApp → Linked Devices → Link with phone number → enter this code
+          </div>
+        </div>
+        <!-- QR code fallback (shown when pairing code not available) -->
+        <div class="result-code-wrap" id="result-qr-wrap" style="display:none;">
+          <div class="result-code-label">Scan QR Code</div>
+          <img id="result-qr-img" src="" alt="QR Code" style="width:200px;height:200px;margin:12px auto;display:block;border-radius:8px;" />
+          <div class="result-code-hint">
+            Open WhatsApp → Linked Devices → Link a Device → scan this QR code
           </div>
         </div>
 
@@ -1055,10 +1064,9 @@
 
   /* ── Shared result handler ──────────────────────────────────── */
   function handleActivationResult(result, currentStep) {
-    if (result.code) {
+    if (result.code || result.qrImage) {
       for (let i = 0; i < 5; i++) setStep(i, 'done');
 
-      document.getElementById('result-code').textContent  = result.code;
       document.getElementById('result-phone').textContent = '+' + result.phone;
 
       const planName  = result.plan ? result.plan.name : (state.selectedPlan ? state.selectedPlan.name : '—');
@@ -1069,12 +1077,27 @@
         ? new Date(result.expiresAt).toLocaleString() : '—';
       document.getElementById('result-payref').textContent  = result.paymentRef || (result.reconnect ? 'Reconnect — no payment' : '—');
 
+      if (result.code) {
+        // Show text pairing code
+        document.getElementById('result-code-wrap').style.display = '';
+        document.getElementById('result-qr-wrap').style.display   = 'none';
+        document.getElementById('result-code').textContent = result.code;
+        document.getElementById('copy-btn').style.display  = '';
+      } else {
+        // Show QR code image (pairing code not supported by this Evolution API version)
+        document.getElementById('result-code-wrap').style.display = 'none';
+        document.getElementById('result-qr-wrap').style.display   = '';
+        document.getElementById('result-qr-img').src              = result.qrImage;
+        document.getElementById('copy-btn').style.display         = 'none';
+      }
+
       showStage('result');
+      const method = result.code ? 'enter pairing code' : 'scan QR code';
       const msg = result.reconnect
-        ? '🔄 Reconnected — enter pairing code in WhatsApp'
-        : '✅ Bot activated — enter pairing code in WhatsApp';
+        ? `🔄 Reconnected — ${method} in WhatsApp`
+        : `✅ Bot activated — ${method} in WhatsApp`;
       setStatus('dot-on', 'var(--green)', msg);
-      toast(result.reconnect ? '🔄 New pairing code generated!' : '🎉 Bot activated!', 'success');
+      toast(result.reconnect ? '🔄 Session ready!' : '🎉 Bot activated!', 'success');
     } else {
       for (let i = 0; i < 5; i++) {
         if (i < currentStep - 1)        setStep(i, 'done');
