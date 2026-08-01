@@ -5,7 +5,7 @@ const QRCode = require('qrcode');
 const db = require('./database');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = 5000;
 
 // ── In-memory log buffer (last 300 lines) ─────────────────────────────────────
 const LOG_BUFFER = [];
