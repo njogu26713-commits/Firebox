@@ -721,21 +721,42 @@ app.post('/api/tokens/activate', async (req, res) => {
   }
 });
 
-// ── POST /webhook — receive Evolution API events ──────────────────────────────
+// ── POST /webhook and /webhook/* — receive Evolution API events ───────────────
+// Evolution API v2 with webhookByEvents=true sends to /webhook/EVENT-NAME
+// (e.g. /webhook/connection-update, /webhook/messages-upsert).
+// With webhookBase64=true the payload body is base64-encoded JSON.
 
-app.post('/webhook', async (req, res) => {
+function parseWebhookBody(raw, urlPath) {
+  let body = raw;
+
+  // Decode base64-wrapped payload (webhookBase64=true)
+  if (body && typeof body.data === 'string') {
+    try { body = JSON.parse(Buffer.from(body.data, 'base64').toString('utf8')); } catch (_) {}
+  }
+
+  // Derive event from URL path when webhookByEvents=true sends to /webhook/EVENT-NAME
+  if (body && !body.event && urlPath && urlPath !== '/webhook') {
+    const slug = urlPath.replace(/^\/webhook\/?/, ''); // e.g. "connection-update"
+    if (slug) {
+      // Convert kebab-case to UPPER_SNAKE: connection-update → CONNECTION_UPDATE
+      body = { ...body, event: slug.toUpperCase().replace(/-/g, '_') };
+    }
+  }
+
+  return body;
+}
+
+async function handleWebhookRequest(req, res) {
   try {
-    const body = req.body;
+    const body = parseWebhookBody(req.body, req.path);
     if (!body) return res.sendStatus(200);
 
-    // Evolution API sends: { event, instance, data, ... }
     const event    = body.event || body.type || '';
     const instance = body.instance || '';
     const data     = body.data || body;
 
     if (event) {
       const { handleWebhookEvent } = require('./sessionManager');
-      // Fire-and-forget — don't await so we ack quickly
       handleWebhookEvent(event, instance, data).catch(err =>
         console.error('[WEBHOOK] Handler error:', err.message)
       );
@@ -744,9 +765,12 @@ app.post('/webhook', async (req, res) => {
     res.sendStatus(200);
   } catch (err) {
     console.error('[WEBHOOK] Error:', err.message);
-    res.sendStatus(200); // always 200 so Evolution API doesn't retry
+    res.sendStatus(200);
   }
-});
+}
+
+app.post('/webhook',    handleWebhookRequest);
+app.post('/webhook/*',  handleWebhookRequest);
 
 // ── GET /api/evo/status — Evolution API instance status ──────────────────────
 
