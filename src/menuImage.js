@@ -19,7 +19,7 @@ const CATS = [
   { icon:'[IMG]', title:'Image FX',    color:'#9333ea', cmds:['.blur','.cartoon','.anime','.sketch','.neon','.glitch','.wasted','.wanted','.sepia','.invert','.watercolor','.oil','.fire','.snow','.rainbow','.vintage'] },
   { icon:'♪', title:'Audio FX',     color:'#0891b2', cmds:['.bass','.blown','.deep','.earrape','.robot','.reverseaudio','.tomp3','.toptt','.volaudio'] },
   { icon:'[GRP]', title:'Group',        color:'#16a34a', cmds:['.tagall','.hidetag','.tagadmin','.kick','.add','.promote','.demote','.mute','.unmute','.poll','.warn','.antilink','.setwelcome'] },
-  { icon:'●', title:'General',      color:'#2563eb', cmds:['.ping','.info','.owner','.runtime','.botstatus','.help','.pair','.repo'] },
+  { icon:'●', title:'General',      color:'#2563eb', cmds:['.ping','.info','.owner','.runtime','.botstatus','.help','.repo'] },
   { icon:'+', title:'Religion',     color:'#92400e', cmds:['.bible','.quran'] },
   { icon:'[>_]', title:'Hacking',      color:'#15803d', cmds:['.iplookup','.whois','.dns','.hash','.checkpass','.b64encode','.b64decode','.cipher','.sslcheck','.numlookup','.scamalyze','.hack'] },
 ];

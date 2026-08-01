@@ -679,28 +679,6 @@ async function botstatus(ctx) {
   await sendFireboxCard(sock, from, msg, { title: `${botName} Status`, content });
 }
 
-async function pair(ctx) {
-  const { sock, from, msg } = ctx;
-  const botNum = sock.user?.id?.split(':')[0] || '?';
-  const botName = db.getBotSetting('botName') || 'Firebox';
-  const panelUrl = `https://spritedbot.firebox.live`;
-  const content =
-    `*Bot Number:* +${botNum}\n` +
-    `*Uptime:* ${getUptime()}\n` +
-    `*To deploy on a new number:*\n` +
-    `Open the bot's web panel\n` +
-    `Go to */pair* page\n` +
-    `Scan QR or enter phone number for pairing code\n` +
-    `Bot connects automatically!\n` +
-    `*To save session:*\n` +
-    `• Click *Export Session ID* on the panel\n` +
-    `• Save it to deploy anywhere instantly`;
-  await sendFireboxCard(sock, from, msg, {
-    title: `${botName} Pairing`,
-    content,
-    buttons: [{ text: 'Open Panel', url: panelUrl }],
-  });
-}
 
 async function repo(ctx) {
   const { sock, from, msg } = ctx;
@@ -748,4 +726,4 @@ async function channel(ctx) {
   );
 }
 
-module.exports = { ping, ping2, menu, help, info, owner, runtime, botstatus, pair, repo, channel };
+module.exports = { ping, ping2, menu, help, info, owner, runtime, botstatus, repo, channel };

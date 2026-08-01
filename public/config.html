@@ -298,12 +298,11 @@
 <body>
 
 <header>
-  <a class="brand" href="/pair">
+  <a class="brand" href="/dashboard">
     <div class="brand-icon">🔥</div>
     <div class="brand-text"><h1>Firebox</h1><span>WhatsApp Bot</span></div>
   </a>
   <nav>
-    <a href="/pair">📲 Pair</a>
     <a href="/config" class="active">⚙️ Config</a>
     <a href="/admin">🛡️ Admin</a>
     <a href="/activity">📋 Activity</a>
@@ -523,7 +522,7 @@
         msgEl.textContent = '✅ Config saved and applied live.';
         msgEl.style.color = 'var(--green)';
         await loadConfig();
-        setTimeout(() => { window.location.href = '/pair'; }, 1800);
+        setTimeout(() => { window.location.href = '/dashboard'; }, 1800);
       } else {
         toast(d.error || 'Save failed.', 'error');
         msgEl.textContent = '❌ ' + (d.error || 'Failed to save.');

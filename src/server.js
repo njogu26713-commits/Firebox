@@ -731,8 +731,6 @@ app.post('/webhook/*', (_req, res) => res.sendStatus(200));
 
 app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 app.get('/', (req, res) => res.redirect('/dashboard'));
-// /pair redirects to the new token-based flow
-app.get('/pair',      (req, res) => res.redirect('/get-token'));
 app.get('/get-token', (req, res) => res.sendFile(path.join(__dirname, '../public/get-token.html')));
 app.get('/activate',  (req, res) => res.sendFile(path.join(__dirname, '../public/activate.html')));
 app.get('/config',    (req, res) => res.sendFile(path.join(__dirname, '../public/config.html')));

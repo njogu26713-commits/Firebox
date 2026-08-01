@@ -356,7 +356,6 @@ async function handleMessage(sock, msg, prefix, sessionState) {
     case 'owner':                  return general.owner(ctx);
     case 'runtime':                return general.runtime(ctx);
     case 'botstatus': case 'bs2':  return general.botstatus(ctx);
-    case 'pair':                   return general.pair(ctx);
     case 'repo':                   return general.repo(ctx);
     case 'channel': case 'follow': return general.channel(ctx);
 
