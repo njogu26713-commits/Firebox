@@ -62,7 +62,7 @@ async function startBaileysSession(id, name, createdAt) {
 
   // makeWASocket may be default or named export depending on build
   const makeWASocket = B.default || B.makeWASocket;
-  const { useMultiFileAuthState, DisconnectReason, Browsers, downloadMediaMessage } = B;
+  const { useMultiFileAuthState, DisconnectReason, Browsers, downloadMediaMessage, fetchLatestBaileysVersion } = B;
 
   // Create or reuse in-memory session state
   let sessionState = sessions.get(id);
@@ -84,10 +84,22 @@ async function startBaileysSession(id, name, createdAt) {
 
   const logger = pino({ level: 'silent' });
 
+  // Fetch the latest WhatsApp Web version — avoids 405 rejections caused by
+  // Baileys shipping an outdated default version.
+  let waVersion;
+  try {
+    const { version } = await fetchLatestBaileysVersion();
+    waVersion = version;
+    console.log(`[BAILEYS] WA Web version: ${version.join('.')}`);
+  } catch (e) {
+    console.warn('[BAILEYS] Could not fetch latest WA version, using built-in default');
+  }
+
   const sock = makeWASocket({
+    version:             waVersion,
     auth:                state,
     logger,
-    printQRInTerminal:   false,   // We surface QR via the dashboard, not terminal
+    printQRInTerminal:   false,
     browser:             Browsers.ubuntu('Chrome'),
     syncFullHistory:     false,
     markOnlineOnConnect: true,
