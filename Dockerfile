@@ -10,16 +10,28 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python3 -m pip install --break-system-packages yt-dlp 2>/dev/null || pip3 install yt-dlp
+# Install yt-dlp and ensure the binary is at /app/bin/yt-dlp for the bot
+RUN python3 -m pip install --break-system-packages yt-dlp 2>/dev/null || pip3 install --break-system-packages yt-dlp || true
 
 WORKDIR /app
 
-COPY package.json ./
+COPY package.json package-lock.json ./
 RUN npm install --production
 
 COPY . .
 
-RUN mkdir -p data session tmp
+# Put a fresh yt-dlp binary in ./bin/ so index.js doesn't re-download it at runtime.
+# Try pip-installed binary first, fall back to downloading standalone binary.
+RUN mkdir -p bin tmp data session && \
+    YT=$(which yt-dlp 2>/dev/null || find /usr /root /home -name yt-dlp 2>/dev/null | head -1 || echo '') && \
+    if [ -n "$YT" ] && [ -x "$YT" ]; then \
+        cp "$YT" bin/yt-dlp && chmod +x bin/yt-dlp && echo "yt-dlp copied from $YT"; \
+    else \
+        echo "Downloading yt-dlp standalone binary..." && \
+        curl -sL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
+             -o bin/yt-dlp && chmod +x bin/yt-dlp && echo "yt-dlp downloaded"; \
+    fi && \
+    bin/yt-dlp --version
 
 ENV NODE_ENV=production
 ENV PREFIX=.

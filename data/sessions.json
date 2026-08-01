@@ -1,7 +1,12 @@
 [
   {
-    "id": "sess_evo_firebox_bot",
-    "name": "firebox-bot",
-    "createdAt": 1785574658181
+    "id": "sess_default",
+    "name": "Firebox Bot",
+    "createdAt": 1785580300750
+  },
+  {
+    "id": "sess_1785580377103",
+    "name": "Bot-1785580377103",
+    "createdAt": 1785580377103
   }
 ]

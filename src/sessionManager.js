@@ -1,47 +1,45 @@
 /**
- * Session Manager — Evolution API edition
+ * Session Manager — native Baileys edition
  * ─────────────────────────────────────────────────────────────────────────────
- * Replaces the Baileys-based session manager with an Evolution API adapter.
- * The public interface (sessions, addSession, removeSession, requestPairingCode,
- * waitForPairingReady, loadAndStartAll) is preserved so the rest of the codebase
- * doesn't need to change.
+ * Replaces the Evolution API adapter with a direct @whiskeysockets/baileys
+ * WebSocket connection. The public interface (sessions, addSession,
+ * removeSession, requestPairingCode, waitForPairingReady, loadAndStartAll) is
+ * preserved so the rest of the codebase doesn't need to change.
  */
 
 'use strict';
 
 const path = require('path');
 const fs   = require('fs');
-
-const {
-  createSockAdapter,
-  createEvoClient,
-  ensureInstance,
-  getInstanceState,
-  getInstanceNumber,
-  setupWebhook,
-  getQrCode,
-} = require('./evolutionApi');
+const pino = require('pino');
 
 const { createSessionState, addActivity } = require('./state');
 const db = require('./database');
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
-const EVO_API_URL  = process.env.EVOLUTION_API_URL  || '';
-const EVO_API_KEY  = process.env.EVOLUTION_API_KEY  || '';
-const EVO_INSTANCE = process.env.EVOLUTION_INSTANCE || 'firebox-bot';
-const PREFIX       = process.env.PREFIX || '.';
-
+const PREFIX        = process.env.PREFIX || '.';
 const SESSIONS_FILE = path.join(__dirname, '../data/sessions.json');
+const SESSION_BASE  = path.join(__dirname, '../session');
 
-// Singleton session map — one entry per Evolution API instance
+// Singleton session map — one entry per connected WhatsApp number
 const sessions = new Map();
 
-// Global dedup cache
+// Global dedup cache to prevent double-processing
 const _handledMsgIds = new Map();
 const DEDUP_TTL = 60 * 1000;
 
-// ── persistence helpers ────────────────────────────────────────────────────────
+// ── Baileys (ESM) — loaded once via dynamic import ────────────────────────────
+
+let Baileys = null;
+async function getBaileys() {
+  if (!Baileys) {
+    Baileys = await import('@whiskeysockets/baileys');
+  }
+  return Baileys;
+}
+
+// ── Persistence helpers ───────────────────────────────────────────────────────
 
 function loadSessionList() {
   try {
@@ -52,53 +50,205 @@ function loadSessionList() {
 
 function saveSessionList() {
   const list = [...sessions.values()].map(s => ({
-    id: s.id, name: s.name, createdAt: s.createdAt
+    id: s.id, name: s.name, createdAt: s.createdAt,
   }));
   try { fs.writeFileSync(SESSIONS_FILE, JSON.stringify(list, null, 2)); } catch {}
 }
 
-// ── build / update the sessionState for the single Evolution API instance ─────
+// ── Start / restart a Baileys socket for one session ─────────────────────────
 
-async function startEvoSession(id, name, createdAt) {
-  if (!EVO_API_URL || !EVO_API_KEY) {
-    console.error('[EVO] EVOLUTION_API_URL / EVOLUTION_API_KEY not set — cannot start.');
-    return null;
-  }
+async function startBaileysSession(id, name, createdAt) {
+  const B = await getBaileys();
 
+  // makeWASocket may be default or named export depending on build
+  const makeWASocket = B.default || B.makeWASocket;
+  const { useMultiFileAuthState, DisconnectReason, Browsers, downloadMediaMessage } = B;
+
+  // Create or reuse in-memory session state
   let sessionState = sessions.get(id);
   if (!sessionState) {
-    sessionState = createSessionState(id, name || EVO_INSTANCE);
+    sessionState = createSessionState(id, name || `Session ${sessions.size + 1}`);
     sessionState.createdAt = createdAt || Date.now();
-    sessionState.awayMode  = db.getBotSetting('awayMode')  || false;
-    sessionState.awayMsg   = db.getBotSetting('awayMsg')   || sessionState.awayMsg;
+    sessionState.awayMode  = db.getBotSetting('awayMode') || false;
+    sessionState.awayMsg   = db.getBotSetting('awayMsg')  || sessionState.awayMsg;
     sessions.set(id, sessionState);
   }
 
   sessionState.status = 'connecting';
 
-  const client = createEvoClient(EVO_API_URL, EVO_API_KEY);
+  // Auth state stored on disk so sessions survive restarts
+  const sessionDir = path.join(SESSION_BASE, id);
+  fs.mkdirSync(sessionDir, { recursive: true });
 
-  // ── Ensure the instance exists on the Evolution API server ───────────────
-  await ensureInstance(EVO_API_URL, EVO_API_KEY, EVO_INSTANCE);
+  const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
 
-  // ── Set up webhook so Evolution API pushes events to us ──────────────────
-  const webhookUrl = buildWebhookUrl();
-  if (webhookUrl) {
-    await setupWebhook(client, EVO_INSTANCE, webhookUrl);
-  } else {
-    console.warn('[EVO] WEBHOOK_URL not set — incoming messages will not arrive. Set WEBHOOK_URL env var.');
-  }
+  const logger = pino({ level: 'silent' });
 
-  // ── Check current connection state ───────────────────────────────────────
-  await refreshSessionState(sessionState, client);
+  const sock = makeWASocket({
+    auth:                state,
+    logger,
+    printQRInTerminal:   false,   // We surface QR via the dashboard, not terminal
+    browser:             Browsers.baileys('Desktop'),
+    syncFullHistory:     false,
+    markOnlineOnConnect: true,
+    connectTimeoutMs:    60000,
+    retryRequestDelayMs: 2000,
+    getMessage: async (key) => {
+      const cached = sessionState.messageCache?.get(key.id);
+      return cached || { conversation: '' };
+    },
+  });
 
-  // ── Attach sock adapter ──────────────────────────────────────────────────
-  const userNumber = await getInstanceNumber(client, EVO_INSTANCE);
-  const sock = createSockAdapter(EVO_INSTANCE, EVO_API_URL, EVO_API_KEY, userNumber);
-  sessionState.sock   = sock;
-  sessionState.number = userNumber;
+  // ── Attach downloadMediaMessage as a sock method (matches previous interface) ─
+  // Returns a Buffer directly (commands that used for-await loops have been updated).
+  sock.downloadMediaMessage = async (msg) => {
+    try {
+      return await downloadMediaMessage(msg, 'buffer', {});
+    } catch (err) {
+      console.error('[BAILEYS] downloadMediaMessage error:', err.message);
+      return null;
+    }
+  };
 
-  // ── Start scheduler ──────────────────────────────────────────────────────
+  sessionState.sock = sock;
+
+  // ── connection.update ─────────────────────────────────────────────────────────
+  sock.ev.on('connection.update', async (update) => {
+    const { connection, lastDisconnect, qr } = update;
+
+    if (qr) {
+      sessionState.qr           = qr;
+      sessionState.pairingCode  = null;
+      sessionState.status        = 'connecting';
+      console.log(`[BAILEYS] QR updated for session '${id}'`);
+    }
+
+    if (connection === 'open') {
+      sessionState.status       = 'connected';
+      sessionState.qr           = null;
+      sessionState.pairingCode  = null;
+      sessionState.number        = sock.user?.id?.split(':')[0] || null;
+      console.log(`[BAILEYS] Session '${id}' connected — +${sessionState.number}`);
+    }
+
+    if (connection === 'close') {
+      const statusCode   = lastDisconnect?.error?.output?.statusCode;
+      const loggedOutCode = DisconnectReason?.loggedOut || 401;
+      const shouldReconnect = statusCode !== loggedOutCode;
+
+      console.log(`[BAILEYS] Session '${id}' closed — code=${statusCode} reconnect=${shouldReconnect}`);
+      sessionState.status = 'disconnected';
+      sessionState.number = null;
+
+      if (shouldReconnect && !sessionState._removed) {
+        console.log(`[BAILEYS] Reconnecting session '${id}' in 5 s...`);
+        setTimeout(() => {
+          if (sessionState._removed) return;
+          startBaileysSession(id, sessionState.name, sessionState.createdAt).catch(console.error);
+        }, 5000);
+      } else if (!shouldReconnect) {
+        // Logged out — wipe auth state so next start shows a fresh QR
+        console.log(`[BAILEYS] Session '${id}' logged out — clearing auth state`);
+        try { fs.rmSync(path.join(SESSION_BASE, id), { recursive: true, force: true }); } catch {}
+      }
+    }
+  });
+
+  // ── credentials saved ─────────────────────────────────────────────────────────
+  sock.ev.on('creds.update', saveCreds);
+
+  // ── incoming messages ─────────────────────────────────────────────────────────
+  sock.ev.on('messages.upsert', async ({ messages: msgs, type }) => {
+    if (type !== 'notify') return;
+
+    for (const msg of msgs) {
+      if (!msg.message) continue;
+      if (msg.key.fromMe) continue;
+
+      // Dedup
+      const msgId = msg.key.id;
+      if (msgId) {
+        if (_handledMsgIds.has(msgId)) continue;
+        _handledMsgIds.set(msgId, Date.now());
+        setTimeout(() => _handledMsgIds.delete(msgId), DEDUP_TTL);
+      }
+
+      sessionState.messageCount++;
+
+      try {
+        const { handleMessage } = require('./handler');
+        await handleMessage(sock, msg, PREFIX, sessionState);
+      } catch (err) {
+        console.error(`[BAILEYS] handleMessage error:`, err.message);
+      }
+    }
+  });
+
+  // ── messages deleted (anti-delete) ────────────────────────────────────────────
+  sock.ev.on('messages.delete', async (item) => {
+    const ownerNumber = process.env.OWNER_NUMBER;
+    if (!ownerNumber) return;
+    const ownerJid = ownerNumber + '@s.whatsapp.net';
+
+    const keys = item.keys || [];
+    for (const key of keys) {
+      const cached = sessionState.messageCache?.get(key.id);
+      if (!cached || !db.getBotSetting('antiDelete')) continue;
+      sessionState.messageCache.delete(key.id);
+      const { body, mType, sender, from, mediaBuffer } = cached;
+      const senderTag = sender ? sender.split('@')[0] : 'unknown';
+      const isGroup   = from?.endsWith('@g.us');
+      const chatLabel = isGroup ? `group ${from?.split('@')[0]}` : `DM with ${senderTag}`;
+      const header    = `✖ *Deleted Message*\n[USER] *By:* @${senderTag}\n» *Chat:* ${chatLabel}\n\n`;
+      try {
+        if (['imageMessage', 'videoMessage', 'audioMessage', 'stickerMessage'].includes(mType) && mediaBuffer) {
+          const mediaSendPayload =
+            mType === 'imageMessage'   ? { image: mediaBuffer, caption: header + (body || '[Image]') } :
+            mType === 'videoMessage'   ? { video: mediaBuffer, mimetype: 'video/mp4', caption: header + (body || '[Video]') } :
+            mType === 'audioMessage'   ? { audio: mediaBuffer, mimetype: 'audio/mp4', ptt: false } :
+            mType === 'stickerMessage' ? { sticker: mediaBuffer } : null;
+          if (mediaSendPayload) await sock.sendMessage(ownerJid, mediaSendPayload);
+        } else if (body) {
+          await sock.sendMessage(ownerJid, {
+            text: header + `► *Message:*\n${body}`,
+            mentions: sender ? [sender] : [],
+          });
+        }
+      } catch (err) {
+        console.error('[BAILEYS] anti-delete forward error:', err.message);
+      }
+    }
+  });
+
+  // ── group participants update ─────────────────────────────────────────────────
+  sock.ev.on('group-participants.update', async (data) => {
+    try {
+      const { handleGroupParticipantUpdate } = require('./commands/group');
+      await handleGroupParticipantUpdate(sock, data);
+    } catch (err) {
+      console.error('[BAILEYS] Group participant update error:', err.message);
+    }
+  });
+
+  // ── call events ───────────────────────────────────────────────────────────────
+  sock.ev.on('call', async (calls) => {
+    for (const call of calls) {
+      if (call.status !== 'offer') continue;
+      const callerJid = call.from || call.chatId;
+      const isDM = callerJid?.endsWith('@s.whatsapp.net');
+      if (!isDM) continue;
+      if (!db.getBotSetting('anticallDm')) continue;
+      const customMsg   = db.getBotSetting('antiCallMsg');
+      const channelLink = db.getBotSetting('channelLink');
+      const channelSuffix = channelLink ? `\n\n» *Follow our channel:* ${channelLink}` : '';
+      const text = customMsg ||
+        `▲ *Call Blocked!*\n\n[NO-MOB] This bot does not accept calls.\n` +
+        `» Please send a text message instead.${channelSuffix}\n\n_Powered by ★ Firebox_`;
+      try { await sock.sendMessage(callerJid, { text }); } catch (_) {}
+    }
+  });
+
+  // ── scheduler: send due scheduled messages every 30 s ─────────────────────────
   if (!sessionState._schedulerInterval) {
     sessionState._schedulerInterval = setInterval(async () => {
       db.checkAndApplyDailyRefill();
@@ -107,86 +257,22 @@ async function startEvoSession(id, name, createdAt) {
       const due = db.getSchedules().filter(s => s.jid && s.sendAt <= now);
       for (const s of due) {
         try {
-          await sock.sendMessage(s.jid, {
-            text: `[SCHED] *Scheduled Message*\n\n${s.message}`
-          });
+          await sock.sendMessage(s.jid, { text: `[SCHED] *Scheduled Message*\n\n${s.message}` });
           db.removeSchedule(s.id);
-        } catch (_) {
-          db.removeSchedule(s.id);
-        }
+        } catch (_) { db.removeSchedule(s.id); }
       }
     }, 30000);
   }
 
-  // ── Poll Evolution API every 15s to sync connection state ────────────────
-  if (!sessionState._pollInterval) {
-    sessionState._pollInterval = setInterval(async () => {
-      if (sessionState._removed) return;
-      await refreshSessionState(sessionState, client);
-
-      // Update sock user if number was just resolved
-      if (!sessionState.sock.user && sessionState.number) {
-        sessionState.sock = createSockAdapter(
-          EVO_INSTANCE, EVO_API_URL, EVO_API_KEY, sessionState.number
-        );
-      }
-    }, 15000);
-  }
-
-  console.log(`[EVO] Session '${id}' initialised — status: ${sessionState.status}`);
+  console.log(`[BAILEYS] Session '${id}' initialising...`);
   return sessionState;
 }
 
-async function refreshSessionState(sessionState, client) {
-  const rawState = await getInstanceState(client, EVO_INSTANCE);
-  const prevStatus = sessionState.status;
-
-  if (rawState === 'open') {
-    sessionState.status = 'connected';
-    sessionState.qr = null;
-    sessionState.pairingCode = null;
-    if (!sessionState.number) {
-      sessionState.number = await getInstanceNumber(client, EVO_INSTANCE);
-    }
-    if (prevStatus !== 'connected') {
-      console.log(`[EVO] Instance '${EVO_INSTANCE}' connected — ${sessionState.number}`);
-    }
-  } else if (rawState === 'connecting') {
-    sessionState.status = 'connecting';
-    // Try to resolve number even in connecting state (ownerJid persists on server)
-    if (!sessionState.number) {
-      const n = await getInstanceNumber(client, EVO_INSTANCE);
-      if (n) sessionState.number = n;
-    }
-  } else {
-    // close / unknown — try to fetch QR
-    sessionState.status = 'disconnected';
-    try {
-      const qr = await getQrCode(client, EVO_INSTANCE);
-      if (qr) sessionState.qr = qr;
-    } catch (_) {}
-  }
-}
-
-function buildWebhookUrl() {
-  if (process.env.WEBHOOK_URL) return process.env.WEBHOOK_URL;
-  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
-    return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}/webhook`;
-  }
-  if (process.env.RAILWAY_STATIC_URL) {
-    return `${process.env.RAILWAY_STATIC_URL}/webhook`;
-  }
-  if (process.env.REPLIT_DEV_DOMAIN) {
-    return `https://${process.env.REPLIT_DEV_DOMAIN}/webhook`;
-  }
-  return null;
-}
-
-// ── public API — preserves original interface ─────────────────────────────────
+// ── Public API — preserves original interface ──────────────────────────────────
 
 async function addSession(name) {
   const id = 'sess_' + Date.now();
-  const sessionState = await startEvoSession(id, name || `Session ${sessions.size + 1}`);
+  const sessionState = await startBaileysSession(id, name || `Session ${sessions.size + 1}`);
   saveSessionList();
   return sessionState;
 }
@@ -196,340 +282,103 @@ function removeSession(id) {
   if (s) {
     s._removed = true;
     if (s._schedulerInterval) clearInterval(s._schedulerInterval);
-    if (s._pollInterval)      clearInterval(s._pollInterval);
+    try { s.sock?.end?.(); } catch {}
   }
   sessions.delete(id);
   saveSessionList();
 }
 
+/**
+ * requestPairingCode — request a WhatsApp pairing code for the given phone
+ * number (called BEFORE the QR code event fires). If number is empty the
+ * dashboard will fall back to displaying the QR code instead.
+ */
 async function requestPairingCode(id, number) {
-  if (!EVO_API_URL || !EVO_API_KEY) throw new Error('Evolution API not configured');
-  const client = createEvoClient(EVO_API_URL, EVO_API_KEY);
-  const clean = String(number).replace(/[^0-9]/g, '');
+  const sessionState = sessions.get(id);
+  if (!sessionState) throw new Error('Session not found');
 
-  try {
-    const { data } = await client.post(`/instance/connect/${EVO_INSTANCE}`);
-    // If Evolution API returns a pairing code directly
-    if (data?.code) {
-      const formatted = data.code.match(/.{1,4}/g)?.join('-') || data.code;
-      const s = sessions.get(id);
-      if (s) { s.pairingCode = formatted; s._socketInitialized = true; }
-      return formatted;
-    }
-  } catch (_) {}
+  const sock = sessionState.sock;
+  if (!sock) throw new Error('Socket not ready — please retry');
 
-  // Try pairing code endpoint
-  try {
-    const { data } = await client.post(`/instance/pairingCode/${EVO_INSTANCE}`, {
-      phoneNumber: clean,
-    });
-    const code = data?.code || data?.pairingCode;
-    if (code) {
-      const formatted = code.match(/.{1,4}/g)?.join('-') || code;
-      const s = sessions.get(id);
-      if (s) { s.pairingCode = formatted; s._socketInitialized = true; }
-      return formatted;
-    }
-  } catch (e) {
-    console.warn('[EVO] requestPairingCode failed:', e?.response?.data || e.message);
+  const clean = String(number || '').replace(/[^0-9]/g, '');
+
+  if (!clean) {
+    // No phone number supplied — QR flow: QR is already set via connection.update
+    sessionState._socketInitialized = true;
+    return null;
   }
 
-  // Pairing code not supported by this Evolution API version — fall back to QR code.
-  // Restart the instance first to guarantee a fresh QR is generated.
-  console.log('[EVO] Pairing code unavailable — restarting instance for fresh QR code.');
   try {
-    await client.post(`/instance/restart/${EVO_INSTANCE}`);
-  } catch (_) {}
-
-  // Poll for the QR code (Evolution API needs a moment to generate it after restart)
-  for (let attempt = 0; attempt < 8; attempt++) {
-    await new Promise(r => setTimeout(r, 1500));
-    try {
-      const { data } = await client.get(`/instance/connect/${EVO_INSTANCE}`);
-      const qr = data?.base64 || data?.qrcode?.base64 || data?.qrcode;
-      if (qr) {
-        const s = sessions.get(id);
-        if (s) { s.qr = qr; s._socketInitialized = true; }
-        console.log('[EVO] Fresh QR code obtained.');
-        return null; // caller checks session.qr
-      }
-    } catch (_) {}
+    const code = await sock.requestPairingCode(clean);
+    const formatted = code.match(/.{1,4}/g)?.join('-') || code;
+    sessionState.pairingCode       = formatted;
+    sessionState._socketInitialized = true;
+    return formatted;
+  } catch (err) {
+    console.warn('[BAILEYS] requestPairingCode failed:', err.message);
+    throw err;
   }
-
-  throw new Error('Could not obtain a QR code from Evolution API. Ensure the instance is in connecting state.');
 }
 
 async function waitForPairingReady(id, timeoutMs = 25000) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const s = sessions.get(id);
-    if (!s) throw new Error('Session not found');
-    if (s.status === 'connected') throw new Error('Session is already connected');
-    // For Evolution API, we're ready as soon as the session is created
-    s._socketInitialized = true;
-    return s;
+    if (!s)                        throw new Error('Session not found');
+    if (s.status === 'connected')  throw new Error('Session is already connected');
+    if (s.sock) {
+      s._socketInitialized = true;
+      return s;
+    }
+    await new Promise(r => setTimeout(r, 300));
   }
-  throw new Error('Timed out waiting for Evolution API session');
+  throw new Error('Timed out waiting for Baileys session to initialise');
 }
 
 function isSetupRequired() {
-  // With Evolution API, setup is required only if API URL is not configured
-  return !EVO_API_URL || !EVO_API_KEY;
+  if (sessions.size > 0) return false;
+  if (!fs.existsSync(SESSION_BASE)) return true;
+  for (const entry of fs.readdirSync(SESSION_BASE)) {
+    if (fs.existsSync(path.join(SESSION_BASE, entry, 'creds.json'))) return false;
+  }
+  return true;
 }
 
 async function loadAndStartAll() {
-  if (!fs.existsSync(path.join(__dirname, '../data'))) {
-    fs.mkdirSync(path.join(__dirname, '../data'), { recursive: true });
+  fs.mkdirSync(path.join(__dirname, '../data'),  { recursive: true });
+  fs.mkdirSync(SESSION_BASE, { recursive: true });
+
+  const saved = loadSessionList();
+
+  // Re-start any sessions that have saved credentials
+  if (fs.existsSync(SESSION_BASE)) {
+    for (const entry of fs.readdirSync(SESSION_BASE)) {
+      const credsFile = path.join(SESSION_BASE, entry, 'creds.json');
+      if (!fs.existsSync(credsFile)) continue;
+      const meta = saved.find(s => s.id === entry) || {
+        id: entry, name: `Session ${entry.slice(-4)}`, createdAt: Date.now(),
+      };
+      console.log(`[BAILEYS] Restoring session '${entry}'...`);
+      await startBaileysSession(meta.id, meta.name, meta.createdAt);
+    }
   }
 
-  if (isSetupRequired()) {
-    console.log('[EVO] ▲  EVOLUTION_API_URL / EVOLUTION_API_KEY not set. Configure in environment variables.');
-    return;
+  // No existing sessions → start a fresh one (will display QR on dashboard)
+  if (sessions.size === 0) {
+    console.log('[BAILEYS] No saved sessions — starting fresh session (scan QR or use pairing code)...');
+    await startBaileysSession('sess_default', 'Firebox Bot', Date.now());
   }
 
-  // Always start a single session mapped to the configured Evolution API instance
-  const id = 'sess_evo_' + EVO_INSTANCE.replace(/[^a-z0-9]/gi, '_');
-
-  console.log(`[EVO] Starting session for instance '${EVO_INSTANCE}'...`);
-  await startEvoSession(id, EVO_INSTANCE, Date.now());
   saveSessionList();
-}
-
-// ── Incoming webhook handler (called from server.js) ─────────────────────────
-
-async function handleWebhookEvent(event, instanceName, data) {
-  // Route to the right session
-  const sessionState = [...sessions.values()].find(s =>
-    s.name === instanceName || s.id.includes(instanceName.replace(/[^a-z0-9]/gi, '_'))
-  ) || [...sessions.values()][0];
-
-  if (!sessionState) {
-    console.warn(`[EVO] No session found for webhook instance '${instanceName}'`);
-    return;
-  }
-
-  if (!sessionState.sock) {
-    const userNumber = sessionState.number;
-    sessionState.sock = createSockAdapter(EVO_INSTANCE, EVO_API_URL, EVO_API_KEY, userNumber);
-  }
-
-  const sock = sessionState.sock;
-
-  switch (event) {
-    case 'connection.update':
-    case 'CONNECTION_UPDATE': {
-      const state = data?.state || data?.connection || data?.instance?.state;
-      console.log(`[EVO] CONNECTION_UPDATE state=${state} data=${JSON.stringify(data).slice(0,200)}`);
-      if (state === 'open') {
-        sessionState.status = 'connected';
-        sessionState.qr = null;
-        sessionState.pairingCode = null;
-        // ownerJid may be in data directly, nested under instance, or need an API call
-        const rawJid = data?.instance?.ownerJid || data?.ownerJid || data?.wuid;
-        if (rawJid) {
-          sessionState.number = rawJid.split('@')[0].split(':')[0];
-        } else if (!sessionState.number) {
-          // Fetch from API as fallback
-          const { createEvoClient, getInstanceNumber } = require('./evolutionApi');
-          const c = createEvoClient(EVO_API_URL, EVO_API_KEY);
-          getInstanceNumber(c, EVO_INSTANCE).then(n => {
-            if (n) {
-              sessionState.number = n;
-              sessionState.sock = createSockAdapter(EVO_INSTANCE, EVO_API_URL, EVO_API_KEY, n);
-            }
-          }).catch(() => {});
-        }
-        if (sessionState.number) {
-          sessionState.sock = createSockAdapter(EVO_INSTANCE, EVO_API_URL, EVO_API_KEY, sessionState.number);
-        }
-        console.log(`[EVO] Connected! +${sessionState.number}`);
-      } else if (state === 'close' || state === 'refused') {
-        sessionState.status = 'disconnected';
-        sessionState.number = null;
-        console.log(`[EVO] Disconnected.`);
-      } else if (state === 'connecting') {
-        sessionState.status = 'connecting';
-      }
-      break;
-    }
-
-    case 'qrcode.updated':
-    case 'QRCODE_UPDATED': {
-      const qr = data?.qrcode?.base64 || data?.base64 || data?.qrcode;
-      if (qr) {
-        sessionState.qr = qr;
-        sessionState.pairingCode = null;
-        console.log('[EVO] QR code updated.');
-      }
-      break;
-    }
-
-    case 'messages.upsert':
-    case 'MESSAGES_UPSERT': {
-      const { handleMessage } = require('./handler');
-      const messages = Array.isArray(data) ? data : (data?.messages || [data]);
-
-      for (const msg of messages) {
-        if (!msg?.message && !msg?.messageType) continue;
-
-        // Normalize message format to Baileys-compatible structure
-        const normalizedMsg = normalizeMessage(msg);
-        if (!normalizedMsg) continue;
-
-        // Skip our own sent messages (fromMe)
-        if (normalizedMsg.key.fromMe) continue;
-
-        // Dedup
-        const msgId = normalizedMsg.key.id;
-        if (msgId) {
-          if (_handledMsgIds.has(msgId)) continue;
-          _handledMsgIds.set(msgId, Date.now());
-          setTimeout(() => _handledMsgIds.delete(msgId), DEDUP_TTL);
-        }
-
-        sessionState.messageCount++;
-
-        try {
-          await handleMessage(sock, normalizedMsg, PREFIX, sessionState);
-        } catch (err) {
-          console.error(`[EVO] handleMessage error:`, err.message);
-        }
-      }
-      break;
-    }
-
-    case 'messages.delete':
-    case 'MESSAGES_DELETE': {
-      // Anti-delete: forward deleted messages to owner
-      const ownerNumber = process.env.OWNER_NUMBER;
-      if (!ownerNumber) break;
-      const ownerJid = ownerNumber + '@s.whatsapp.net';
-      const keys = Array.isArray(data) ? data : (data?.keys || []);
-      for (const key of keys) {
-        const cached = sessionState.messageCache?.get(key.id);
-        if (!cached || !db.getBotSetting('antiDelete')) continue;
-        sessionState.messageCache.delete(key.id);
-        const { body, mType, sender, from, mediaBuffer } = cached;
-        const senderTag = sender ? sender.split('@')[0] : 'unknown';
-        const isGroup   = from?.endsWith('@g.us');
-        const chatLabel = isGroup ? `group ${from?.split('@')[0]}` : `DM with ${senderTag}`;
-        const header    = `✖ *Deleted Message*\n[USER] *By:* @${senderTag}\n» *Chat:* ${chatLabel}\n\n`;
-        try {
-          if (['imageMessage', 'videoMessage', 'audioMessage', 'stickerMessage'].includes(mType) && mediaBuffer) {
-            const mediaSendPayload =
-              mType === 'imageMessage'   ? { image: mediaBuffer, caption: header + (body || '[Image]') } :
-              mType === 'videoMessage'   ? { video: mediaBuffer, mimetype: 'video/mp4', caption: header + (body || '[Video]') } :
-              mType === 'audioMessage'   ? { audio: mediaBuffer, mimetype: 'audio/mp4', ptt: false } :
-              mType === 'stickerMessage' ? { sticker: mediaBuffer } : null;
-            if (mediaSendPayload) await sock.sendMessage(ownerJid, mediaSendPayload);
-          } else if (body) {
-            await sock.sendMessage(ownerJid, {
-              text: header + `► *Message:*\n${body}`,
-              mentions: sender ? [sender] : [],
-            });
-          }
-        } catch (err) {
-          console.error('[EVO] anti-delete forward error:', err.message);
-        }
-      }
-      break;
-    }
-
-    case 'group-participants.update':
-    case 'GROUP_PARTICIPANTS_UPDATE': {
-      const { handleGroupParticipantUpdate } = require('./commands/group');
-      try {
-        await handleGroupParticipantUpdate(sock, data);
-      } catch (err) {
-        console.error('[EVO] Group participant update error:', err.message);
-      }
-      break;
-    }
-
-    case 'call':
-    case 'CALL': {
-      const calls = Array.isArray(data) ? data : [data];
-      for (const call of calls) {
-        if (call?.status !== 'offer') continue;
-        const callerJid = call.from || call.chatId;
-        const isDM = callerJid?.endsWith('@s.whatsapp.net');
-        if (!isDM) continue;
-        if (!db.getBotSetting('anticallDm')) continue;
-        const customMsg = db.getBotSetting('antiCallMsg');
-        const channelLink = db.getBotSetting('channelLink');
-        const channelSuffix = channelLink ? `\n\n» *Follow our channel:* ${channelLink}` : '';
-        const text = customMsg ||
-          `▲ *Call Blocked!*\n\n[NO-MOB] This bot does not accept calls.\n` +
-          `» Please send a text message instead.${channelSuffix}\n\n_Powered by ★ Firebox_`;
-        try { await sock.sendMessage(callerJid, { text }); } catch (_) {}
-      }
-      break;
-    }
-
-    default:
-      // Ignore other events silently
-      break;
-  }
-}
-
-// ── Normalize Evolution API message to Baileys-compatible format ───────────────
-
-function normalizeMessage(data) {
-  if (!data) return null;
-
-  // If it already has a Baileys-format key, use it directly
-  if (data.key && data.message) {
-    return {
-      key: {
-        id:          data.key.id,
-        remoteJid:   data.key.remoteJid,
-        fromMe:      data.key.fromMe || false,
-        participant: data.key.participant,
-      },
-      message:          data.message,
-      messageTimestamp: data.messageTimestamp || Math.floor(Date.now() / 1000),
-      pushName:         data.pushName || '',
-    };
-  }
-
-  // Evolution API v2 format
-  const key = {
-    id:          data.key?.id || data.id || '',
-    remoteJid:   data.key?.remoteJid || data.remoteJid || data.from || '',
-    fromMe:      data.key?.fromMe || data.fromMe || false,
-    participant: data.key?.participant || data.participant || undefined,
-  };
-
-  const messageType = data.messageType || 'conversation';
-  let message = data.message || {};
-
-  // If Evolution API sends a flattened structure, rebuild the message object
-  if (Object.keys(message).length === 0) {
-    if (data.body) {
-      message = { conversation: data.body };
-    } else if (messageType === 'conversation' && data.body) {
-      message = { conversation: data.body };
-    }
-  }
-
-  if (!key.remoteJid || !key.id) return null;
-
-  return {
-    key,
-    message,
-    messageTimestamp: data.messageTimestamp || Math.floor(Date.now() / 1000),
-    pushName:         data.pushName || data.senderName || '',
-  };
 }
 
 module.exports = {
   sessions,
   addSession,
-  startSession: startEvoSession,
+  startSession: startBaileysSession,
   removeSession,
   requestPairingCode,
   waitForPairingReady,
   loadAndStartAll,
-  handleWebhookEvent,
   isSetupRequired,
 };

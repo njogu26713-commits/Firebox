@@ -721,76 +721,11 @@ app.post('/api/tokens/activate', async (req, res) => {
   }
 });
 
-// ── POST /webhook and /webhook/* — receive Evolution API events ───────────────
-// Evolution API v2 with webhookByEvents=true sends to /webhook/EVENT-NAME
-// (e.g. /webhook/connection-update, /webhook/messages-upsert).
-// With webhookBase64=true the payload body is base64-encoded JSON.
+// ── POST /webhook — kept as a no-op for backward compatibility ───────────────
+// (Baileys uses a direct WebSocket connection; webhooks are not needed.)
 
-function parseWebhookBody(raw, urlPath) {
-  let body = raw;
-
-  // Decode base64-wrapped payload (webhookBase64=true)
-  if (body && typeof body.data === 'string') {
-    try { body = JSON.parse(Buffer.from(body.data, 'base64').toString('utf8')); } catch (_) {}
-  }
-
-  // Derive event from URL path when webhookByEvents=true sends to /webhook/EVENT-NAME
-  if (body && !body.event && urlPath && urlPath !== '/webhook') {
-    const slug = urlPath.replace(/^\/webhook\/?/, ''); // e.g. "connection-update"
-    if (slug) {
-      // Convert kebab-case to UPPER_SNAKE: connection-update → CONNECTION_UPDATE
-      body = { ...body, event: slug.toUpperCase().replace(/-/g, '_') };
-    }
-  }
-
-  return body;
-}
-
-async function handleWebhookRequest(req, res) {
-  try {
-    const body = parseWebhookBody(req.body, req.path);
-    if (!body) return res.sendStatus(200);
-
-    const event    = body.event || body.type || '';
-    const instance = body.instance || '';
-    const data     = body.data || body;
-
-    if (event) {
-      const { handleWebhookEvent } = require('./sessionManager');
-      handleWebhookEvent(event, instance, data).catch(err =>
-        console.error('[WEBHOOK] Handler error:', err.message)
-      );
-    }
-
-    res.sendStatus(200);
-  } catch (err) {
-    console.error('[WEBHOOK] Error:', err.message);
-    res.sendStatus(200);
-  }
-}
-
-app.post('/webhook',    handleWebhookRequest);
-app.post('/webhook/*',  handleWebhookRequest);
-
-// ── GET /api/evo/status — Evolution API instance status ──────────────────────
-
-app.get('/api/evo/status', async (req, res) => {
-  try {
-    const { createEvoClient, getInstanceState, getInstanceNumber } = require('./evolutionApi');
-    const url = process.env.EVOLUTION_API_URL;
-    const key = process.env.EVOLUTION_API_KEY;
-    const inst = process.env.EVOLUTION_INSTANCE || 'firebox-bot';
-    if (!url || !key) return res.json({ configured: false });
-    const client = createEvoClient(url, key);
-    const [state, number] = await Promise.all([
-      getInstanceState(client, inst),
-      getInstanceNumber(client, inst),
-    ]);
-    res.json({ configured: true, instance: inst, state, number });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+app.post('/webhook',   (_req, res) => res.sendStatus(200));
+app.post('/webhook/*', (_req, res) => res.sendStatus(200));
 
 // ── GET /api/setup-status — updated for Evolution API ────────────────────────
 

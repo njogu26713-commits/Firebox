@@ -283,29 +283,23 @@ async function savestatus(ctx) {
 
   try {
     if (quoted.imageMessage) {
-      const stream = await sock.downloadMediaMessage({ message: quoted });
-      const chunks = [];
-      for await (const chunk of stream) chunks.push(chunk);
-      const buf = Buffer.concat(chunks);
+      const buf = await sock.downloadMediaMessage({ message: quoted });
+      if (!buf) throw new Error('Media download returned empty');
       await sock.sendMessage(from, {
         image: buf,
         caption: `Status saved!`
       }, { quoted: msg });
     } else if (quoted.videoMessage) {
-      const stream = await sock.downloadMediaMessage({ message: quoted });
-      const chunks = [];
-      for await (const chunk of stream) chunks.push(chunk);
-      const buf = Buffer.concat(chunks);
+      const buf = await sock.downloadMediaMessage({ message: quoted });
+      if (!buf) throw new Error('Media download returned empty');
       await sock.sendMessage(from, {
         video: buf,
         caption: `Status saved!`,
         mimetype: 'video/mp4'
       }, { quoted: msg });
     } else if (quoted.audioMessage) {
-      const stream = await sock.downloadMediaMessage({ message: quoted });
-      const chunks = [];
-      for await (const chunk of stream) chunks.push(chunk);
-      const buf = Buffer.concat(chunks);
+      const buf = await sock.downloadMediaMessage({ message: quoted });
+      if (!buf) throw new Error('Media download returned empty');
       await sock.sendMessage(from, {
         audio: buf,
         mimetype: 'audio/mpeg',
@@ -531,10 +525,8 @@ async function videodoc(ctx) {
       key: { remoteJid: from, id: qCtx.stanzaId, fromMe: false, participant: qCtx.participant },
       message: quoted
     };
-    const stream = await sock.downloadMediaMessage(fakeMsg);
-    const chunks = [];
-    for await (const c of stream) chunks.push(c);
-    const buf = Buffer.concat(chunks);
+    const buf = await sock.downloadMediaMessage(fakeMsg);
+    if (!buf) throw new Error('Media download returned empty');
     const filename = `video_${Date.now()}.mp4`;
     await sock.sendMessage(from, {
       document: buf,

@@ -1,13 +1,13 @@
 /**
- * Media compatibility helpers — Evolution API edition
- * Drop-in replacements for the Baileys helper functions used by command modules.
+ * Media compatibility helpers — Baileys edition
+ * Drop-in replacements for the helper functions used by command modules.
  */
 
 'use strict';
 
 /**
- * getContentType — identify the primary message type from a Baileys/Evolution API
- * message object (same logic as Baileys' own getContentType).
+ * getContentType — identify the primary message type from a Baileys message
+ * object (same ordering as Baileys' own getContentType helper).
  */
 function getContentType(message) {
   if (!message || typeof message !== 'object') return undefined;
@@ -28,21 +28,20 @@ function getContentType(message) {
 }
 
 /**
- * downloadMediaBuffer — download media from a message using the sock adapter.
- * Returns a Buffer or null.
+ * downloadMediaBuffer — download media from a message using the Baileys sock.
+ * Returns a Buffer, or null on failure.
  *
- * @param {object} sock        - Evolution API sock adapter
- * @param {object} msg         - Full message object (with key + message)
+ * @param {object} sock         - Baileys socket (has sock.downloadMediaMessage)
+ * @param {object} msg          - Full message object (with key + message)
  * @param {object} [altMessage] - Optional alternate message content (e.g. quotedMessage).
- *                                If provided, builds a synthetic key from msg.
+ *                                If provided, builds a synthetic msg using the original key.
  */
 async function downloadMediaBuffer(sock, msg, altMessage) {
   const targetMsg = altMessage
     ? { key: msg.key, message: altMessage }
     : msg;
 
-  const buffer = await sock.downloadMediaMessage(targetMsg);
-  return buffer; // Buffer or null
+  return sock.downloadMediaMessage(targetMsg);
 }
 
 module.exports = { getContentType, downloadMediaBuffer };
