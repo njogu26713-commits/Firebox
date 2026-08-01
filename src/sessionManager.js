@@ -308,16 +308,38 @@ async function requestPairingCode(id, number) {
     return null;
   }
 
-  try {
-    const code = await sock.requestPairingCode(clean);
-    const formatted = code.match(/.{1,4}/g)?.join('-') || code;
-    sessionState.pairingCode       = formatted;
-    sessionState._socketInitialized = true;
-    return formatted;
-  } catch (err) {
-    console.warn('[BAILEYS] requestPairingCode failed:', err.message);
-    throw err;
+  // Retry up to 3 times — Baileys occasionally closes the WS before the
+  // pairing-code response arrives (transient network blip on cloud hosts).
+  const MAX_ATTEMPTS = 3;
+  let lastErr;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const code = await sock.requestPairingCode(clean);
+      const formatted = code.match(/.{1,4}/g)?.join('-') || code;
+      sessionState.pairingCode       = formatted;
+      sessionState._socketInitialized = true;
+      return formatted;
+    } catch (err) {
+      lastErr = err;
+      const isConnectionErr = /connection closed|connection lost|timed out|econnreset/i.test(err.message || '');
+      console.warn(`[BAILEYS] requestPairingCode attempt ${attempt}/${MAX_ATTEMPTS} failed:`, err.message);
+      if (!isConnectionErr || attempt === MAX_ATTEMPTS) break;
+
+      // Brief back-off then retry with a fresh socket for this session
+      await new Promise(r => setTimeout(r, 2000 * attempt));
+      try {
+        await startBaileysSession(id, sessionState.name, sessionState.createdAt);
+        await new Promise(r => setTimeout(r, 1500));
+        const fresh = sessions.get(id);
+        if (fresh?.sock) {
+          // update local sock reference for next attempt
+          Object.assign(sessionState, { sock: fresh.sock });
+        }
+      } catch (_) {}
+    }
   }
+
+  throw lastErr;
 }
 
 async function waitForPairingReady(id, timeoutMs = 25000) {
