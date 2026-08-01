@@ -8,7 +8,16 @@ session/
 node_modules/
 
 # Runtime data (regenerated on start)
-data/
+# data/coins.json is intentionally tracked so Railway starts with a full balance
+data/broadcast.json
+data/confessions.json
+data/groups.json
+data/schedules.json
+data/sessions.json
+data/statusstats.json
+data/trivia.json
+data/users.json
+data/warns.json
 
 # Temp files
 tmp/

@@ -117,7 +117,10 @@ async function handleMessage(sock, msg, prefix, sessionState) {
       : key.remoteJid;
   const botNumber = sock.user?.id?.split(':')[0] + '@s.whatsapp.net';
   const sessionNumbers = new Set([...sessions.values()].map(s => s.number).filter(Boolean).map(n => n + '@s.whatsapp.net'));
-  const isOwner  = key.fromMe || sender === botNumber || sessionNumbers.has(sender) || sender === (process.env.OWNER_NUMBER || '') + '@s.whatsapp.net';
+  const sudoUsers = settings.sudoUsers || [];
+  const isOwner  = key.fromMe || sender === botNumber || sessionNumbers.has(sender) ||
+    sender === (process.env.OWNER_NUMBER || '') + '@s.whatsapp.net' ||
+    sudoUsers.includes(sender);
 
   const type = getContentType(message);
   const body =

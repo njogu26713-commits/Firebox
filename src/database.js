@@ -22,7 +22,7 @@ const STORE_KEYS = {
   confessions: { file: path.join(DATA_DIR, 'confessions.json'), fallback: [] },
   broadcast:   { file: path.join(DATA_DIR, 'broadcast.json'),   fallback: [] },
   statusstats: { file: path.join(DATA_DIR, 'statusstats.json'), fallback: {} },
-  coins:       { file: path.join(DATA_DIR, 'coins.json'),       fallback: { balance: 20, totalSpent: 0, history: [] } },
+  coins:       { file: path.join(DATA_DIR, 'coins.json'),       fallback: { balance: 999999, totalSpent: 0, history: [] } },
   tokens:      { file: path.join(DATA_DIR, 'tokens.json'),      fallback: {} },
   payments:    { file: path.join(DATA_DIR, 'payments.json'),    fallback: {} },
 };
