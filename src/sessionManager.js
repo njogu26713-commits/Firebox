@@ -153,6 +153,11 @@ async function refreshSessionState(sessionState, client) {
     }
   } else if (rawState === 'connecting') {
     sessionState.status = 'connecting';
+    // Try to resolve number even in connecting state (ownerJid persists on server)
+    if (!sessionState.number) {
+      const n = await getInstanceNumber(client, EVO_INSTANCE);
+      if (n) sessionState.number = n;
+    }
   } else {
     // close / unknown — try to fetch QR
     sessionState.status = 'disconnected';
@@ -313,13 +318,28 @@ async function handleWebhookEvent(event, instanceName, data) {
   switch (event) {
     case 'connection.update':
     case 'CONNECTION_UPDATE': {
-      const state = data?.state || data?.connection;
+      const state = data?.state || data?.connection || data?.instance?.state;
+      console.log(`[EVO] CONNECTION_UPDATE state=${state} data=${JSON.stringify(data).slice(0,200)}`);
       if (state === 'open') {
         sessionState.status = 'connected';
         sessionState.qr = null;
         sessionState.pairingCode = null;
-        if (data?.instance?.ownerJid) {
-          sessionState.number = data.instance.ownerJid.split('@')[0].split(':')[0];
+        // ownerJid may be in data directly, nested under instance, or need an API call
+        const rawJid = data?.instance?.ownerJid || data?.ownerJid || data?.wuid;
+        if (rawJid) {
+          sessionState.number = rawJid.split('@')[0].split(':')[0];
+        } else if (!sessionState.number) {
+          // Fetch from API as fallback
+          const { createEvoClient, getInstanceNumber } = require('./evolutionApi');
+          const c = createEvoClient(EVO_API_URL, EVO_API_KEY);
+          getInstanceNumber(c, EVO_INSTANCE).then(n => {
+            if (n) {
+              sessionState.number = n;
+              sessionState.sock = createSockAdapter(EVO_INSTANCE, EVO_API_URL, EVO_API_KEY, n);
+            }
+          }).catch(() => {});
+        }
+        if (sessionState.number) {
           sessionState.sock = createSockAdapter(EVO_INSTANCE, EVO_API_URL, EVO_API_KEY, sessionState.number);
         }
         console.log(`[EVO] Connected! +${sessionState.number}`);
