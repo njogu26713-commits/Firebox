@@ -88,7 +88,7 @@ async function startBaileysSession(id, name, createdAt) {
     auth:                state,
     logger,
     printQRInTerminal:   false,   // We surface QR via the dashboard, not terminal
-    browser:             Browsers.baileys('Desktop'),
+    browser:             Browsers.ubuntu('Chrome'),
     syncFullHistory:     false,
     markOnlineOnConnect: true,
     connectTimeoutMs:    60000,
