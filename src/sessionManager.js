@@ -294,29 +294,37 @@ function removeSession(id) {
  * dashboard will fall back to displaying the QR code instead.
  */
 async function requestPairingCode(id, number) {
-  const sessionState = sessions.get(id);
-  if (!sessionState) throw new Error('Session not found');
-
-  const sock = sessionState.sock;
-  if (!sock) throw new Error('Socket not ready — please retry');
+  const s0 = sessions.get(id);
+  if (!s0) throw new Error('Session not found');
 
   const clean = String(number || '').replace(/[^0-9]/g, '');
 
   if (!clean) {
-    // No phone number supplied — QR flow: QR is already set via connection.update
-    sessionState._socketInitialized = true;
+    // No phone number supplied — QR flow
+    s0._socketInitialized = true;
     return null;
   }
+
+  // Give the WS handshake a moment to complete before the first attempt
+  await new Promise(r => setTimeout(r, 1000));
 
   // Retry up to 3 times — Baileys occasionally closes the WS before the
   // pairing-code response arrives (transient network blip on cloud hosts).
   const MAX_ATTEMPTS = 3;
   let lastErr;
+
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    // Always fetch the current state + sock — retries may have swapped the socket
+    const sessionState = sessions.get(id);
+    if (!sessionState) throw new Error('Session not found');
+
+    const sock = sessionState.sock;
+    if (!sock) throw new Error('Socket not ready — please retry');
+
     try {
       const code = await sock.requestPairingCode(clean);
       const formatted = code.match(/.{1,4}/g)?.join('-') || code;
-      sessionState.pairingCode       = formatted;
+      sessionState.pairingCode        = formatted;
       sessionState._socketInitialized = true;
       return formatted;
     } catch (err) {
@@ -325,16 +333,12 @@ async function requestPairingCode(id, number) {
       console.warn(`[BAILEYS] requestPairingCode attempt ${attempt}/${MAX_ATTEMPTS} failed:`, err.message);
       if (!isConnectionErr || attempt === MAX_ATTEMPTS) break;
 
-      // Brief back-off then retry with a fresh socket for this session
-      await new Promise(r => setTimeout(r, 2000 * attempt));
+      // Back-off then spin up a fresh socket so the next attempt has a clean WS
+      await new Promise(r => setTimeout(r, 2500 * attempt));
       try {
         await startBaileysSession(id, sessionState.name, sessionState.createdAt);
+        // Give the new socket ~1.5 s to complete the WS handshake with WhatsApp
         await new Promise(r => setTimeout(r, 1500));
-        const fresh = sessions.get(id);
-        if (fresh?.sock) {
-          // update local sock reference for next attempt
-          Object.assign(sessionState, { sock: fresh.sock });
-        }
       } catch (_) {}
     }
   }
